@@ -1,14 +1,19 @@
 # Local credentials
 /Gittoken.txt
-/.env
-/.env.*
-!/.env.example
+.env
+.env.*
+!.env.example
 
 # Dependencies and generated output
 node_modules/
 dist/
 target/
 *.log
+*.tsbuildinfo
+**/src-tauri/gen/
+playwright-report/
+test-results/
+artifacts/
 
 # Local editor and OS files
 /.idea/

@@ -2,13 +2,37 @@
 
 面向 Windows 的本地 AI 项目工作台：对话、可追溯知识、版本审核，以及知识关系和实际执行过程的 3D 探索。
 
-当前处于开发前规划阶段，尚未初始化桌面应用。
+当前处于 Phase 0：Tauri 2 + React + TypeScript 应用壳，包含对话、知识、图谱、设置四个页面。模型连接、数据库、知识编辑与 3D 尚未接入，界面已明确标注。
+
+## 本地运行
+
+Windows 需要 Node 22.12+、Visual Studio C++ Build Tools、WebView2 与 MSVC Rust 工具链。当前主机的具体版本见 [环境检查](docs/environment.md)。
+
+```powershell
+cd apps/desktop
+npm.cmd ci
+npm.cmd run tauri -- dev
+```
+
+仅浏览器预览使用 `npm.cmd run dev`，打开 `http://127.0.0.1:1420`。预览不代表桌面验证。
+
+```powershell
+npm.cmd run build
+cargo check --manifest-path src-tauri/Cargo.toml --locked
+npm.cmd run tauri -- build --debug --no-bundle
+npm.cmd run test:smoke
+```
+
+独立调试版位于 `apps/desktop/src-tauri/target/debug/cortexos-desktop.exe`。主机全局 Rust 默认保持 GNU，本项目通过工具链文件选择 MSVC。当前不需要安装 Ollama 来浏览 Phase 0 页面；Phase 1 真实对话验收需要另行准备本机服务与模型。
 
 ## 开发文档
 
 - [项目总纲](development.md)
 - [开发与交互规范](docs/development-standards.md)
 - [实施计划与阶段验收](docs/implementation-plan.md)
+- [架构与边界](docs/architecture.md)
+- [检查方法](docs/test-plan.md)
+- [实际里程碑记录](docs/milestone-log.md)
 
 ## 仓库与推送
 
