@@ -12,8 +12,8 @@
 
 ## 仓库与推送
 
-本目录使用独立 Git 仓库，主分支为 `main`。预定远程为私有 GitHub 仓库 `hfdsdfgr/CortexOS`；当前 GitHub 创建接口返回 404，远程创建与首次推送尚未完成。
+本目录使用独立 Git 仓库，主分支为 `main`。远程为私有 GitHub 仓库 [hfdsdfgr/CortexOS](https://github.com/hfdsdfgr/CortexOS)。
 
-本机为该仓库配置 Windows Git Credential Manager，使用用户提供的 token。远程创建完成且 token 具有仓库写权限后，在本目录正常执行 `git push` 即可复用凭据。凭据配置属于本机，不随克隆迁移到其他设备。
+本机为该仓库配置 Windows Git Credential Manager，使用用户提供的最新 token。在本目录正常执行 `git push` 即可复用凭据。凭据配置属于本机，不随克隆迁移到其他设备。
 
 根目录 `Gittoken.txt` 仅供本机使用，已加入忽略规则；提交前保持该文件未被跟踪。token 不应出现在源码、文档或远程 URL 中。更换 token 后需要更新本机凭据。
