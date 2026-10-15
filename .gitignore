@@ -1,0 +1,16 @@
+# Local credentials
+/Gittoken.txt
+/.env
+/.env.*
+!/.env.example
+
+# Dependencies and generated output
+node_modules/
+dist/
+target/
+*.log
+
+# Local editor and OS files
+/.idea/
+Thumbs.db
+.DS_Store
