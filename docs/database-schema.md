@@ -24,6 +24,8 @@
 
 当前数据库文件为应用数据目录下的 `cortexos.sqlite3`。连接启用外键、WAL、FULL 同步及 3 秒 busy timeout；启动检查 SQLite FTS5 编译能力。迁移版本与 SHA-256 校验不匹配时显示错误并保留数据，不自动重建。Windows 用独占 `cortexos.lock` 句柄保护打开和恢复，锁随进程退出释放。强制中断可能损失最后 250 ms 以来尚未提交的片段，不能保证未落盘字节恢复。
 
+模型完成帧的 `done_reason` 与实际 token/耗时统计保存在 `response_completed` 事件 payload。接口中的消息 `finishReason` 从该事件投影读取；`length` 在界面显示达到输出上限，该轮不用于后续上下文。运行 completed 表示响应流结束，不自动宣称回答内容完整或正确。
+
 ## Phase 2 知识修订
 
 | 表 | 规则 |

@@ -142,6 +142,9 @@ test("installed local Ollama answers, cancels and retains conversations after re
     let offlineRecoveryVerified = false;
     let restartedServerPid: number | undefined;
     if (process.env.CORTEXOS_MANAGED_OLLAMA_PID) {
+      await expect(
+        page.getByText("Ollama 已连接", { exact: true }),
+      ).toBeVisible();
       const managedPid = Number(process.env.CORTEXOS_MANAGED_OLLAMA_PID);
       if (!Number.isSafeInteger(managedPid) || managedPid <= 0)
         throw new Error("Invalid managed Ollama PID");
@@ -184,7 +187,6 @@ test("installed local Ollama answers, cancels and retains conversations after re
             })
           ).at(-1)!.status,
         ).toBe("failed");
-        offlineRecoveryVerified = true;
       } finally {
         const server = spawn(executable, ["serve"], {
           detached: true,
@@ -223,6 +225,27 @@ test("installed local Ollama answers, cancels and retains conversations after re
       await expect(
         page.getByText(`Ollama ${health.version} 已连接`, { exact: true }),
       ).toBeVisible();
+      await page
+        .getByRole("navigation")
+        .getByRole("link", { name: "对话", exact: true })
+        .click();
+      const answersBeforeRecovery = await page
+        .getByRole("article", { name: "模型回答" })
+        .count();
+      await page
+        .getByRole("textbox", { name: "你的问题", exact: true })
+        .fill("请只回复：本地服务已恢复。");
+      await page.getByRole("button", { name: "发送消息", exact: true }).click();
+      await expect(page.getByRole("article", { name: "模型回答" })).toHaveCount(
+        answersBeforeRecovery + 1,
+      );
+      await expect(
+        page
+          .getByRole("article", { name: "模型回答" })
+          .last()
+          .getByText("已完成", { exact: true }),
+      ).toBeVisible({ timeout: 120_000 });
+      offlineRecoveryVerified = true;
     }
     const report = {
       version: health.version,
