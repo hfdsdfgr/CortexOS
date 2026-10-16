@@ -4,7 +4,6 @@ import {
   ArrowUp,
   Check,
   Copy,
-  FileText,
   GitBranch,
   HardDrive,
   MessageSquare,
@@ -95,11 +94,6 @@ function Conversations({
         <div className="sidebar-empty">
           <MessageSquare size={22} aria-hidden="true" />
           <p>还没有会话</p>
-          <span>
-            {studio.workspaceId
-              ? "输入问题即可开始，讨论会自动保存在本机。"
-              : "先创建一个工作区，再开始讨论。"}
-          </span>
         </div>
       )}
       <p className="sidebar-footer">
@@ -180,9 +174,7 @@ export function ChatPage({
         <header className="page-heading">
           <div>
             <h1 id="page-title">对话</h1>
-            <p>
-              {conversation?.title ?? "让问题、依据与决定，留在同一个工作区。"}
-            </p>
+            {conversation && <p className="conversation-title">{conversation.title}</p>}
           </div>
           <div className="heading-actions">
             <button
@@ -325,7 +317,6 @@ export function ChatPage({
                           重试
                         </button>
                       )}
-                      <span>本次未使用可引用来源</span>
                     </div>
                   )}
                 </article>
@@ -347,12 +338,12 @@ export function ChatPage({
               </h2>
               <p>
                 {!studio.desktop
-                  ? "这里是界面预览。打开 CortexOS 桌面程序，即可创建工作区并保存对话。"
+                  ? "打开桌面程序，创建工作区并开始对话。"
                   : !studio.workspaceId
-                    ? "把相关讨论放在一起。工作区和会话会保存在本机，之后可随时继续。"
+                    ? "创建工作区，集中保存这个项目的讨论。"
                     : !modelReady
-                      ? "先在设置中检测 Ollama，并选择已安装模型。你可以先在下方写好问题。"
-                      : "围绕项目展开讨论，回答和实际执行记录会自动保留。"}
+                      ? "在设置中检测 Ollama，选择已安装模型。"
+                      : "梳理想法、拆解问题，继续推进你的项目。"}
               </p>
               {studio.desktop && !studio.workspaceId ? (
                 <button
@@ -389,13 +380,8 @@ export function ChatPage({
           </button>
         )}
         <div className="composer-area">
-          <div className="context-summary">
-            <FileText size={15} aria-hidden="true" />
-            <span>本次上下文</span>
-            <span className="muted">最近对话 · 按预算选择</span>
-          </div>
           <div className="composer">
-            <label htmlFor="message">你的问题</label>
+            <label className="sr-only" htmlFor="message">你的问题</label>
             <textarea
               id="message"
               rows={2}
@@ -403,7 +389,7 @@ export function ChatPage({
               onChange={(event) => studio.setDraft(event.target.value)}
               placeholder={
                 studio.workspaceId
-                  ? "输入问题，Enter 发送，Shift+Enter 换行…"
+                  ? "输入问题…"
                   : "创建工作区后，在这里输入问题…"
               }
               disabled={
@@ -459,11 +445,11 @@ export function ChatPage({
               )}
             </div>
           </div>
-          <p className="composer-help">
-            {!studio.desktop
-              ? "浏览器预览不会读取或保存你的本地数据。"
-              : "会话自动保存 · 回答仍需结合依据判断"}
-          </p>
+          <details className="composer-help">
+            <summary>对话说明与快捷键</summary>
+            <p>Enter 发送，Shift+Enter 换行。上下文按预算选取最近完整对话，当前不使用文件检索。回答请结合依据判断。</p>
+            {!studio.desktop && <p>浏览器预览不会读取或保存本地数据。</p>}
+          </details>
         </div>
         <p className="sr-only" role="status">
           {currentRunning ? "本地助手正在生成回答" : "当前没有生成任务"}

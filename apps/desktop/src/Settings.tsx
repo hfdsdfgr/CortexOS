@@ -3,7 +3,6 @@ import {
   CheckCircle2,
   Database,
   Info,
-  ShieldCheck,
   SlidersHorizontal,
   Unplug,
 } from "lucide-react";
@@ -31,7 +30,6 @@ export function SettingsPage({ studio }: { studio: Studio }) {
       <header className="page-heading">
         <div>
           <h1 id="page-title">设置</h1>
-          <p>管理本地模型、数据与工作环境。</p>
         </div>
       </header>
       <div className="page-content settings-content">
@@ -41,7 +39,6 @@ export function SettingsPage({ studio }: { studio: Studio }) {
               <SlidersHorizontal size={18} aria-hidden="true" />
               模型连接
             </h2>
-            <p>通过 Ollama 使用本机模型。</p>
           </div>
           <form
             className="settings-fields"
@@ -90,9 +87,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                 id="endpoint"
                 value="http://127.0.0.1:11434"
                 readOnly
-                aria-describedby="endpoint-help"
               />
-              <p id="endpoint-help">仅连接本机。应用不会将对话转发到云端。</p>
             </div>
             <button
               type="button"
@@ -134,7 +129,6 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                   }));
                   setSaved(false);
                 }}
-                aria-describedby="model-help"
               >
                 {!installed && (
                   <option value={draft.model}>{draft.model}（未安装）</option>
@@ -146,10 +140,10 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                   </option>
                 ))}
               </select>
-              <p id="model-help">
-                建议 qwen3:4b-instruct，直接返回回答。Thinking
-                模型可能需要更高的最大输出。更改设置用于下一次回答。
-              </p>
+              <details className="field-help">
+                <summary>如何选择模型</summary>
+                <p>建议 qwen3:4b-instruct。Thinking 模型可能需要更高的最大输出。更改在下一次回答生效。</p>
+              </details>
             </div>
             <details className="advanced-settings">
               <summary>生成参数</summary>
@@ -239,7 +233,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                   ? "设置已保存"
                   : changed
                     ? "有未保存的更改"
-                    : "当前为已保存配置"}
+                    : ""}
               </span>
             </div>
           </form>
@@ -250,7 +244,6 @@ export function SettingsPage({ studio }: { studio: Studio }) {
               <Database size={18} aria-hidden="true" />
               本地数据
             </h2>
-            <p>项目内容由你掌控。</p>
           </div>
           <div className="settings-fields">
             <dl className="data-summary">
@@ -278,10 +271,10 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                 {studio.data.dataPath}
               </p>
             )}
-            <p className="privacy-note">
-              <ShieldCheck size={17} aria-hidden="true" />
-              模型请求只发往本机。文件导入开放前，不会读取项目资料。
-            </p>
+            <details className="field-help">
+              <summary>隐私与存储说明</summary>
+              <p>模型请求只发往本机。文件导入开放前，不会读取项目资料。会话保存在本机数据库中。</p>
+            </details>
           </div>
         </section>
         <section className="settings-section" aria-labelledby="about-settings">
@@ -297,8 +290,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
               <span className="version-label">0.1.0 · 本地对话 Alpha</span>
             </div>
             <p className="muted">
-              可保存工作区与会话、查看实际执行记录。知识编辑与 3D
-              图谱正在建设中。
+              知识编辑与 3D 图谱尚未开放。
             </p>
           </div>
         </section>

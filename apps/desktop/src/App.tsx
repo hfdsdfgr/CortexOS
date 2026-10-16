@@ -5,7 +5,6 @@ import {
   ChevronRight,
   CircleHelp,
   GitBranch,
-  Info,
   MessageSquare,
   Network,
   Plus,
@@ -32,22 +31,12 @@ function currentPage() {
   const id = window.location.hash.replace("#/", "");
   return pages.find((page) => page.id === id)?.id ?? "chat";
 }
-function PreviewNote({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="preview-note">
-      <Info size={16} aria-hidden="true" />
-      {children}
-    </p>
-  );
-}
-
 function KnowledgePage() {
   return (
     <section className="standard-page" aria-labelledby="page-title">
       <header className="page-heading">
         <div>
           <h1 id="page-title">知识</h1>
-          <p>把有价值的内容，整理成有来源、有版本的项目知识。</p>
         </div>
         <button className="button secondary" disabled title="知识编辑尚未开放">
           <Plus size={16} aria-hidden="true" />
@@ -76,11 +65,9 @@ function KnowledgePage() {
                 <td colSpan={5}>
                   <div className="table-empty">
                     <BookOpen size={32} strokeWidth={1.5} aria-hidden="true" />
-                    <h2>让每条知识都有来处</h2>
+                    <h2>知识编辑尚未开放</h2>
                     <p>
-                      知识功能开放后，你可以手动记录，
-                      <br />
-                      或把对话中的有用内容保存为待确认草案。
+                      后续可从对话保存草案，确认后加入项目知识。
                     </p>
                     <a className="button text-button" href="#/chat">
                       返回对话
@@ -92,9 +79,6 @@ function KnowledgePage() {
             </tbody>
           </table>
         </div>
-        <PreviewNote>
-          知识编辑、审核与版本历史尚未开放。模型生成的内容不会自动成为已确认知识。
-        </PreviewNote>
       </div>
     </section>
   );
@@ -108,7 +92,6 @@ function GraphPage() {
       <header className="page-heading">
         <div>
           <h1 id="page-title">图谱</h1>
-          <p>从关系理解项目，从记录追溯每次执行。</p>
         </div>
         <span className="subtle-label">查看器尚未开放</span>
       </header>
@@ -138,7 +121,6 @@ function GraphPage() {
             执行过程
           </label>
         </fieldset>
-        <span className="muted graph-count">3D 查看器尚未开放</span>
       </div>
       <div className="graph-canvas">
         <div className="graph-empty" aria-live="polite" aria-atomic="true">
@@ -147,12 +129,12 @@ function GraphPage() {
           </div>
           <h2>
             {isKnowledge
-              ? "知识之间的联系，将在这里展开"
+              ? "探索知识之间的联系"
               : "在对话中查看实际执行过程"}
           </h2>
           <p>
             {isKnowledge
-              ? "查看知识之间的支持、依赖与冲突，选中节点后查看来源与版本。"
+              ? "图谱尚未开放。后续可查看关系、来源与版本。"
               : "从每条回答打开实际执行步骤；三维展示将在后续版本接入。"}
           </p>
           <a
@@ -162,9 +144,6 @@ function GraphPage() {
             {isKnowledge ? "前往知识" : "前往对话"}
             <ChevronRight size={16} aria-hidden="true" />
           </a>
-          <span className="empty-footnote">
-            当前为图谱页面预览，尚未接入三维数据。
-          </span>
         </div>
         <div className="graph-caption">
           <CircleHelp size={15} aria-hidden="true" />
