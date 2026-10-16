@@ -1,3 +1,11 @@
+mod commands;
+mod db;
+mod models;
+mod ollama;
+
+use std::sync::atomic::Ordering;
+use tauri::Manager;
+
 pub fn run() {
     let context = tauri::generate_context!();
     #[cfg(debug_assertions)]
@@ -18,6 +26,46 @@ pub fn run() {
         context
     };
     tauri::Builder::default()
+        .setup(|app| {
+            let mut directory = app.path().app_data_dir()?;
+            #[cfg(debug_assertions)]
+            if let Ok(value) = std::env::var("CORTEXOS_TEST_DATA_DIR") {
+                directory = std::path::PathBuf::from(value);
+            }
+            app.manage(commands::AppState::new(&directory));
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::bootstrap,
+            commands::create_workspace,
+            commands::list_conversations,
+            commands::create_conversation,
+            commands::rename_conversation,
+            commands::load_messages,
+            commands::check_ollama,
+            commands::save_settings,
+            commands::get_run,
+            commands::cancel_run,
+            commands::start_chat
+        ])
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let state = window.state::<commands::AppState>().inner().clone();
+                if state.has_active() {
+                    api.prevent_close();
+                    if !state.closing.swap(true, Ordering::SeqCst) {
+                        state.cancel_active();
+                        let window = window.clone();
+                        tauri::async_runtime::spawn(async move {
+                            while state.has_active() {
+                                tokio::time::sleep(std::time::Duration::from_millis(40)).await;
+                            }
+                            let _ = window.close();
+                        });
+                    }
+                }
+            }
+        })
         .run(context)
         .expect("CortexOS desktop failed to start");
 }

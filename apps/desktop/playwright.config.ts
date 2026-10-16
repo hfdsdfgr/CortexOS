@@ -22,6 +22,9 @@ export default defineConfig({
   },
   projects: [
     { name: "edge", testMatch: "app.spec.ts" },
-    { name: "desktop", testMatch: "desktop.spec.ts" },
+    { name: "desktop", testMatch: ["desktop.spec.ts", "chat.spec.ts"] },
+    ...(process.env.CORTEXOS_REAL_OLLAMA === "1"
+      ? [{ name: "ollama", testMatch: "ollama.spec.ts" }]
+      : []),
   ],
 });

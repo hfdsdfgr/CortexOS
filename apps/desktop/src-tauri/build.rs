@@ -1,3 +1,18 @@
 fn main() {
-    tauri_build::build()
+    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
+        tauri_build::AppManifest::new().commands(&[
+            "bootstrap",
+            "create_workspace",
+            "list_conversations",
+            "create_conversation",
+            "rename_conversation",
+            "load_messages",
+            "check_ollama",
+            "save_settings",
+            "get_run",
+            "cancel_run",
+            "start_chat",
+        ]),
+    ))
+    .expect("Failed to build the CortexOS command permission manifest");
 }

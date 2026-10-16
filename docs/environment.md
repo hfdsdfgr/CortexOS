@@ -15,7 +15,7 @@
 | WebView2 | 155.0.4283.45 | Runtime 目录存在，最终以原生启动检查判断 |
 | Edge | 系统 Microsoft Edge 已安装 | 用于浏览器冒烟，不下载另一套 Chromium |
 | GPU | RTX 4070 Laptop，驱动 610.74，总显存 8188 MiB | 一次查询时已用 1158 MiB；仅瞬时读数，不是预算保证 |
-| Ollama | PATH 与标准安装位置未找到；127.0.0.1:11434/api/version 不可用 | Phase 1 的真实模型验收前需准备服务与模型；本轮不安装 |
+| Ollama | Phase 0 未安装；Phase 1 经用户授权安装官方 0.40.4 | 当前账号安装，服务仅监听 127.0.0.1:11434，云端功能关闭 |
 
 ## 检查说明
 
@@ -25,4 +25,25 @@
 
 npm registry 核验 React 19.3.1、Vite 8.3.4、TypeScript 7.0.2 与 Tauri CLI 2.12.3 的实际元数据后固定版本。运行时支持与锁文件以实际构建为最终依据，不把未来升级自动视为兼容。
 
-系统级工具不自动安装。Ollama 服务、模型下载与驱动升级均留到有明确需求的阶段。
+Phase 1 另在该 MSVC 工具链安装官方 rustfmt 组件，供 `cargo fmt` 使用，未切换全局工具链。
+
+## Phase 1 本地模型环境
+
+用户明确同意安装官方 Ollama 并下载 `qwen3:4b`。从 GitHub 官方 ollama/ollama 的 v0.40.4 release 下载 Windows 安装包，核对 release 资产 SHA-256 `45fcd47d70dd047ab95736802e71a7497ef1a473a50470471fc2fb0eb90badde`，Authenticode 状态 Valid，签名者 Ollama Inc.。安装退出码 0，无需重启；程序在 `%LOCALAPPDATA%/Programs/Ollama`。
+
+当前用户环境设为：
+
+```text
+OLLAMA_HOST=127.0.0.1:11434
+OLLAMA_NO_CLOUD=1
+OLLAMA_CONTEXT_LENGTH=4096
+OLLAMA_NUM_PARALLEL=1
+OLLAMA_MAX_LOADED_MODELS=1
+OLLAMA_KEEP_ALIVE=5m
+```
+
+实际用 `ollama serve` 启动隐藏后台服务，核对 API 版本 0.40.4、监听地址及服务日志 cloud disabled。官方托盘 UI 安装成功，但本轮没有证明托盘能自动拉起模型服务或重启后自动可用；必要时在终端执行 `ollama serve`。新终端才会读取安装后的 PATH。
+
+模型首次下载因远程分片连接超时中断，使用相同 pull 命令续传。最终模型信息与真实运行结果在 `milestone-log.md` 记录。安装包、安装日志、服务诊断和模型测试截图保存在忽略目录 `artifacts`，不上传仓库。驱动未修改。
+
+实际 `qwen3:4b` 为 Thinking 版本，模型 ID 359d7dd4bcda、Q4_K_M、2,497,293,931 字节；`think:false` 仍返回分析式文本且耗尽 512 输出预算。已在同一模型准备范围内补充下载同系列 `qwen3:4b-instruct` 并改为默认，原模型保留，磁盘总占用约 5 GB。一次只加载一个模型；默认上下文仍为 4096。官方标签区别及决定见 ADR 0004。

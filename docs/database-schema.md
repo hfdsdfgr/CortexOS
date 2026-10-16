@@ -1,6 +1,6 @@
 # 数据模型契约
 
-状态：Phase 0 设计，尚无数据库或迁移。以总纲为基础，采用 ADR 0002/0003 的明确语义。
+状态：Phase 1 已实现最小迁移；后续知识与检索表仍为设计。采用 ADR 0002/0003 的明确语义。SQL 以 `apps/desktop/src-tauri/migrations/0001_initial.sql` 为准。
 
 ## 共用约束
 
@@ -13,13 +13,16 @@
 | schema_migrations | version PK、checksum、applied_at |
 | workspaces | id PK、name、created_at、updated_at |
 | conversations | id PK、workspace_id FK、title、created_at、updated_at |
-| messages | id PK、conversation_id FK、role CHECK、content、status CHECK、model_run_id nullable、created_at、updated_at |
-| execution_runs | id PK、conversation_id FK、model_id、model_config_json、context_manifest_json、status、started_at、finished_at |
+| messages | id PK、workspace_id、conversation_id、seq、role CHECK、content、status CHECK、model_run_id NOT NULL、created_at、updated_at；UNIQUE(conversation_id,seq) |
+| execution_runs | id PK、workspace_id、conversation_id、assistant_message_id、model_id、model_config_json、context_manifest_json、status CHECK、error_message、started_at、finished_at |
 | execution_events | id PK、run_id FK、seq、kind、occurred_at、payload_json；UNIQUE(run_id, seq) |
+| app_settings | key PK、value_json；保存已校验模型参数 |
 
 `execution_runs.status` 是当前状态投影。`execution_events` 经应用接口只允许插入，并用数据库触发器拒绝常规更新/删除；其不可变保证面向应用使用，不声称能阻止拥有数据库文件的管理员修改。整工作区永久清理需要独立授权的维护路径与备份策略，在实现删除功能前定义。
 
-消息与运行的关联通过插入顺序和事务处理，避免循环外键的初始化死锁。开始新运行先保存用户消息与 run，再追加事件。结束、取消、失败只能确定一个终态；中断启动恢复新增恢复事件，不伪造成功。每次重试创建新 run。
+运行指向回答消息的复合外键为 `DEFERRABLE INITIALLY DEFERRED`；消息指向运行使用同工作区、同会话复合外键。在同一事务内依次创建运行、用户消息、回答占位及事件，提交时校验完整关系。唯一部分索引限制全库只有一个 running。结束更新带 `WHERE status='running'`，迟到终态与检查点不会覆盖已结束内容。每次重试创建新 run。
+
+当前数据库文件为应用数据目录下的 `cortexos.sqlite3`。连接启用外键、WAL、FULL 同步及 3 秒 busy timeout；启动检查 SQLite FTS5 编译能力。迁移版本与 SHA-256 校验不匹配时显示错误并保留数据，不自动重建。Windows 用独占 `cortexos.lock` 句柄保护打开和恢复，锁随进程退出释放。强制中断可能损失最后 250 ms 以来尚未提交的片段，不能保证未落盘字节恢复。
 
 ## Phase 2 知识修订
 

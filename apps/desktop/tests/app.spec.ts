@@ -49,7 +49,7 @@ test("keyboard navigation and graph choice work; unavailable operations stay hon
   await page.keyboard.press("Enter");
   await expect(page.getByRole("main")).toBeFocused();
   await expect(
-    page.getByRole("button", { name: "发送消息（尚未开放）" }),
+    page.getByRole("button", { name: "发送消息", exact: true }),
   ).toBeDisabled();
   await page
     .getByRole("navigation")
@@ -68,12 +68,14 @@ test("keyboard navigation and graph choice work; unavailable operations stay hon
     .getByRole("link", { name: "设置", exact: true })
     .click();
   await expect(
-    page.getByText("连接功能尚未开放", { exact: true }),
+    page.getByText("浏览器仅供界面预览", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "测试连接" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "检测连接" })).toBeDisabled();
   await expect(page.getByLabel("服务地址")).toHaveAttribute("readonly", "");
-  await page.getByText("默认生成参数", { exact: true }).click();
-  await expect(page.getByText("4096 tokens", { exact: true })).toBeVisible();
+  await page.getByText("生成参数", { exact: true }).click();
+  await expect(page.getByLabel("上下文长度", { exact: true })).toHaveValue(
+    "4096",
+  );
 });
 
 for (const [width, height] of [
