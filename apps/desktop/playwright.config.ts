@@ -21,8 +21,16 @@ export default defineConfig({
     timeout: 30_000,
   },
   projects: [
-    { name: "edge", testMatch: "app.spec.ts" },
-    { name: "desktop", testMatch: ["desktop.spec.ts", "chat.spec.ts", "knowledge.spec.ts"] },
+    { name: "edge", testMatch: ["app.spec.ts", "graph-preview.spec.ts"] },
+    {
+      name: "desktop",
+      testMatch: [
+        "desktop.spec.ts",
+        "chat.spec.ts",
+        "knowledge.spec.ts",
+        "graph.spec.ts",
+      ],
+    },
     ...(process.env.CORTEXOS_REAL_OLLAMA === "1"
       ? [{ name: "ollama", testMatch: "ollama.spec.ts" }]
       : []),

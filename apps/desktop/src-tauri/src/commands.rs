@@ -412,3 +412,31 @@ pub async fn approve_knowledge(
     })
     .await
 }
+
+#[tauri::command]
+pub async fn load_knowledge_graph(
+    state: State<'_, AppState>,
+    workspace_id: String,
+) -> AppResult<crate::graph::KnowledgeGraph> {
+    blocking(state.database.clone()?, move |db| {
+        db.knowledge_graph(&workspace_id)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn save_knowledge_edge(
+    state: State<'_, AppState>,
+    input: crate::graph::SaveEdge,
+) -> AppResult<String> {
+    blocking(state.database.clone()?, move |db| {
+        db.save_knowledge_edge(input)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn save_graph_view(
+    state: State<'_, AppState>,
+    input: crate::graph::SaveGraphView,
+) -> AppResult<i64> {
+    blocking(state.database.clone()?, move |db| db.save_graph_view(input)).await
+}

@@ -8,7 +8,11 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const MIGRATIONS: &[&str] = &[MIGRATION, include_str!("../migrations/0002_knowledge.sql")];
+const MIGRATIONS: &[&str] = &[
+    MIGRATION,
+    include_str!("../migrations/0002_knowledge.sql"),
+    include_str!("../migrations/0003_graph.sql"),
+];
 const MIGRATION: &str = include_str!("../migrations/0001_initial.sql");
 const RUN_COLUMNS: &str = "id,workspace_id,conversation_id,assistant_message_id,model_id,status,started_at,finished_at,error_message";
 const SYSTEM_PROMPT: &str = "你是 CortexOS 本地项目助手。使用中文清晰回答。区分事实、假设与建议；没有来源时不要编造引用，不要声称内容已经验证。当前没有文件检索或工具权限。直接给出可用的回答，无需输出内部思考过程。";

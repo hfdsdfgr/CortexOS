@@ -1,6 +1,6 @@
 # 数据模型契约
 
-状态：Phase 1 与 Phase 2A 知识迁移已实现；关系、布局与检索表仍为设计。采用 ADR 0002/0003 的明确语义。SQL 以 `apps/desktop/src-tauri/migrations/` 中 0001 和 0002 为准。
+状态：Phase 1、2A 知识与 2B 关系/布局迁移已实现；检索表仍为设计。采用 ADR 0002/0003 的明确语义。SQL 以 `apps/desktop/src-tauri/migrations/` 中 0001、0002 和 0003 为准。
 
 ## 共用约束
 
@@ -55,3 +55,10 @@
 版本包含标题、类型（context/knowledge/hypothesis/decision/evidence/conflict）、正文、作者 user、修改原因和时间；每次保存新增版本，旧版本用触发器禁止更新/删除。确认事件记录版本、user、时间，不改变版本内容。确认仅允许最新版本，事务内检查 expected_revision 并更新 effective_version/revision。新草案保持原 effective_version。来源引用、节点指针使用外键（版本指针延迟检查），拒绝跨工作区来源。
 
 迁移器检查全部已应用版本的顺序和 checksum，旧库升级前用 VACUUM INTO 生成同目录唯一的迁移前备份；备份失败则停止升级。迁移在事务中完成。2A 不实现删除、撤销确认、关系或自动知识检索；确认代表用户审核，不代表事实验证。
+
+
+### Phase 2B 实施契约
+
+0003 迁移新增 knowledge_edges（稳定 id/workspace_id/latest_version）与 knowledge_edge_versions（edge_id/version/workspace_id/from_node_id/to_node_id/relation/active/change_reason/created_at）。关系版本不可修改/删除；端点以复合外键限制同工作区。关系保存需预期版本、同工作区两端点、有效关系类型、非自环和非重复有效关系。停用追加 active=false 修订，历史保留。方向按“起点 relation 终点”阅读；关系关联稳定节点，节点内容更新不自动构成关系重新审核。
+
+graph_layouts 每个工作区一份 knowledge 视图，含 revision、camera/target 与更新时间；knowledge_positions 按 workspace_id/node_id 保存有限坐标。保存需预期视图 revision，防止两个页面覆盖；位置和视角保存不改变知识/关系版本。演示图仅在前端内存中，显式标记，不能保存为工作区内容。迁移沿用升级前一致性备份。首批仅验收小图，不预先实现动态力导向布局。

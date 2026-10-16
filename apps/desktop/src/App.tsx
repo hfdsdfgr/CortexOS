@@ -3,8 +3,6 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronRight,
-  CircleHelp,
-  GitBranch,
   MessageSquare,
   Network,
   Plus,
@@ -12,8 +10,13 @@ import {
   Unplug,
   X,
 } from "lucide-react";
-import { KnowledgePage, KnowledgeEditor, type EditKnowledge } from "./Knowledge";
+import {
+  KnowledgePage,
+  KnowledgeEditor,
+  type EditKnowledge,
+} from "./Knowledge";
 import { ChatPage } from "./Chat";
+import { GraphPage, RelationshipEditor, type EditEdge } from "./Graph";
 import { SettingsPage } from "./Settings";
 import { errorText, useStudio } from "./studio";
 import "./App.css";
@@ -32,84 +35,16 @@ function currentPage() {
   const id = window.location.hash.replace("#/", "");
   return pages.find((page) => page.id === id)?.id ?? "chat";
 }
-function GraphPage() {
-  const [graph, setGraph] = useState("knowledge");
-  const isKnowledge = graph === "knowledge";
-  return (
-    <section className="standard-page graph-page" aria-labelledby="page-title">
-      <header className="page-heading">
-        <div>
-          <h1 id="page-title">图谱</h1>
-        </div>
-        <span className="subtle-label">查看器尚未开放</span>
-      </header>
-      <div className="graph-toolbar">
-        <fieldset className="segmented-control">
-          <legend className="sr-only">图谱类型</legend>
-          <label>
-            <input
-              type="radio"
-              name="graph"
-              value="knowledge"
-              checked={isKnowledge}
-              onChange={() => setGraph("knowledge")}
-            />
-            <BookOpen size={15} aria-hidden="true" />
-            知识关系
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="graph"
-              value="execution"
-              checked={!isKnowledge}
-              onChange={() => setGraph("execution")}
-            />
-            <GitBranch size={15} aria-hidden="true" />
-            执行过程
-          </label>
-        </fieldset>
-      </div>
-      <div className="graph-canvas">
-        <div className="graph-empty" aria-live="polite" aria-atomic="true">
-          <div className="empty-symbol">
-            <Network size={32} strokeWidth={1.5} aria-hidden="true" />
-          </div>
-          <h2>
-            {isKnowledge
-              ? "探索知识之间的联系"
-              : "在对话中查看实际执行过程"}
-          </h2>
-          <p>
-            {isKnowledge
-              ? "图谱尚未开放。后续可查看关系、来源与版本。"
-              : "从每条回答打开实际执行步骤；三维展示将在后续版本接入。"}
-          </p>
-          <a
-            className="button secondary"
-            href={isKnowledge ? "#/knowledge" : "#/chat"}
-          >
-            {isKnowledge ? "前往知识" : "前往对话"}
-            <ChevronRight size={16} aria-hidden="true" />
-          </a>
-        </div>
-        <div className="graph-caption">
-          <CircleHelp size={15} aria-hidden="true" />
-          <span>
-            {isKnowledge
-              ? "空间位置用于布局，不代表因果或可信程度。"
-              : "执行过程记录实际应用事件，不代表模型的内部思维。"}
-          </span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function App() {
   const studio = useStudio();
-  const [knowledgeEdit, setKnowledgeEdit] = useState<EditKnowledge | null>(null);
-  const [knowledgeSelection, setKnowledgeSelection] = useState<{workspace: string; id: string} | null>(null);
+  const [edgeEdit, setEdgeEdit] = useState<EditEdge | null>(null);
+  const [knowledgeEdit, setKnowledgeEdit] = useState<EditKnowledge | null>(
+    null,
+  );
+  const [knowledgeSelection, setKnowledgeSelection] = useState<{
+    workspace: string;
+    id: string;
+  } | null>(null);
   const [knowledgeRevision, setKnowledgeRevision] = useState(0);
   const page = useSyncExternalStore(subscribeToNavigation, currentPage);
   const mainRef = useRef<HTMLElement>(null);
@@ -255,13 +190,71 @@ export default function App() {
           </div>
         )}
         {page === "chat" && (
-          <ChatPage studio={studio} onCreateWorkspace={openCreateWorkspace} onSaveKnowledge={(source, excerpt) => setKnowledgeEdit({ workspaceId: source.workspaceId, source, excerpt })} />
+          <ChatPage
+            studio={studio}
+            onCreateWorkspace={openCreateWorkspace}
+            onSaveKnowledge={(source, excerpt) =>
+              setKnowledgeEdit({
+                workspaceId: source.workspaceId,
+                source,
+                excerpt,
+              })
+            }
+          />
         )}
-        {page === "knowledge" && <KnowledgePage key={studio.workspaceId ?? "preview"} studio={studio} selected={knowledgeSelection?.workspace === studio.workspaceId ? knowledgeSelection.id : null} onSelect={(id) => setKnowledgeSelection(id && studio.workspaceId ? {workspace: studio.workspaceId, id} : null)} revision={knowledgeRevision} onEdit={setKnowledgeEdit} />}
-        {page === "graph" && <GraphPage />}
+        {page === "knowledge" && (
+          <KnowledgePage
+            key={studio.workspaceId ?? "preview"}
+            studio={studio}
+            selected={
+              knowledgeSelection?.workspace === studio.workspaceId
+                ? knowledgeSelection.id
+                : null
+            }
+            onSelect={(id) =>
+              setKnowledgeSelection(
+                id && studio.workspaceId
+                  ? { workspace: studio.workspaceId, id }
+                  : null,
+              )
+            }
+            revision={knowledgeRevision}
+            onEdit={setKnowledgeEdit}
+          />
+        )}
+        {page === "graph" && (
+          <GraphPage
+            studio={studio}
+            revision={knowledgeRevision}
+            onEdit={setKnowledgeEdit}
+            onEditEdge={setEdgeEdit}
+          />
+        )}
         {page === "settings" && <SettingsPage studio={studio} />}
       </main>
-      {knowledgeEdit && <KnowledgeEditor request={knowledgeEdit} onClose={() => setKnowledgeEdit(null)} onSaved={(workspace, id) => { setKnowledgeEdit(null); setKnowledgeSelection({workspace, id}); setKnowledgeRevision((n) => n + 1); location.hash = "/knowledge"; }} />}
+      {edgeEdit && (
+        <RelationshipEditor
+          request={edgeEdit}
+          onClose={() => setEdgeEdit(null)}
+          onSaved={() => {
+            setEdgeEdit(null);
+            setKnowledgeRevision((n) => n + 1);
+          }}
+        />
+      )}
+      {knowledgeEdit && (
+        <KnowledgeEditor
+          request={knowledgeEdit}
+          onClose={() => setKnowledgeEdit(null)}
+          onSaved={(workspace, id) => {
+            setKnowledgeEdit(null);
+            setKnowledgeSelection({ workspace, id });
+            setKnowledgeRevision((n) => n + 1);
+            location.hash =
+              knowledgeEdit.returnTo === "graph" ? "/graph" : "/knowledge";
+          }}
+        />
+      )}
       <dialog
         ref={workspaceDialog}
         className="form-dialog"

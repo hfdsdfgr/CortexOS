@@ -58,8 +58,8 @@ fn error(_: rusqlite::Error) -> String {
 fn missing() -> String {
     "知识不存在，或不属于当前工作区。".into()
 }
-const COLUMNS: &str = "n.id,n.workspace_id,v.title,v.kind,n.latest_version,n.effective_version,n.revision,n.updated_at,n.source_message_id";
-fn node(row: &rusqlite::Row<'_>) -> rusqlite::Result<KnowledgeNode> {
+pub(crate) const COLUMNS: &str = "n.id,n.workspace_id,v.title,v.kind,n.latest_version,n.effective_version,n.revision,n.updated_at,n.source_message_id";
+pub(crate) fn node(row: &rusqlite::Row<'_>) -> rusqlite::Result<KnowledgeNode> {
     Ok(KnowledgeNode {
         id: row.get(0)?,
         workspace_id: row.get(1)?,

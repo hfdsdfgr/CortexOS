@@ -1,10 +1,10 @@
 # 安全与隐私实现边界
 
-2026-10-16，Phase 2A。
+2026-10-16，Phase 2。
 
 ## 当前已配置
 
-- 没有 shell、文件、HTTP 或 opener 插件；15 个业务命令逐项授权，命令清单由 `tauri_build::AppManifest::commands` 生成。
+- 没有 shell、文件、HTTP 或 opener 插件；18 个业务命令逐项授权，命令清单由 `tauri_build::AppManifest::commands` 生成。
 - 主窗口 capability 仅允许当前业务动作；不使用宽泛 `core:default`，不提供任意 SQL、路径读取或 URL 代理。
 - 生产 CSP 限制脚本、样式、字体和页面来源；禁用 object/frame，模型调用经 Rust 完成。
 - 开发服务器只监听 loopback，固定端口，静态根目录为应用目录，token 不在该目录。
@@ -42,3 +42,10 @@ SQLite 数据目录不是加密保险库，当前未实现加密功能，不声�
 为知识编辑的窗口关闭保护，主窗口增加 core:event:allow-listen、allow-unlisten 与 core:window:allow-close。只有编辑器存在时注册关闭监听，阻止直接关闭并显示保存/放弃/继续编辑；确认离开后注销监听并走原有窗口关闭路径。未授予 destroy、文件、shell 或任意网络权限。
 
 旧库升级前用 SQLite VACUUM INTO 生成同目录独立备份，全部迁移 checksum 检查通过后才升级。备份包含原有用户数据，保持本地保存；本切片没有通用备份恢复 UI，也不自动删除迁移前备份。
+
+
+## Phase 2B 图谱边界
+
+新增 load_knowledge_graph、save_knowledge_edge、save_graph_view 三个工作区命令；沿用现有事件/关闭权限保护关系编辑，没有新增文件/网络/强制销毁窗口权限。关系端点同时经事务查询及复合外键检查；重复有效关系、自环、无效类型和旧预期版本均拒绝，失败保留草稿。视图保存限制有限坐标、唯一节点、工作区与预期 revision，最多 1000 个位置；此上限不代表性能已验收。
+
+演示图只存在前端常量中，不提供写入接口；切换到真实工作区后通过 Rust 读取实际数据。3D 节点标题通过 textContent 加入受控标签层，不执行 HTML，不请求远程字体或模型；标签与 WebGL 资源随场景卸载清理。知识图与执行图分开，尚未接入的执行图继续明确显示占位。

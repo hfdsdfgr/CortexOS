@@ -16,6 +16,9 @@ fn main() {
             "get_knowledge",
             "save_knowledge",
             "approve_knowledge",
+            "load_knowledge_graph",
+            "save_knowledge_edge",
+            "save_graph_view",
         ]),
     ))
     .expect("Failed to build the CortexOS command permission manifest");

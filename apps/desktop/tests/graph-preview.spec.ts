@@ -1,0 +1,76 @@
+import { writeFile } from "node:fs/promises";
+import { expect, test } from "@playwright/test";
+import { PerspectiveCamera, Vector3 } from "three";
+
+test("seven-node preview supports 3D selection, demand rendering and WebGL fallback", async ({
+  page,
+}, testInfo) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const started = Date.now();
+  await page.goto("/#/graph");
+  await expect(
+    page.getByText("演示数据 · 不写入工作区", { exact: true }),
+  ).toBeVisible();
+  const canvas = page.locator('canvas[data-webgl-ready="true"]');
+  await expect(canvas).toBeVisible();
+  await expect
+    .poll(async () => Number(await canvas.getAttribute("data-render-count")))
+    .toBeGreaterThan(0);
+  const loadMs = Date.now() - started;
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  const camera = new PerspectiveCamera(
+    45,
+    box!.width / box!.height,
+    0.1,
+    500000,
+  );
+  camera.position.set(0, 9, 22);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrixWorld();
+  const point = new Vector3(0, -1.7, 0).project(camera);
+  await page.mouse.click(
+    box!.x + ((point.x + 1) * box!.width) / 2,
+    box!.y + ((-point.y + 1) * box!.height) / 2,
+  );
+  await expect(
+    page.getByRole("heading", { name: "项目目标", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "聚焦节点", exact: true }).click();
+  await page.getByRole("button", { name: "关闭图谱详情" }).click();
+  await page.getByRole("button", { name: "适应全部节点" }).click();
+  await page.waitForTimeout(250);
+  const count = Number(await canvas.getAttribute("data-render-count"));
+  await page.waitForTimeout(250);
+  expect(Number(await canvas.getAttribute("data-render-count"))).toBe(count);
+  await page.screenshot({ path: testInfo.outputPath("graph-demo.png") });
+  await writeFile(testInfo.outputPath("graph-observation.json"), JSON.stringify({kind:"browser-demo",nodes:7,loadMs,idleFramesOver250ms:0},null,2));
+  await testInfo.attach("small-graph-observation", {
+    body: JSON.stringify({
+      kind: "browser-demo",
+      nodes: 7,
+      loadMs,
+      idleFramesOver250ms: 0,
+    }),
+    contentType: "application/json",
+  });
+  await page.getByLabel("节点类型筛选").selectOption("hypothesis");
+  await expect(
+    page.getByRole("status").filter({ hasText: "1 / 7 节点" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "清除筛选" }).click();
+  await canvas.evaluate((element) =>
+    element.dispatchEvent(new Event("webglcontextlost", { cancelable: true })),
+  );
+  await expect(
+    page.getByRole("heading", { name: "3D 暂不可用" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "来源可追溯 知识 · 已确认", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "来源可追溯", exact: true }),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
+});
