@@ -8,6 +8,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
+const MIGRATIONS: &[&str] = &[MIGRATION, include_str!("../migrations/0002_knowledge.sql")];
 const MIGRATION: &str = include_str!("../migrations/0001_initial.sql");
 const RUN_COLUMNS: &str = "id,workspace_id,conversation_id,assistant_message_id,model_id,status,started_at,finished_at,error_message";
 const SYSTEM_PROMPT: &str = "你是 CortexOS 本地项目助手。使用中文清晰回答。区分事实、假设与建议；没有来源时不要编造引用，不要声称内容已经验证。当前没有文件检索或工具权限。直接给出可用的回答，无需输出内部思考过程。";
@@ -93,28 +94,51 @@ impl Database {
             return Err("当前 SQLite 缺少 FTS5 支持，请使用项目提供的构建。".into());
         }
         connection.execute_batch("CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY,checksum TEXT NOT NULL,applied_at TEXT NOT NULL)").map_err(error)?;
-        let previous: Option<(i64, String)> = connection
-            .query_row(
-                "SELECT version,checksum FROM schema_migrations ORDER BY version DESC LIMIT 1",
-                [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
-            )
-            .optional()
-            .map_err(error)?;
-        match previous {
-            None => {
-                let transaction = connection.transaction().map_err(error)?;
-                transaction.execute_batch(MIGRATION).map_err(error)?;
+        let applied = {
+            let mut statement = connection
+                .prepare("SELECT version,checksum FROM schema_migrations ORDER BY version")
+                .map_err(error)?;
+            statement
+                .query_map([], |row| {
+                    Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+                })
+                .map_err(error)?
+                .collect::<rusqlite::Result<Vec<_>>>()
+                .map_err(error)?
+        };
+        for (index, (version, checksum)) in applied.iter().enumerate() {
+            if *version != (index + 1) as i64
+                || MIGRATIONS
+                    .get(index)
+                    .is_none_or(|sql| hash(sql) != *checksum)
+            {
+                return Err("数据库版本或迁移校验不匹配。请保留数据并使用兼容的应用版本。".into());
+            }
+        }
+        if applied.len() < MIGRATIONS.len() {
+            if !applied.is_empty() {
+                let backup = directory.join(format!(
+                    "before-migration-{}-{}.sqlite3",
+                    applied.len() + 1,
+                    new_id()
+                ));
+                connection
+                    .execute("VACUUM INTO ?1", params![backup.to_string_lossy()])
+                    .map_err(|_| {
+                        "升级前备份失败，请检查磁盘空间与权限；原数据库未升级。".to_string()
+                    })?;
+            }
+            let transaction = connection.transaction().map_err(error)?;
+            for (index, sql) in MIGRATIONS.iter().enumerate().skip(applied.len()) {
+                transaction.execute_batch(sql).map_err(error)?;
                 transaction
                     .execute(
-                        "INSERT INTO schema_migrations VALUES(1,?1,?2)",
-                        params![hash(MIGRATION), now()],
+                        "INSERT INTO schema_migrations VALUES(?1,?2,?3)",
+                        params![(index + 1) as i64, hash(sql), now()],
                     )
                     .map_err(error)?;
-                transaction.commit().map_err(error)?;
             }
-            Some((1, checksum)) if checksum == hash(MIGRATION) => {}
-            _ => return Err("数据库版本或迁移校验不匹配。请保留数据并使用兼容的应用版本。".into()),
+            transaction.commit().map_err(error)?;
         }
         let database = Self {
             connection: Mutex::new(connection),
@@ -125,7 +149,7 @@ impl Database {
         Ok(database)
     }
 
-    fn connection(&self) -> AppResult<MutexGuard<'_, Connection>> {
+    pub(crate) fn connection(&self) -> AppResult<MutexGuard<'_, Connection>> {
         self.connection
             .lock()
             .map_err(|_| "本地数据连接不可用，请重启应用。".into())

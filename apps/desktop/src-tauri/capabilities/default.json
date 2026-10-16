@@ -2,7 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-window",
   "description": "Workspace-scoped local data and loopback model commands for the main window.",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "allow-bootstrap",
     "allow-create-workspace",
@@ -14,6 +16,13 @@
     "allow-save-settings",
     "allow-get-run",
     "allow-cancel-run",
-    "allow-start-chat"
+    "allow-start-chat",
+    "allow-list-knowledge",
+    "allow-get-knowledge",
+    "allow-save-knowledge",
+    "allow-approve-knowledge",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:window:allow-close"
   ]
 }

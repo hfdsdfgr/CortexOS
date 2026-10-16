@@ -12,6 +12,7 @@ import {
   Unplug,
   X,
 } from "lucide-react";
+import { KnowledgePage, KnowledgeEditor, type EditKnowledge } from "./Knowledge";
 import { ChatPage } from "./Chat";
 import { SettingsPage } from "./Settings";
 import { errorText, useStudio } from "./studio";
@@ -31,59 +32,6 @@ function currentPage() {
   const id = window.location.hash.replace("#/", "");
   return pages.find((page) => page.id === id)?.id ?? "chat";
 }
-function KnowledgePage() {
-  return (
-    <section className="standard-page" aria-labelledby="page-title">
-      <header className="page-heading">
-        <div>
-          <h1 id="page-title">知识</h1>
-        </div>
-        <button className="button secondary" disabled title="知识编辑尚未开放">
-          <Plus size={16} aria-hidden="true" />
-          新建知识
-        </button>
-      </header>
-      <div className="page-content knowledge-content">
-        <div className="list-summary">
-          <h2>全部知识</h2>
-          <span className="muted">尚无条目</span>
-        </div>
-        <div className="table-scroll">
-          <table className="knowledge-table">
-            <caption className="sr-only">项目知识列表</caption>
-            <thead>
-              <tr>
-                <th scope="col">标题</th>
-                <th scope="col">类型</th>
-                <th scope="col">状态</th>
-                <th scope="col">来源</th>
-                <th scope="col">更新时间</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={5}>
-                  <div className="table-empty">
-                    <BookOpen size={32} strokeWidth={1.5} aria-hidden="true" />
-                    <h2>知识编辑尚未开放</h2>
-                    <p>
-                      后续可从对话保存草案，确认后加入项目知识。
-                    </p>
-                    <a className="button text-button" href="#/chat">
-                      返回对话
-                      <ChevronRight size={16} aria-hidden="true" />
-                    </a>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function GraphPage() {
   const [graph, setGraph] = useState("knowledge");
   const isKnowledge = graph === "knowledge";
@@ -160,6 +108,9 @@ function GraphPage() {
 
 export default function App() {
   const studio = useStudio();
+  const [knowledgeEdit, setKnowledgeEdit] = useState<EditKnowledge | null>(null);
+  const [knowledgeSelection, setKnowledgeSelection] = useState<{workspace: string; id: string} | null>(null);
+  const [knowledgeRevision, setKnowledgeRevision] = useState(0);
   const page = useSyncExternalStore(subscribeToNavigation, currentPage);
   const mainRef = useRef<HTMLElement>(null);
   const previousPage = useRef(page);
@@ -304,12 +255,13 @@ export default function App() {
           </div>
         )}
         {page === "chat" && (
-          <ChatPage studio={studio} onCreateWorkspace={openCreateWorkspace} />
+          <ChatPage studio={studio} onCreateWorkspace={openCreateWorkspace} onSaveKnowledge={(source, excerpt) => setKnowledgeEdit({ workspaceId: source.workspaceId, source, excerpt })} />
         )}
-        {page === "knowledge" && <KnowledgePage />}
+        {page === "knowledge" && <KnowledgePage key={studio.workspaceId ?? "preview"} studio={studio} selected={knowledgeSelection?.workspace === studio.workspaceId ? knowledgeSelection.id : null} onSelect={(id) => setKnowledgeSelection(id && studio.workspaceId ? {workspace: studio.workspaceId, id} : null)} revision={knowledgeRevision} onEdit={setKnowledgeEdit} />}
         {page === "graph" && <GraphPage />}
         {page === "settings" && <SettingsPage studio={studio} />}
       </main>
+      {knowledgeEdit && <KnowledgeEditor request={knowledgeEdit} onClose={() => setKnowledgeEdit(null)} onSaved={(workspace, id) => { setKnowledgeEdit(null); setKnowledgeSelection({workspace, id}); setKnowledgeRevision((n) => n + 1); location.hash = "/knowledge"; }} />}
       <dialog
         ref={workspaceDialog}
         className="form-dialog"

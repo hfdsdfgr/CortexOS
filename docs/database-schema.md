@@ -1,6 +1,6 @@
 # 数据模型契约
 
-状态：Phase 1 已实现最小迁移；后续知识与检索表仍为设计。采用 ADR 0002/0003 的明确语义。SQL 以 `apps/desktop/src-tauri/migrations/0001_initial.sql` 为准。
+状态：Phase 1 与 Phase 2A 知识迁移已实现；关系、布局与检索表仍为设计。采用 ADR 0002/0003 的明确语义。SQL 以 `apps/desktop/src-tauri/migrations/` 中 0001 和 0002 为准。
 
 ## 共用约束
 
@@ -30,9 +30,9 @@
 
 | 表 | 规则 |
 | --- | --- |
-| knowledge_nodes | id、workspace_id、kind、latest_version、effective_version nullable、revision、archived_at |
+| knowledge_nodes | id、workspace_id、kind、latest_version、effective_version nullable、revision；归档后续实现 |
 | knowledge_versions | node_id + version 复合 PK，标题/正文/作者/修改原因/时间不可变 |
-| knowledge_approval_events | node_id、version、action、actor、created_at；记录确认、拒绝和撤销 |
+| knowledge_approval_events | node_id、version、actor、created_at；2A 仅记录确认，拒绝与撤销后续实现 |
 | knowledge_edges | 稳定关系 ID、workspace_id、当前修订指针 |
 | knowledge_edge_versions | edge_id + version PK、端点、relation、状态与修改原因 |
 | graph_layouts | id、workspace_id、graph_kind、name、camera_json |
@@ -46,3 +46,12 @@
 授权来源、来源内容版本、分段、FTS5、证据关联及上下文快照在对应阶段建表。证据关联必须标识 node_id + node_version、source_version_id 及真实段落/行定位。哈希用于识别内容，不能替代可重放内容。
 
 撤销授权阻止未来读取和检索；是否保留已导入内容、历史快照和引用由明确清理选项控制。备份/导出保持引用一致，恢复后执行外键和完整性检查。
+
+
+### Phase 2A 实施契约
+
+迁移 0002 创建 knowledge_nodes、knowledge_versions、knowledge_approval_events。节点保存工作区、latest_version、effective_version（可空）、revision、更新时间，以及可空的原回答 conversation/message 引用、原文摘录和后端计算的消息 SHA-256。来源是创建时不可变的起源记录，不代表修改后内容已经被原文证实。创建时验证原回答属于同一工作区、角色 assistant、已结束且摘录是原文的连续子串。手动创建没有回答来源。
+
+版本包含标题、类型（context/knowledge/hypothesis/decision/evidence/conflict）、正文、作者 user、修改原因和时间；每次保存新增版本，旧版本用触发器禁止更新/删除。确认事件记录版本、user、时间，不改变版本内容。确认仅允许最新版本，事务内检查 expected_revision 并更新 effective_version/revision。新草案保持原 effective_version。来源引用、节点指针使用外键（版本指针延迟检查），拒绝跨工作区来源。
+
+迁移器检查全部已应用版本的顺序和 checksum，旧库升级前用 VACUUM INTO 生成同目录唯一的迁移前备份；备份失败则停止升级。迁移在事务中完成。2A 不实现删除、撤销确认、关系或自动知识检索；确认代表用户审核，不代表事实验证。

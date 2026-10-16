@@ -290,7 +290,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
               <span className="version-label">0.1.0 · 本地对话 Alpha</span>
             </div>
             <p className="muted">
-              知识编辑与 3D 图谱尚未开放。
+              知识草案与版本记录已开放；3D 图谱尚未开放。
             </p>
           </div>
         </section>

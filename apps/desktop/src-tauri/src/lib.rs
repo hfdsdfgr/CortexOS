@@ -1,5 +1,6 @@
 mod commands;
 mod db;
+mod knowledge;
 mod models;
 mod ollama;
 
@@ -46,6 +47,10 @@ pub fn run() {
             commands::save_settings,
             commands::get_run,
             commands::cancel_run,
+            commands::list_knowledge,
+            commands::get_knowledge,
+            commands::save_knowledge,
+            commands::approve_knowledge,
             commands::start_chat
         ])
         .on_window_event(|window, event| {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  BookOpen,
   ArrowDown,
   ArrowUp,
   Check,
@@ -13,7 +14,7 @@ import {
   Square,
   X,
 } from "lucide-react";
-import { errorText, type RunDetail, type Studio } from "./studio";
+import { errorText, type Message, type RunDetail, type Studio } from "./studio";
 
 const statusNames: Record<string, string> = {
   streaming: "生成中",
@@ -107,9 +108,11 @@ function Conversations({
 export function ChatPage({
   studio,
   onCreateWorkspace,
+  onSaveKnowledge,
 }: {
   studio: Studio;
   onCreateWorkspace: () => void;
+  onSaveKnowledge: (message: Message, excerpt: string) => void;
 }) {
   const conversation = studio.conversations.find(
     (item) => item.id === studio.conversationId,
@@ -287,6 +290,13 @@ export function ChatPage({
                         )}
                         {copied === message.id ? "已复制" : "复制"}
                       </button>
+                      <button className="button text-button" disabled={!message.content || message.status === "streaming"} onClick={(event) => {
+                        const selection = window.getSelection();
+                        const article = event.currentTarget.closest("article");
+                        const selected = selection?.toString() ?? "";
+                        const inside = selection?.anchorNode && selection?.focusNode && article?.querySelector(".message-content")?.contains(selection.anchorNode) && article?.querySelector(".message-content")?.contains(selection.focusNode);
+                        onSaveKnowledge(message, Array.from(inside && selected && message.content.includes(selected) ? selected : message.content).slice(0, 20000).join(""));
+                      }}><BookOpen size={14} aria-hidden="true" />保存为知识</button>
                       {message.modelRunId && (
                         <button
                           className="button text-button"

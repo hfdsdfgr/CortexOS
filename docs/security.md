@@ -1,10 +1,10 @@
 # 安全与隐私实现边界
 
-2026-10-15，Phase 1。
+2026-10-16，Phase 2A。
 
 ## 当前已配置
 
-- 没有 shell、文件、HTTP 或 opener 插件；11 个业务命令逐项授权，命令清单由 `tauri_build::AppManifest::commands` 生成。
+- 没有 shell、文件、HTTP 或 opener 插件；15 个业务命令逐项授权，命令清单由 `tauri_build::AppManifest::commands` 生成。
 - 主窗口 capability 仅允许当前业务动作；不使用宽泛 `core:default`，不提供任意 SQL、路径读取或 URL 代理。
 - 生产 CSP 限制脚本、样式、字体和页面来源；禁用 object/frame，模型调用经 Rust 完成。
 - 开发服务器只监听 loopback，固定端口，静态根目录为应用目录，token 不在该目录。
@@ -33,3 +33,12 @@ Rust 固定连接 HTTP `127.0.0.1:11434`；显式禁用代理与重定向。debu
 SQLite 数据目录不是加密保险库，当前未实现加密功能，不声称内容已加密。Windows 用户权限仍是本地边界。公开测试前完成一致性备份、恢复、导出、删除及模型/依赖许可证检查。
 
 参考：[Tauri capabilities](https://v2.tauri.app/security/capabilities/)、[Tauri CSP](https://v2.tauri.app/security/csp/)。
+
+
+## Phase 2A 知识权限与迁移
+
+新增 list/get/save/approve_knowledge 四个工作区业务命令。来源消息由 Rust 检查工作区、角色、终态及摘录包含关系；SHA-256 在后端计算。版本与审批事件不可变，保存/确认在事务内检查 revision，保存草案不覆盖原生效版。内容以普通文本显示，知识不会自动加入模型上下文。
+
+为知识编辑的窗口关闭保护，主窗口增加 core:event:allow-listen、allow-unlisten 与 core:window:allow-close。只有编辑器存在时注册关闭监听，阻止直接关闭并显示保存/放弃/继续编辑；确认离开后注销监听并走原有窗口关闭路径。未授予 destroy、文件、shell 或任意网络权限。
+
+旧库升级前用 SQLite VACUUM INTO 生成同目录独立备份，全部迁移 checksum 检查通过后才升级。备份包含原有用户数据，保持本地保存；本切片没有通用备份恢复 UI，也不自动删除迁移前备份。

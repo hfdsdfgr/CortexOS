@@ -58,3 +58,10 @@ UI 负责呈现和交互；Rust 负责校验工作区、权限、运行生命周
 Vite 仅监听 `127.0.0.1:1420`，固定端口并限制文件服务范围；项目 token 在应用根目录之外，不通过静态目录提供。桌面生产 CSP 不允许远程脚本/字体和外部模型连接。Phase 1 的 Ollama 请求由 Rust 完成，无需放开浏览器模型连接。
 
 参考：[Tauri 前端配置](https://v2.tauri.app/start/frontend/)、[Vite 配置](https://v2.tauri.app/start/frontend/vite/)、[Tauri capabilities](https://v2.tauri.app/security/capabilities/)。
+
+
+## Phase 2A 知识切片
+
+Knowledge.tsx 包含工作区列表/详情与聚焦编辑器，通过四个类型化命令访问 knowledge.rs。编辑器由应用根部持有请求及固定工作区，原生 dialog 阻止背景导航操作；浏览器历史跳转不会卸载编辑器。知识详情按工作区与选中对象读取，迟到读取结果在卸载后丢弃。保存及确认均由后端 transaction + revision 检查实现，冲突比较必须由用户选择后才更新预期 revision。
+
+知识节点的起源、不可变版本和审批事件分开保存；最新草案与生效版本有独立指针。0002 迁移前一致性备份，已应用迁移逐项核验。未引入新依赖。关系与图谱仍属于 Phase 2B。

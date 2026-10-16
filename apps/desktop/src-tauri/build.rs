@@ -12,6 +12,10 @@ fn main() {
             "get_run",
             "cancel_run",
             "start_chat",
+            "list_knowledge",
+            "get_knowledge",
+            "save_knowledge",
+            "approve_knowledge",
         ]),
     ))
     .expect("Failed to build the CortexOS command permission manifest");

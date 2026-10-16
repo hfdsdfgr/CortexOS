@@ -371,3 +371,44 @@ fn update(
         error_message,
     }
 }
+
+#[tauri::command]
+pub async fn list_knowledge(
+    state: State<'_, AppState>,
+    workspace_id: String,
+) -> AppResult<Vec<crate::knowledge::KnowledgeNode>> {
+    blocking(state.database.clone()?, move |db| {
+        db.knowledge_list(&workspace_id)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn get_knowledge(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    node_id: String,
+) -> AppResult<crate::knowledge::KnowledgeDetail> {
+    blocking(state.database.clone()?, move |db| {
+        db.knowledge_detail(&workspace_id, &node_id)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn save_knowledge(
+    state: State<'_, AppState>,
+    input: crate::knowledge::SaveKnowledge,
+) -> AppResult<String> {
+    blocking(state.database.clone()?, move |db| db.save_knowledge(input)).await
+}
+#[tauri::command]
+pub async fn approve_knowledge(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    node_id: String,
+    expected_revision: i64,
+) -> AppResult<()> {
+    blocking(state.database.clone()?, move |db| {
+        db.approve_knowledge(&workspace_id, &node_id, expected_revision)
+    })
+    .await
+}
