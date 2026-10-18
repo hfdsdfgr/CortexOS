@@ -74,3 +74,10 @@ Graph.tsx 管理筛选、选中节点、关系修订与布局草稿；GraphViewp
 KnowledgeInspector 与 KnowledgeEditor 在知识页和图谱中共享，图谱编辑保存后返回原图谱。关系编辑器由 App 根部持有固定工作区，避免背景导航卸载未保存编辑；与知识编辑同样提供取消/正常关窗保护及并发比较。节点和关系的历史存储与视图存储分开；graph_layouts 与 knowledge_positions 的修订不会写入知识版本。
 
 标签仅为选中节点及相邻节点（最多 7 项），通过受控 DOM 层按相机投影更新，避免跨 React root 的标签卸载冲突。无持续旋转、粒子、后处理或外部贴图。场景卸载时释放 WebGL 对象、控件、标签与监听。遇到 WebGL 创建失败或 contextlost 时保留节点索引与详情编辑。
+
+
+## P0-A 上下文闭环增量
+
+prepare_context_run 复用既有组装函数，同时服务 preview_context 和 start_chat。生效知识解析与快照提交持有同一 DB mutex，避免审批竞争；短事务保存整笔输入/快照，网络在释放锁后执行。Ollama::chat 接收 PreparedRun.request，而不再自行组装请求。get_run 同时读取快照，RunDrawer 可查看本次版本与实际 messages。
+
+外部事件分为 model_inspection_started/completed、model_request_started、model_response_received 和原终态；legacy model_called 只表示旧调用尝试。详细权衡见 ADR 0006。保留 P0-B 的执行投影和统一导航任务。

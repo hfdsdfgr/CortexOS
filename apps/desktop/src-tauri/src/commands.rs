@@ -190,6 +190,7 @@ pub async fn start_chat(
     workspace_id: String,
     conversation_id: String,
     content: String,
+    context_selection: Option<Vec<ContextSelection>>,
     on_update: Channel<StreamUpdate>,
 ) -> AppResult<RunSummary> {
     if state.closing.load(Ordering::SeqCst) {
@@ -223,12 +224,14 @@ pub async fn start_chat(
     let prepare_id = id.clone();
     let model_settings = settings.clone();
     let prepared = match blocking(database.clone(), move |db| {
-        db.prepare_run(
+        db.prepare_context_run(
             &prepare_id,
             &workspace_id,
             &conversation_id,
             &content,
             &model_settings,
+            &context_selection.unwrap_or_default(),
+            false,
         )
     })
     .await
@@ -271,8 +274,35 @@ async fn generate(
     let result = {
         let generation = async {
             let id = run.id.clone();
-            blocking(database.clone(), move |db| db.model_called(&id)).await?;
-            let mut response = provider.chat(&settings, &prepared.messages).await?;
+            blocking(database.clone(), move |db| {
+                db.record_event(
+                    &id,
+                    "model_inspection_started",
+                    json!({"provider":"ollama","transport":"loopback"}),
+                )
+            })
+            .await?;
+            let inspected = provider.inspect(&settings).await?;
+            let id = run.id.clone();
+            blocking(database.clone(), move |db| {
+                db.record_event(&id, "model_inspection_completed", inspected)
+            })
+            .await?;
+            let id = run.id.clone();
+            blocking(database.clone(), move |db| {
+                db.record_event(
+                    &id,
+                    "model_request_started",
+                    json!({"endpoint":"/api/chat"}),
+                )
+            })
+            .await?;
+            let mut response = provider.chat(&settings, &prepared.request).await?;
+            let id = run.id.clone();
+            blocking(database.clone(), move |db| {
+                db.record_event(&id, "model_response_received", json!({"status":200}))
+            })
+            .await?;
             let mut parser = Ndjson::default();
             let mut checkpoint = tokio::time::interval(Duration::from_millis(250));
             let mut dirty = false;
@@ -439,4 +469,29 @@ pub async fn save_graph_view(
     input: crate::graph::SaveGraphView,
 ) -> AppResult<i64> {
     blocking(state.database.clone()?, move |db| db.save_graph_view(input)).await
+}
+
+#[tauri::command]
+pub async fn preview_context(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    conversation_id: Option<String>,
+    content: String,
+    context_selection: Vec<ContextSelection>,
+) -> AppResult<serde_json::Value> {
+    blocking(state.database.clone()?, move |db| {
+        let settings = db.settings()?;
+        Ok(db
+            .prepare_context_run(
+                &new_id(),
+                &workspace_id,
+                &conversation_id.unwrap_or_default(),
+                &content,
+                &settings,
+                &context_selection,
+                true,
+            )?
+            .manifest)
+    })
+    .await
 }

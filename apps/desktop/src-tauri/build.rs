@@ -10,6 +10,7 @@ fn main() {
             "check_ollama",
             "save_settings",
             "get_run",
+            "preview_context",
             "cancel_run",
             "start_chat",
             "list_knowledge",

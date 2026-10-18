@@ -47,6 +47,7 @@ pub fn run() {
             commands::check_ollama,
             commands::save_settings,
             commands::get_run,
+            commands::preview_context,
             commands::cancel_run,
             commands::list_knowledge,
             commands::get_knowledge,

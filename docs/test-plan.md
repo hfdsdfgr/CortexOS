@@ -82,3 +82,12 @@ Rust graph 检查覆盖关系创建/重复拒绝/修订/停用、跨工作区拒
 - 原生桌面：隔离工作区创建 7 条知识，添加关系、正常关窗继续编辑、位置保存、模拟并发关系修订并比较、图谱中修改/确认知识、旋转并保存视图、停用关系、工作区切换、状态筛选、375px 详情布局、WebGL 降级和重启恢复；重开后不移动相机再次保存，逐轴核对相机与目标点。
 
 使用 `npm.cmd run test:smoke` 运行完整检查，图谱专项使用 `npm.cmd run test:smoke -- graph-preview.spec.ts graph.spec.ts`。graph-observation.json 记录单次 7 节点载入观测和原生渲染设备，不作为大图基准。100/500/1000 节点与真实模型并行性能、完整读屏及 Windows 150% 缩放仍待后续验收。
+
+
+## P0-A 已加入的检查
+
+Rust context_tests：生效 v1 / 草案 v2、审批冲突、重复和跨工作区、预算限制、预览不写库、快照等值/哈希/不可变、注入快照写入失败的事务回滚、恢复中断、v3 升级旧运行不补造快照、完整性与外键检查。
+
+tests/context.spec.ts：原生 WebView2 选择知识→实际模拟 HTTP 捕获与快照逐项相等→审批冲突保留问题→刷新选择 v2→预览→下一次请求使用 v2→模型检查失败无 chat 请求→重启保留 v1 快照。tests/context-real.spec.ts 使用 CORTEXOS_REAL_CONTEXT=1 独立开启，运行已安装真实 Ollama，保存观察记录与截图。既有 chat 测试的事件预期更新为真实边界；图测试补 HTMLCanvasElement 类型标注。
+
+执行记录、浏览器/原生/真实模型结果分别见 milestone-log。尚未实测新面板的 Windows 150% 缩放与屏幕阅读器，不以浏览器尺寸检查代替。

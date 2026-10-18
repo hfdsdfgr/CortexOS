@@ -15,6 +15,7 @@
     "allow-check-ollama",
     "allow-save-settings",
     "allow-get-run",
+    "allow-preview-context",
     "allow-cancel-run",
     "allow-start-chat",
     "allow-list-knowledge",

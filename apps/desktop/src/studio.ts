@@ -41,17 +41,42 @@ export interface RunSummary {
   finishedAt: string | null;
   errorMessage: string | null;
 }
+export interface ContextSelection {
+  nodeId: string;
+  version: number;
+}
+export interface KnowledgeReference extends ContextSelection {
+  title: string;
+  kind: string;
+  content: string;
+  contentHash: string;
+  reason: string;
+}
+export interface ContextManifest {
+  strategy: string;
+  estimatedUnits: number;
+  budgetUnits: number;
+  estimateNote: string;
+  messageRefs: { messageId: string; contentHash: string }[];
+  retrievalUsed: boolean;
+  knowledgeRefs?: KnowledgeReference[];
+}
+export interface ContextSnapshot {
+  request: {
+    model: string;
+    messages: { role: string; content: string }[];
+    options: Record<string, number>;
+    think: boolean;
+    keep_alive: string;
+  };
+  requestHash: string;
+  manifest: ContextManifest;
+}
 export interface RunDetail {
   run: RunSummary;
   settings: ModelSettings;
-  contextManifest: {
-    strategy: string;
-    estimatedUnits: number;
-    budgetUnits: number;
-    estimateNote: string;
-    messageRefs: { messageId: string; contentHash: string }[];
-    retrievalUsed: boolean;
-  };
+  contextManifest: ContextManifest;
+  snapshot: ContextSnapshot | null;
   events: { seq: number; kind: string; occurredAt: string; payload: unknown }[];
 }
 export interface Bootstrap {
@@ -110,6 +135,7 @@ function remember(key: string, value: string) {
   }
 }
 
+const emptyContext: ContextSelection[] = [];
 export function useStudio() {
   const [data, setData] = useState<Bootstrap | null>(null);
   const [settings, setSettings] = useState(defaultSettings);
@@ -120,6 +146,9 @@ export function useStudio() {
   const [storedMessages, setMessages] = useState<Message[]>([]);
   const [updates, setUpdates] = useState<Record<string, StreamUpdate>>({});
   const [activeRun, setActiveRun] = useState<RunSummary | null>(null);
+  const [contexts, setContexts] = useState<Record<string, ContextSelection[]>>(
+    {},
+  );
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [health, setHealth] = useState<ModelHealth | null>(null);
   const [checking, setChecking] = useState(false);
@@ -324,6 +353,9 @@ export function useStudio() {
   };
 
   const draftKey = `${workspaceId}:${conversationId ?? "new"}`;
+  const contextSelection = contexts[draftKey] ?? emptyContext;
+  const setContextSelection = (items: ContextSelection[]) =>
+    setContexts((previous) => ({ ...previous, [draftKey]: items }));
   const draft = drafts[draftKey] ?? "";
   const setDraft = (text: string) =>
     setDrafts((current) => ({ ...current, [draftKey]: text }));
@@ -331,6 +363,7 @@ export function useStudio() {
   const send = async (override?: string) => {
     const workspace = view.current.workspaceId;
     const content = (override ?? draft).trim();
+    const selectedContext = contextSelection;
     if (!workspace || !content || activeRun || pendingSend.current) return;
     pendingSend.current = true;
     setSending(true);
@@ -338,6 +371,10 @@ export function useStudio() {
     let conversation = view.current.conversationId;
     try {
       conversation = conversation ?? (await newConversation()).id;
+      setContexts((previous) => ({
+        ...previous,
+        [`${workspace}:${conversation}`]: selectedContext,
+      }));
       if (override === undefined)
         setDrafts((current) => ({
           ...current,
@@ -367,6 +404,7 @@ export function useStudio() {
         workspaceId: workspace,
         conversationId: conversation,
         content,
+        contextSelection: selectedContext,
         onUpdate: stream,
       });
       if (!finishedRuns.current.has(run.id)) setActiveRun(run);
@@ -432,6 +470,8 @@ export function useStudio() {
     activeRun,
     draft,
     setDraft,
+    contextSelection,
+    setContextSelection,
     health,
     checking,
     connectionError,

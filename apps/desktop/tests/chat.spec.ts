@@ -159,7 +159,10 @@ test("native chat preserves real SQLite data through cancellation, errors and re
     expect(cancelledRun.events.map((event) => event.kind)).toEqual([
       "request_received",
       "context_prepared",
-      "model_called",
+      "model_inspection_started",
+      "model_inspection_completed",
+      "model_request_started",
+      "model_response_received",
       "run_cancelled",
     ]);
     await expect(

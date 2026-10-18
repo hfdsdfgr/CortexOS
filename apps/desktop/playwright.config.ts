@@ -27,10 +27,14 @@ export default defineConfig({
       testMatch: [
         "desktop.spec.ts",
         "chat.spec.ts",
+        "context.spec.ts",
         "knowledge.spec.ts",
         "graph.spec.ts",
       ],
     },
+    ...(process.env.CORTEXOS_REAL_CONTEXT === "1"
+      ? [{ name: "real-context", testMatch: "context-real.spec.ts" }]
+      : []),
     ...(process.env.CORTEXOS_REAL_OLLAMA === "1"
       ? [{ name: "ollama", testMatch: "ollama.spec.ts" }]
       : []),

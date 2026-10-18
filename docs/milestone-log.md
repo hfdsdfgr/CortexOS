@@ -238,3 +238,47 @@ Phase 1 停在本阶段验收点。下一阶段先实现知识列表、详情与
 当前验收小图，尚未验证 100/500/1000 节点、密集关系、真实模型生成与图谱并行负载或显存增量。关系历史查询逐边读取，保存视图最多 1000 个位置；这些上限不代表性能承诺。渲染依赖内部存在 THREE.Clock 弃用警告，未屏蔽警告。完整读屏、Windows 150% 缩放、release 与安装包仍未验证。
 
 关系指向稳定节点，内容修订后需用户自行复查关系；知识仍未自动加入模型上下文。下一阶段 Phase 3 先将实际运行事件投影为独立执行图，再测大图及模型并行性能，不混入模型内部思维。
+# 2026-10-18 产品方向纠偏审计（文档交付，待用户确认）
+
+基线 `70ea24c`。用户要求仅审计与规划，本轮新增 `gap-analysis.md`、`cognitive-architecture-v2.md`、`graph-experience-v2.md`、`refactoring-plan.md`；保留既有实施历史，未修改运行代码、迁移、依赖、模型或用户数据库。核心发现：真实运行/事件与数据库知识图已存在，知识未进入模型上下文；执行图占位，完整上下文快照和统一实体导航缺失。建议确认后从 P0-A 知识上下文与快照切片开始。
+
+实际检查：`git rev-parse --show-toplevel` 返回本独立仓库；`git rev-parse --short HEAD` 返回 `70ea24c`；`git status --short` 初始干净。通过 `Get-Content`、`Select-Object` 和 `rg -n` 核对 development.md、开发规范/计划、三份 SQL、Rust 数据/模型/命令/provider/知识/图服务、前端状态/页面/画布和测试入口。`rg -n 'ContextSnapshot|ExecutionStep|execution_steps|context_snapshots|retrieval_results|evaluation_cases|CREATE VIRTUAL|workflow' apps/desktop/src apps/desktop/src-tauri/src apps/desktop/src-tauri/migrations` 无匹配；结合实际调用链判断缺口，而非仅凭名称。
+
+使用 ui-ux-pro-max、positive-spec-writing 技能。实际 `python D:/CodexData/skills/ui-ux-pro-max/scripts/search.py 'deep linking predictable back' --domain ux -n 3` 因默认 Python 不支持脚本语法失败；改为 `py -3` 同命令成功，返回 Deep Linking 和移动平台 Back Button 建议，适用范围记录在交互规范。一次包含 Bash 花括号路径的 rg 命令被 PowerShell 拒绝，随后改用逐个明确路径；一次测试路径通配符未被 rg 展开，改为搜索 tests 目录。均为只读检查，无数据变更。
+
+文档检查：使用 `py -3 -` 内联标准库脚本，验证四文件 UTF-8 可读、相对 Markdown 链接目标存在、代码围栏配对、无行尾空白，四份通过；`git diff --check` 通过。另核对 package.json 及审计中关键符号行号。未运行 Rust/Playwright/桌面构建、原生 UI 或真实 Ollama，本轮不新增功能/性能验收成绩；现有成绩仍以以下历史记录为准。停止于审计交付，等待用户确认，不启动 P0。
+
+
+# 2026-10-18 P0-A：已确认知识进入真实请求与上下文快照
+
+用户在审计交付后明确“执行吧”，本轮按 P0-A 切片实施，停在 P0-A 门槛。未启动执行图、跨页实体导航、自动检索、工作流或评估。复用原服务/编辑器/事务和依赖；原审计四份文档同时纳入仓库。
+
+## 变更与实现细化
+
+- 新增 0004_context_audit：完整 request/manifest/哈希快照与有外键/工作区触发器的知识版本引用；不可变 UPDATE/DELETE 保护。旧库迁移自动一致性备份，旧 run snapshot:null。
+- prepare_context_run 解析已确认 knowledge/context/decision，最多20项，固定生效版本、内容、哈希与理由，记录历史消息排除原因；同一构造对象保存后交给 provider。事务保护输入、输出占位、运行、快照和事件；写入失败回滚且不请求模型。
+- preview_context 为只读命令（业务命令总数19）；start_chat 增加可选 contextSelection；get_run 复用返回 snapshot。UI 折叠选择/预览、版本变化保留问题、查看本次知识正文与完整消息快照。选择按当前进程工作区/会话保留，重启需重选；运行依据永久保存。
+- 模型检查开始/完成、请求尝试、收到响应分别追加事实事件；旧 model_called 保留，只调整解释文案。没有添加虚构检索/验证事件。执行图仍占位。
+- 与最初方案的细化：同步校验和预算失败留在发送前；运行与上下文原子提交，未提前保存空运行。没有单独 get_context_snapshot 命令、通用 context item 多态框架或模型权重固定；详见 ADR 0006。接收/准备事件记录持久化时间，不当作组装耗时。
+
+## 实际命令与结果
+
+- `cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml`，最终 `cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check`：通过。
+- `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --lib`：最终 **10/10**，0.22秒。新增测试覆盖预览不写库、v1生效/v2草案、审批并发、跨工作区/重复/超预算、请求快照及哈希一致、不可变、写入失败回滚、重启、v3迁移备份和外键完整性。8项历史测试继续通过。
+- apps/desktop 中 `npm.cmd run tauri -- build --debug --no-bundle`：独立桌面构建成功。后续纯格式化后 `npm.cmd run build` 再次通过，产物哈希与原生测试版本一致：index-B4W8iVML.js，GraphViewport-xvJ1wQ5P.js。没有新增依赖；保留约932.70kB图模块告警。
+- `npx.cmd playwright test context.spec.ts --project desktop`：原生新闭环 **1/1**，7.1秒；HTTP捕获与快照等值、审批冲突保留输入、v2实际使用、模型检查失败不发送chat、重启原快照一致。
+- `npx.cmd playwright test`：浏览器/原生回归 **13/13**，约1.1分钟。包含5种窗口尺寸、键盘/导航、图降级、聊天取消/异常/关闭、知识和关系修订。使用独立测试目录，正常桌面权限执行，不读取正式工作区数据。原生测试窗口1440×900、DPR1.25。
+- Ollama 初始未运行；默认沙箱执行已安装程序被拒绝访问，提升至正常桌面权限后按既有授权使用 `Start-Process -WindowStyle Hidden` 启动官方 serve（PID8220），仅绑定127.0.0.1，进程环境禁用cloud且单生成，未改全局环境、未下载模型。`Invoke-RestMethod` 检查0.40.4与既有模型。
+- `$env:CORTEXOS_REAL_CONTEXT='1'; npx.cmd playwright test --project real-context`（在 PowerShell 中分行执行）：真实本地模型 **1/1**，9.1秒。qwen3:4b-instruct 完成；真实回答为“验收项目代号为青鹭-742，发布时间是周四。”，使用知识v1且重启后快照一致。观察wallMs4124包含UI检查/截图开销，不当作稳定生成性能基准。服务保持运行供用户使用。
+- `npm.cmd exec --yes --package=prettier@3.9.10 -- prettier --write src/ContextPicker.tsx src/studio.ts src/Chat.tsx tests/context.spec.ts tests/context-real.spec.ts playwright.config.ts`：格式化成功，未增加项目依赖。`git diff --check`：通过。
+
+## 调试中实际失败与恢复
+
+Python默认cp950读取中文失败后改用 `py -3 -X utf8 -`；首次 Rust 测试暴露旧 PreparedRun.messages 引用，改为读取 request.messages。拆分 inspect 时格式化后的签名未匹配导致重复chat，修正后通过。新增迁移测试的 usize SQL参数改为i64；旧库fixture需事务满足延迟外键，补事务后通过。前端构建发现原图测试 HTMLElement 缺少 getContext 类型，明确为 HTMLCanvasElement 后通过。一次在根目录调用npm因无package.json失败，改从apps/desktop执行。上述失败均已恢复，不计为通过。
+
+## 证据与限制
+
+已查看原生模拟与真实截图：`artifacts/p0-a/context-snapshot.png`、`native-real-context.png`；观察JSON为 `artifacts/p0-a/real-context-observation.json`。这些是隔离测试工作区，不是用户项目知识。当前provider检查可能不提供digest，快照记录精确HTTP输入但不能承诺模型权重/回答精确重现。暂无自动检索、答案引用验证或执行图。Windows150%缩放、完整屏幕阅读器、公开安装包和新面板大知识列表性能尚未验证。
+
+
+提交前发现新迁移工作区为CRLF，而Git索引为LF；发布前将0004统一为LF（尚未访问正式用户库）。通过标准库脚本核对工作区与暂存区字节相同，SHA-256为1849427505789c35f7358616dce145924ee0420b7c24b2874f543c3c810d057d。重新执行Rust测试10/10、桌面构建成功；最终二进制用 `$env:CORTEXOS_REAL_CONTEXT='1'` 后运行 `npx.cmd playwright test context.spec.ts context-real.spec.ts`，原生模拟与真实模型2/2通过（11.1秒）。最终真实观察wallMs1033（已热模型，仍包含UI检查开销），回答同上；artifacts/p0-a覆盖为最终截图和JSON，不把两次耗时当性能对比。测试之外未使用新迁移打开正式数据库。

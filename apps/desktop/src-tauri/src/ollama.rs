@@ -216,11 +216,7 @@ impl Ollama {
         })
     }
 
-    pub async fn chat(
-        &self,
-        settings: &ModelSettings,
-        messages: &[ChatMessage],
-    ) -> AppResult<Response> {
+    pub async fn inspect(&self, settings: &ModelSettings) -> AppResult<Value> {
         let inspection = self
             .client
             .post(format!("{}/api/show", self.endpoint))
@@ -243,11 +239,19 @@ impl Ollama {
         {
             return Err("当前仅允许本机 GGUF 模型，已阻止云端模型或无法确认来源的模型。".into());
         }
-        let response=self.client.post(format!("{}/api/chat",self.endpoint))
-            .timeout(Duration::from_secs(settings.timeout_seconds)).json(&json!({
-                "model":settings.model,"messages":messages,"stream":true,"think":false,"keep_alive":"5m",
-                "options":{"num_ctx":settings.num_ctx,"temperature":settings.temperature,"num_predict":settings.num_predict}
-            })).send().await.map_err(network_error)?;
+        Ok(
+            json!({"format":"gguf","model":settings.model,"digest":inspection.get("digest"),"identityNote":"digest unknown when provider omits it"}),
+        )
+    }
+    pub async fn chat(&self, settings: &ModelSettings, request: &Value) -> AppResult<Response> {
+        let response = self
+            .client
+            .post(format!("{}/api/chat", self.endpoint))
+            .timeout(Duration::from_secs(settings.timeout_seconds))
+            .json(request)
+            .send()
+            .await
+            .map_err(network_error)?;
         if response.status() == reqwest::StatusCode::NOT_FOUND {
             return Err("所选模型不存在，请在设置中选择已安装模型。".into());
         }
@@ -309,4 +313,9 @@ mod tests {
             assert!(validate_endpoint(endpoint).is_err());
         }
     }
+}
+
+pub fn chat_request(settings: &ModelSettings, messages: &[ChatMessage]) -> Value {
+    json!({"model":settings.model,"messages":messages,"stream":true,"think":false,"keep_alive":"5m",
+        "options":{"num_ctx":settings.num_ctx,"temperature":settings.temperature,"num_predict":settings.num_predict}})
 }

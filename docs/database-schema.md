@@ -62,3 +62,12 @@
 0003 迁移新增 knowledge_edges（稳定 id/workspace_id/latest_version）与 knowledge_edge_versions（edge_id/version/workspace_id/from_node_id/to_node_id/relation/active/change_reason/created_at）。关系版本不可修改/删除；端点以复合外键限制同工作区。关系保存需预期版本、同工作区两端点、有效关系类型、非自环和非重复有效关系。停用追加 active=false 修订，历史保留。方向按“起点 relation 终点”阅读；关系关联稳定节点，节点内容更新不自动构成关系重新审核。
 
 graph_layouts 每个工作区一份 knowledge 视图，含 revision、camera/target 与更新时间；knowledge_positions 按 workspace_id/node_id 保存有限坐标。保存需预期视图 revision，防止两个页面覆盖；位置和视角保存不改变知识/关系版本。演示图仅在前端内存中，显式标记，不能保存为工作区内容。迁移沿用升级前一致性备份。首批仅验收小图，不预先实现动态力导向布局。
+
+
+## P0-A：0004_context_audit（2026-10-18）
+
+新增 context_snapshots：run_id 为主键并外键引用 execution_runs，保存 request_json、request_hash、manifest_json、created_at。request_json 是 provider 实际发送的同一 serde_json::Value 序列化结果，含 system/历史/知识/当前问题及 model、options、stream、think、keep_alive；timeout 仍在 run 的 ModelSettings。SHA-256 基于 serde_json 当前默认有序对象序列化的 UTF-8 字节，后续变更序列化规则需增加格式版本。
+
+context_knowledge_items 保存 run、ordinal、node_id、version，约束唯一节点及有效知识版本；额外触发器检查 run 与节点同工作区。两表均以触发器禁止更新和删除。知识正文和哈希在 manifest 的 knowledgeRefs 中，完整资料消息也在请求快照中。保存运行、输入输出消息、快照、引用、初始事件为一个事务；任一写入失败整笔回滚，模型不会开始请求。读取快照沿用 get_run 的工作区校验。
+
+manifest schemaVersion=2，保留原 messageRefs/systemHash/systemVersion/budget 字段，增加 knowledgeRefs（标题、类型、版本、正文、哈希及选择理由）和 excludedMessages（历史预算/轮次或不完整轮次原因）。新请求的知识只解析 effective_version，拒绝重复/超过20项/非当前工作区/不支持类型/版本冲突。旧运行没有快照合法，get_run 返回 snapshot:null；迁移不回填。原三份迁移内容保持不变，升级前自动一致性备份。

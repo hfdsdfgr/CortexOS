@@ -280,7 +280,7 @@ test("native graph persists relationships, independent views and knowledge edits
     }
 
     const renderer = await page.locator("canvas").evaluate((element) => {
-      const gl = element.getContext("webgl2");
+      const gl = (element as HTMLCanvasElement).getContext("webgl2");
       const info = gl?.getExtension("WEBGL_debug_renderer_info");
       return info ? String(gl?.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "unavailable";
     });

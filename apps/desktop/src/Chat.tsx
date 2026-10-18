@@ -14,6 +14,7 @@ import {
   Square,
   X,
 } from "lucide-react";
+import { ContextPicker } from "./ContextPicker";
 import { errorText, type Message, type RunDetail, type Studio } from "./studio";
 
 const statusNames: Record<string, string> = {
@@ -26,7 +27,11 @@ const statusNames: Record<string, string> = {
 const eventNames: Record<string, string> = {
   request_received: "收到问题",
   context_prepared: "准备上下文",
-  model_called: "调用本地模型",
+  model_called: "开始本地模型调用尝试（旧记录）",
+  model_inspection_started: "开始检查本地模型",
+  model_inspection_completed: "本地模型检查完成",
+  model_request_started: "开始发送模型请求",
+  model_response_received: "收到模型服务响应",
   response_completed: "回答完成",
   run_cancelled: "用户停止生成",
   run_failed: "生成失败",
@@ -177,7 +182,9 @@ export function ChatPage({
         <header className="page-heading">
           <div>
             <h1 id="page-title">对话</h1>
-            {conversation && <p className="conversation-title">{conversation.title}</p>}
+            {conversation && (
+              <p className="conversation-title">{conversation.title}</p>
+            )}
           </div>
           <div className="heading-actions">
             <button
@@ -290,13 +297,42 @@ export function ChatPage({
                         )}
                         {copied === message.id ? "已复制" : "复制"}
                       </button>
-                      <button className="button text-button" disabled={!message.content || message.status === "streaming"} onClick={(event) => {
-                        const selection = window.getSelection();
-                        const article = event.currentTarget.closest("article");
-                        const selected = selection?.toString() ?? "";
-                        const inside = selection?.anchorNode && selection?.focusNode && article?.querySelector(".message-content")?.contains(selection.anchorNode) && article?.querySelector(".message-content")?.contains(selection.focusNode);
-                        onSaveKnowledge(message, Array.from(inside && selected && message.content.includes(selected) ? selected : message.content).slice(0, 20000).join(""));
-                      }}><BookOpen size={14} aria-hidden="true" />保存为知识</button>
+                      <button
+                        className="button text-button"
+                        disabled={
+                          !message.content || message.status === "streaming"
+                        }
+                        onClick={(event) => {
+                          const selection = window.getSelection();
+                          const article =
+                            event.currentTarget.closest("article");
+                          const selected = selection?.toString() ?? "";
+                          const inside =
+                            selection?.anchorNode &&
+                            selection?.focusNode &&
+                            article
+                              ?.querySelector(".message-content")
+                              ?.contains(selection.anchorNode) &&
+                            article
+                              ?.querySelector(".message-content")
+                              ?.contains(selection.focusNode);
+                          onSaveKnowledge(
+                            message,
+                            Array.from(
+                              inside &&
+                                selected &&
+                                message.content.includes(selected)
+                                ? selected
+                                : message.content,
+                            )
+                              .slice(0, 20000)
+                              .join(""),
+                          );
+                        }}
+                      >
+                        <BookOpen size={14} aria-hidden="true" />
+                        保存为知识
+                      </button>
                       {message.modelRunId && (
                         <button
                           className="button text-button"
@@ -390,8 +426,14 @@ export function ChatPage({
           </button>
         )}
         <div className="composer-area">
+          <ContextPicker
+            key={`${studio.workspaceId}:${studio.conversationId}`}
+            studio={studio}
+          />
           <div className="composer">
-            <label className="sr-only" htmlFor="message">你的问题</label>
+            <label className="sr-only" htmlFor="message">
+              你的问题
+            </label>
             <textarea
               id="message"
               rows={2}
@@ -457,7 +499,10 @@ export function ChatPage({
           </div>
           <details className="composer-help">
             <summary>对话说明与快捷键</summary>
-            <p>Enter 发送，Shift+Enter 换行。上下文按预算选取最近完整对话，当前不使用文件检索。回答请结合依据判断。</p>
+            <p>
+              Enter 发送，Shift+Enter
+              换行。上下文按预算选取最近完整对话，当前不使用文件检索。回答请结合依据判断。
+            </p>
             {!studio.desktop && <p>浏览器预览不会读取或保存本地数据。</p>}
           </details>
         </div>
@@ -661,6 +706,35 @@ function RunInspector({
             ))}
           </ol>
           <h3>使用的上下文</h3>
+          {detail.contextManifest.knowledgeRefs?.map((item) => (
+            <details key={item.nodeId} className="knowledge-disclosure">
+              <summary>
+                {item.title} · 本次使用 v{item.version}
+              </summary>
+              <p className="context-content">{item.content}</p>
+              <p>用户选定的参考资料；纳入上下文不代表回答已验证。</p>
+              <code>{item.nodeId}</code>
+            </details>
+          ))}
+          {detail.snapshot ? (
+            <details className="advanced-settings">
+              <summary>完整请求快照</summary>
+              <p>本地保存的实际请求；模型仅按标签记录，不保证逐字重现。</p>
+              {detail.snapshot.request.messages.map((item, index) => (
+                <details key={index}>
+                  <summary>
+                    {index + 1}. {item.role}
+                  </summary>
+                  <p className="context-content">{item.content}</p>
+                </details>
+              ))}
+              <p className="identifier">
+                SHA-256：{detail.snapshot.requestHash}
+              </p>
+            </details>
+          ) : (
+            <p>历史记录未保存完整快照，仅有上下文清单。</p>
+          )}
           <p className="muted">
             {detail.contextManifest.messageRefs.length}{" "}
             条会话消息；未使用文件检索。

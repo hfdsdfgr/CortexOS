@@ -105,6 +105,7 @@ pub struct RunDetail {
     pub run: RunSummary,
     pub settings: ModelSettings,
     pub context_manifest: serde_json::Value,
+    pub snapshot: Option<ContextSnapshot>,
     pub events: Vec<ExecutionEvent>,
 }
 
@@ -126,7 +127,8 @@ pub struct ChatMessage {
 #[derive(Clone, Debug)]
 pub struct PreparedRun {
     pub run: RunSummary,
-    pub messages: Vec<ChatMessage>,
+    pub request: serde_json::Value,
+    pub manifest: serde_json::Value,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -155,4 +157,18 @@ pub fn validate_name(value: &str) -> AppResult<String> {
         return Err("名称需为 1–80 个字符，且不能包含控制字符。".into());
     }
     Ok(value.into())
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ContextSelection {
+    pub node_id: String,
+    pub version: i64,
+}
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContextSnapshot {
+    pub request: serde_json::Value,
+    pub request_hash: String,
+    pub manifest: serde_json::Value,
 }
