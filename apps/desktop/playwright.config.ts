@@ -28,6 +28,7 @@ export default defineConfig({
         "desktop.spec.ts",
         "chat.spec.ts",
         "context.spec.ts",
+        "trace.spec.ts",
         "knowledge.spec.ts",
         "graph.spec.ts",
       ],

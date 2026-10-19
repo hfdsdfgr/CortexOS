@@ -93,6 +93,20 @@ test("real local model receives approved knowledge with an immutable request sna
       ),
     );
     await page.getByRole("button", { name: "关闭执行详情" }).click();
+    await page
+      .getByRole("button", { name: "3D 执行轨迹", exact: true })
+      .click();
+    await expect(
+      page.locator('canvas[data-webgl-ready="true"]'),
+    ).toHaveAttribute("aria-label", "3D 执行画布");
+    await page
+      .getByRole("button", { name: "测试项目代号 · v1", exact: true })
+      .click();
+    await expect(page.getByLabel("执行节点详情")).toContainText("青鹭-742");
+    await page.getByRole("button", { name: "适应执行图", exact: true }).click();
+    await page.screenshot({
+      path: testInfo.outputPath("native-real-execution-trace.png"),
+    });
     await app.closeWindow();
     await app.stop();
     app = await launchNative(testInfo);

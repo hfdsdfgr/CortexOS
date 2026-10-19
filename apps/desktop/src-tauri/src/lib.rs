@@ -1,5 +1,6 @@
 mod commands;
 mod db;
+mod execution;
 mod graph;
 mod knowledge;
 mod models;
@@ -47,6 +48,9 @@ pub fn run() {
             commands::check_ollama,
             commands::save_settings,
             commands::get_run,
+            commands::list_runs,
+            commands::load_execution_graph,
+            commands::save_execution_view,
             commands::preview_context,
             commands::cancel_run,
             commands::list_knowledge,

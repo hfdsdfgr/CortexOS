@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Check, Pencil, Plus, Search, X } from "lucide-react";
+import { navigate, useNavigation } from "./navigation";
 import { errorText, type Message, type Studio } from "./studio";
 
 export const kinds: Record<string, string> = {
@@ -62,9 +63,11 @@ export function KnowledgePage({
   onSelect,
   revision,
   onEdit,
+  requestedVersion,
 }: {
   studio: Studio;
   selected: string | null;
+  requestedVersion?: number;
   onSelect: (id: string | null) => void;
   revision: number;
   onEdit: (request: EditKnowledge) => void;
@@ -216,6 +219,7 @@ export function KnowledgePage({
           studio={studio}
           workspace={workspace}
           selected={selected}
+          requestedVersion={requestedVersion}
           revision={revision}
           onBack={() => onSelect(null)}
           onEdit={onEdit}
@@ -234,6 +238,7 @@ export function KnowledgeInspector({
   onBack,
   onEdit,
   onChanged,
+  requestedVersion,
 }: {
   studio: Studio;
   workspace: string | null;
@@ -242,7 +247,9 @@ export function KnowledgeInspector({
   onBack: () => void;
   onEdit: (request: EditKnowledge) => void;
   onChanged?: () => void;
+  requestedVersion?: number;
 }) {
+  const route = useNavigation();
   const [detail, setDetail] = useState<KnowledgeDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [version, setVersion] = useState<number | null>(null);
@@ -253,14 +260,15 @@ export function KnowledgeInspector({
   useEffect(() => {
     let current = true;
     setDetail(null);
-    setVersion(null);
     setError(null);
     setLoadingDetail(false);
     if (!workspace || !selected) return;
     setLoadingDetail(true);
     void getKnowledge(workspace, selected)
       .then((data) => {
-        if (current) setDetail(data);
+        if (current) {
+          setDetail(data);
+        }
       })
       .catch((e) => {
         if (current) setError(errorText(e));
@@ -272,6 +280,17 @@ export function KnowledgeInspector({
       current = false;
     };
   }, [workspace, selected, revision, refresh]);
+  useEffect(() => {
+    setVersion(requestedVersion ?? null);
+    if (detail) {
+      setError(
+        requestedVersion &&
+        !detail.versions.some((v) => v.version === requestedVersion)
+          ? "指定知识版本不存在，请从版本历史中选择已有版本。"
+          : null,
+      );
+    }
+  }, [requestedVersion, detail]);
 
   const currentVersion = detail?.versions.find(
     (item) => item.version === (version ?? detail.node.latestVersion),
@@ -327,6 +346,22 @@ export function KnowledgeInspector({
               </button>
             </header>
             <div className="knowledge-prose">{currentVersion.content}</div>
+            {route.page === "knowledge" && (
+              <button
+                className="button text-button"
+                onClick={() =>
+                  navigate("graph", {
+                    workspace,
+                    mode: "knowledge",
+                    node: selected,
+                    version: currentVersion.version,
+                    back: route.back,
+                  })
+                }
+              >
+                在知识图谱定位
+              </button>
+            )}
             {detail.node.latestVersion !== detail.node.effectiveVersion && (
               <div className="knowledge-review">
                 <span>最新草案 v{detail.node.latestVersion}</span>
@@ -354,7 +389,16 @@ export function KnowledgeInspector({
                 <select
                   id="knowledge-version"
                   value={currentVersion.version}
-                  onChange={(e) => setVersion(Number(e.target.value))}
+                  onChange={(e) => {
+                    setVersion(Number(e.target.value));
+                    navigate(route.page, {
+                      workspace,
+                      node: selected,
+                      version: Number(e.target.value),
+                      mode: route.page === "graph" ? "knowledge" : undefined,
+                      back: route.back,
+                    });
+                  }}
                 >
                   {detail.versions.map((item) => (
                     <option key={item.version} value={item.version}>
@@ -393,7 +437,12 @@ export function KnowledgeInspector({
                           detail.sourceConversationId!,
                         )
                         .then(() => {
-                          location.hash = "/chat";
+                          navigate("chat", {
+                            workspace,
+                            conversation: detail.sourceConversationId,
+                            message: detail.node.sourceMessageId,
+                            back: route.back,
+                          });
                         })
                         .catch(studio.reportError);
                     }}

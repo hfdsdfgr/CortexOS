@@ -20,6 +20,8 @@ import {
   X,
 } from "lucide-react";
 import { KnowledgeInspector, kinds, type EditKnowledge } from "./Knowledge";
+import { navigate, useNavigation } from "./navigation";
+import { ExecutionTrace } from "./ExecutionTrace";
 import { errorText, type Studio } from "./studio";
 import {
   defaultPositions,
@@ -52,7 +54,10 @@ export function GraphPage({
   onEdit: (request: EditKnowledge) => void;
   onEditEdge: (request: EditEdge) => void;
 }) {
-  const [kind, setKind] = useState("knowledge");
+  const route = useNavigation();
+  const kind = route.mode;
+  const setKind = (mode: string) =>
+    navigate("graph", { workspace: studio.workspaceId, mode });
   const [demo, setDemo] = useState(!studio.desktop);
   return (
     <section className="standard-page graph-page" aria-labelledby="page-title">
@@ -106,15 +111,7 @@ export function GraphPage({
           />
         </>
       ) : (
-        <div className="graph-empty">
-          <GitBranch size={32} />
-          <h2>在对话中查看实际执行过程</h2>
-          <p>三维执行图将在下一阶段接入。</p>
-          <a className="button secondary" href="#/chat">
-            前往对话
-          </a>
-          <p>执行过程记录实际应用事件，不代表模型的内部思维。</p>
-        </div>
+        <ExecutionTrace key={studio.workspaceId ?? "preview"} studio={studio} />
       )}
     </section>
   );
@@ -132,12 +129,16 @@ function KnowledgeGraph({
   onEdit: (request: EditKnowledge) => void;
   onEditEdge: (request: EditEdge) => void;
 }) {
+  const route = useNavigation();
   const workspace = studio.workspaceId;
   const [graph, setGraph] = useState<GraphData | null>(demo ? demoGraph : null);
   const [positions, setPositions] = useState<Record<string, Point>>(
     demo ? defaultPositions(demoGraph.nodes) : {},
   );
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(route.node);
+  useEffect(() => {
+    if (!demo) setSelected(route.node);
+  }, [route.node, demo]);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -222,6 +223,13 @@ function KnowledgeGraph({
     ) ?? [];
   const select = (id: string) => {
     setSelected(id);
+    if (!demo)
+      navigate("graph", {
+        workspace,
+        mode: "knowledge",
+        node: id,
+        back: route.back,
+      });
     setListOpen(false);
   };
   const focusSelected = () => {
@@ -481,8 +489,17 @@ function KnowledgeGraph({
             <Suspense fallback={<p className="inline-loading">正在加载 3D…</p>}>
               <Viewport
                 key={canvasKey}
-                nodes={visible}
-                edges={visibleEdges}
+                nodes={visible.map((node) => ({
+                  ...node,
+                  badge:
+                    node.latestVersion !== node.effectiveVersion
+                      ? "草案"
+                      : undefined,
+                }))}
+                edges={visibleEdges.map((edge) => ({
+                  id: edge.id,
+                  ...edge.versions[0],
+                }))}
                 positions={positions}
                 selected={visibleIds.has(selected ?? "") ? selected : null}
                 camera={initialView.current?.camera ?? [0, 9, 22]}
@@ -535,7 +552,11 @@ function KnowledgeGraph({
               <button
                 className="icon-button"
                 aria-label="关闭图谱详情"
-                onClick={() => setSelected(null)}
+                onClick={() => {
+                  setSelected(null);
+                  if (!demo)
+                    navigate("graph", { workspace, mode: "knowledge" });
+                }}
               >
                 <X size={19} />
               </button>
@@ -557,8 +578,13 @@ function KnowledgeGraph({
                 studio={studio}
                 workspace={workspace}
                 selected={selected}
+                requestedVersion={route.version}
                 revision={revision + refresh}
-                onBack={() => setSelected(null)}
+                onBack={() => {
+                  setSelected(null);
+                  if (!demo)
+                    navigate("graph", { workspace, mode: "knowledge" });
+                }}
                 onEdit={(request) => onEdit({ ...request, returnTo: "graph" })}
                 onChanged={() => setRefresh((n) => n + 1)}
               />

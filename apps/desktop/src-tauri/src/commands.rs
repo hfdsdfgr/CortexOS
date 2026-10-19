@@ -495,3 +495,36 @@ pub async fn preview_context(
     })
     .await
 }
+
+#[tauri::command]
+pub async fn list_runs(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    offset: Option<u32>,
+) -> AppResult<Vec<RunSummary>> {
+    blocking(state.database.clone()?, move |db| {
+        db.list_runs(&workspace_id, offset.unwrap_or(0))
+    })
+    .await
+}
+#[tauri::command]
+pub async fn load_execution_graph(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    run_id: String,
+) -> AppResult<crate::execution::ExecutionGraph> {
+    blocking(state.database.clone()?, move |db| {
+        db.execution_graph(&workspace_id, &run_id)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn save_execution_view(
+    state: State<'_, AppState>,
+    input: crate::execution::SaveExecutionView,
+) -> AppResult<i64> {
+    blocking(state.database.clone()?, move |db| {
+        db.save_execution_view(input)
+    })
+    .await
+}

@@ -91,3 +91,12 @@ Rust context_tests：生效 v1 / 草案 v2、审批冲突、重复和跨工作�
 tests/context.spec.ts：原生 WebView2 选择知识→实际模拟 HTTP 捕获与快照逐项相等→审批冲突保留问题→刷新选择 v2→预览→下一次请求使用 v2→模型检查失败无 chat 请求→重启保留 v1 快照。tests/context-real.spec.ts 使用 CORTEXOS_REAL_CONTEXT=1 独立开启，运行已安装真实 Ollama，保存观察记录与截图。既有 chat 测试的事件预期更新为真实边界；图测试补 HTMLCanvasElement 类型标注。
 
 执行记录、浏览器/原生/真实模型结果分别见 milestone-log。尚未实测新面板的 Windows 150% 缩放与屏幕阅读器，不以浏览器尺寸检查代替。
+
+
+## P0-B 检查
+
+Rust `execution::tests` 覆盖工作区隔离、分页、视角并发/无效参数、知识视角独立性、完成/失败/取消及恢复中断的读取、重启和外键完整性。
+
+`tests/trace.spec.ts` 在原生 WebView2 验证：事件与投影逐项对应、legacy 无补造上下文、v1运行在知识更新到v2后仍定位v1、原消息键盘焦点、返回节点、保存视角、WebGL降级、375px布局、生成中刷新、跨工作区拒绝、关闭模拟服务后重启离线读取。`context-real.spec.ts` 增加真实模型回答到执行画布和知识快照检查，使用 CORTEXOS_REAL_CONTEXT=1 开启。
+
+大图基准、Windows150%缩放和完整读屏待专项验收；浏览器窗口尺寸检查与原生测试分别记录。

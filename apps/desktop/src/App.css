@@ -2259,3 +2259,30 @@ dd {
 .context-options { display: grid; gap: 8px; margin: 12px 0; }
 .context-options label { display: flex; align-items: baseline; gap: 8px; }
 .context-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+:root { --node-event: #315fa2; --node-input: #986817; --node-output: #168362; --node-error: #b42318; }
+.trace-toolbar,.trace-heading { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:8px 0; }
+.trace-toolbar select { min-width:0; max-width:100%; flex:1; }
+.trace-workbench { display:grid; grid-template-columns:210px minmax(0,1fr) 320px; flex:1; min-height:400px; border-top:1px solid var(--line); }
+.trace-index,.trace-detail { padding:16px; overflow:auto; max-height:65vh; }
+.trace-index h2,.trace-detail h2 { font-size:16px; }
+.trace-node { display:block; width:100%; text-align:left; border:0; background:transparent; color:var(--text); padding:10px 4px; }
+.trace-node[aria-current=true] { background:var(--selected); color:var(--primary); }
+.trace-canvas { position:relative; min-height:400px; }
+.trace-detail pre,.trace-detail code { white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
+.trace-detail ul { padding-left:16px; }
+.trace-detail li p { font-size:14px; }
+.trace-detail .button { white-space:normal; text-align:left; }
+.trace-run-info { margin-top:20px; }
+.trace-caption { margin:10px 0; font-size:14px; color:var(--muted); }
+.message[data-located=true] { outline:2px solid var(--primary); outline-offset:4px; }
+.return-to-trace { margin:8px 20px; }
+@media(max-width:1100px) { .trace-workbench {grid-template-columns:180px minmax(0,1fr);} .trace-detail {grid-column:1/-1;max-height:300px;border-top:1px solid var(--line);} }
+@media(max-width:600px) { .trace-workbench {display:flex;flex-direction:column;} .trace-index {max-height:180px;} .trace-canvas {min-height:300px;height:300px;flex:none;} .trace-detail {max-height:none;} }
+
+:root { --trace-order: #315fa2; --trace-context: #986817; --trace-output: #168362; }
+
+.trace-toolbar,.trace-heading { margin:0 24px; }
+.trace-toolbar select { padding:8px; border:1px solid var(--control-border); border-radius:2px; background:var(--surface); }
+.trace-caption { margin:10px 24px; }
+@media(max-width:600px) { .trace-toolbar,.trace-heading,.trace-caption {margin-left:12px;margin-right:12px;} }

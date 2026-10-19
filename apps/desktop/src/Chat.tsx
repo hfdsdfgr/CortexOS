@@ -14,6 +14,7 @@ import {
   Square,
   X,
 } from "lucide-react";
+import { navigate, useNavigation } from "./navigation";
 import { ContextPicker } from "./ContextPicker";
 import { errorText, type Message, type RunDetail, type Studio } from "./studio";
 
@@ -63,7 +64,13 @@ function Conversations({
         onClick={() => {
           void studio
             .newConversation()
-            .then(onSelect)
+            .then((conversation) => {
+              navigate("chat", {
+                workspace: conversation.workspaceId,
+                conversation: conversation.id,
+              });
+              onSelect?.();
+            })
             .catch(studio.reportError);
         }}
       >
@@ -83,7 +90,13 @@ function Conversations({
                 onClick={() => {
                   void studio
                     .openConversation(conversation.workspaceId, conversation.id)
-                    .then(onSelect)
+                    .then(() => {
+                      navigate("chat", {
+                        workspace: conversation.workspaceId,
+                        conversation: conversation.id,
+                      });
+                      onSelect?.();
+                    })
                     .catch(studio.reportError);
                 }}
               >
@@ -119,6 +132,13 @@ export function ChatPage({
   onCreateWorkspace: () => void;
   onSaveKnowledge: (message: Message, excerpt: string) => void;
 }) {
+  const route = useNavigation();
+  useEffect(() => {
+    if (!route.message || studio.loadingMessages) return;
+    const element = document.getElementById(`message-${route.message}`);
+    element?.scrollIntoView({ block: "center" });
+    element?.focus({ preventScroll: true });
+  }, [route.message, studio.messages.length, studio.loadingMessages]);
   const conversation = studio.conversations.find(
     (item) => item.id === studio.conversationId,
   );
@@ -152,7 +172,7 @@ export function ChatPage({
     setShowJump(false);
   }, [studio.conversationId]);
   useEffect(() => {
-    if (nearBottom.current && scroller.current)
+    if (!route.message && nearBottom.current && scroller.current)
       scroller.current.scrollTop = scroller.current.scrollHeight;
   }, [studio.messages]);
   useEffect(() => {
@@ -164,6 +184,13 @@ export function ChatPage({
     return () => window.clearTimeout(timer);
   }, [copied]);
 
+  const send = (content?: string) => {
+    navigate("chat", {
+      workspace: studio.workspaceId,
+      conversation: studio.conversationId,
+    });
+    return studio.send(content);
+  };
   const copy = async (id: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -253,6 +280,9 @@ export function ChatPage({
                 <article
                   className={`message ${message.role}`}
                   key={message.id}
+                  id={`message-${message.id}`}
+                  tabIndex={-1}
+                  data-located={route.message === message.id || undefined}
                   aria-label={message.role === "user" ? "你的问题" : "模型回答"}
                 >
                   <div className="message-heading">
@@ -334,13 +364,27 @@ export function ChatPage({
                         保存为知识
                       </button>
                       {message.modelRunId && (
-                        <button
-                          className="button text-button"
-                          onClick={() => setSelectedRun(message.modelRunId)}
-                        >
-                          <GitBranch size={14} aria-hidden="true" />
-                          执行过程
-                        </button>
+                        <>
+                          <button
+                            className="button text-button"
+                            onClick={() => setSelectedRun(message.modelRunId)}
+                          >
+                            <GitBranch size={14} aria-hidden="true" />
+                            执行过程
+                          </button>
+                          <button
+                            className="button text-button"
+                            onClick={() =>
+                              navigate("graph", {
+                                workspace: message.workspaceId,
+                                mode: "execution",
+                                run: message.modelRunId,
+                              })
+                            }
+                          >
+                            3D 执行轨迹
+                          </button>
+                        </>
                       )}
                       {(["failed", "cancelled", "interrupted"].includes(
                         message.status,
@@ -357,7 +401,7 @@ export function ChatPage({
                                 item.role === "user" &&
                                 item.modelRunId === message.modelRunId,
                             );
-                            if (question) void studio.send(question.content);
+                            if (question) void send(question.content);
                           }}
                         >
                           重试
@@ -459,7 +503,7 @@ export function ChatPage({
                   event.keyCode !== 229
                 ) {
                   event.preventDefault();
-                  if (canSend) void studio.send();
+                  if (canSend) void send();
                 }
               }}
             />
@@ -488,7 +532,7 @@ export function ChatPage({
                   className="send-button"
                   disabled={!canSend}
                   onClick={() => {
-                    void studio.send();
+                    void send();
                   }}
                   aria-label={studio.sending ? "正在发送" : "发送消息"}
                 >

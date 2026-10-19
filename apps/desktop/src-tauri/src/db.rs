@@ -13,6 +13,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("../migrations/0002_knowledge.sql"),
     include_str!("../migrations/0003_graph.sql"),
     include_str!("../migrations/0004_context_audit.sql"),
+    include_str!("../migrations/0005_execution_views.sql"),
 ];
 const MIGRATION: &str = include_str!("../migrations/0001_initial.sql");
 const RUN_COLUMNS: &str = "id,workspace_id,conversation_id,assistant_message_id,model_id,status,started_at,finished_at,error_message";
@@ -634,6 +635,20 @@ impl Database {
         }
         transaction.commit().map_err(error)?;
         Ok(())
+    }
+
+    pub fn list_runs(&self, workspace: &str, offset: u32) -> AppResult<Vec<RunSummary>> {
+        if offset > 100000 {
+            return Err("运行页码超出范围。".into());
+        }
+        self.conversations(workspace)?;
+        let connection = self.connection()?;
+        let mut query=connection.prepare(&format!("SELECT {RUN_COLUMNS} FROM execution_runs WHERE workspace_id=?1 ORDER BY started_at DESC,id DESC LIMIT 50 OFFSET ?2")).map_err(error)?;
+        query
+            .query_map(params![workspace, offset], read_run)
+            .map_err(error)?
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(error)
     }
 
     pub fn run_detail(&self, workspace_id: &str, run_id: &str) -> AppResult<RunDetail> {

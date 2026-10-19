@@ -81,3 +81,10 @@ KnowledgeInspector 与 KnowledgeEditor 在知识页和图谱中共享，图谱�
 prepare_context_run 复用既有组装函数，同时服务 preview_context 和 start_chat。生效知识解析与快照提交持有同一 DB mutex，避免审批竞争；短事务保存整笔输入/快照，网络在释放锁后执行。Ollama::chat 接收 PreparedRun.request，而不再自行组装请求。get_run 同时读取快照，RunDrawer 可查看本次版本与实际 messages。
 
 外部事件分为 model_inspection_started/completed、model_request_started、model_response_received 和原终态；legacy model_called 只表示旧调用尝试。详细权衡见 ADR 0006。保留 P0-B 的执行投影和统一导航任务。
+
+
+## P0-B 执行图与实体导航
+
+`execution.rs` 读取工作区限定的 RunDetail、输出和视角；`execution-data.ts` 将不可变事件、实际请求消息及知识引用投影为展示节点。`ExecutionTrace.tsx` 复用 `GraphViewport.tsx`，运行中每秒刷新，终态停止。事件顺序边、上下文纳入边、输出保存边各有独立解释；历史缺失快照保留缺失状态。
+
+`navigation.ts` 用 URL hash 保存 workspace/conversation/run/node/version/message/event/mode 及返回执行图位置。App 验证工作区并加载会话；知识检查器读取精确版本；Chat 滚动并聚焦消息。异步结果按当前运行清理，工作区切换清除旧定位。详情正文不进入 URL。知识图和执行图共享渲染器及导航，使用独立事实来源和视角存储。见 ADR 0007。

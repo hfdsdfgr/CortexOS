@@ -71,3 +71,10 @@ graph_layouts 每个工作区一份 knowledge 视图，含 revision、camera/tar
 context_knowledge_items 保存 run、ordinal、node_id、version，约束唯一节点及有效知识版本；额外触发器检查 run 与节点同工作区。两表均以触发器禁止更新和删除。知识正文和哈希在 manifest 的 knowledgeRefs 中，完整资料消息也在请求快照中。保存运行、输入输出消息、快照、引用、初始事件为一个事务；任一写入失败整笔回滚，模型不会开始请求。读取快照沿用 get_run 的工作区校验。
 
 manifest schemaVersion=2，保留原 messageRefs/systemHash/systemVersion/budget 字段，增加 knowledgeRefs（标题、类型、版本、正文、哈希及选择理由）和 excludedMessages（历史预算/轮次或不完整轮次原因）。新请求的知识只解析 effective_version，拒绝重复/超过20项/非当前工作区/不支持类型/版本冲突。旧运行没有快照合法，get_run 返回 snapshot:null；迁移不回填。原三份迁移内容保持不变，升级前自动一致性备份。
+
+
+## 0005_execution_views（P0-B）
+
+`execution_runs(workspace_id,id)` 增加唯一索引；`execution_layouts` 以 run_id 为主键，保存 workspace_id、revision、camera_json、target_json、updated_at，复合外键引用同一工作区运行。写入检查有限坐标、相机距离与 expectedRevision，事务内比较后递增版本。知识布局及执行事件保持独立。
+
+执行节点是事件、快照与消息的读取投影，坐标按事件顺序生成。当前无需 execution_positions 或另一份 ExecutionStep 表；工作流真正产生依赖时再扩充。迁移文件保持 LF，已有迁移内容和校验和保持不变。

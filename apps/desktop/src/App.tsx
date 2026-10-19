@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   CheckCircle2,
@@ -20,6 +20,7 @@ import { GraphPage, RelationshipEditor, type EditEdge } from "./Graph";
 import { SettingsPage } from "./Settings";
 import { errorText, useStudio } from "./studio";
 import "./App.css";
+import { useNavigation, navigate } from "./navigation";
 
 const pages = [
   { id: "chat", label: "对话", icon: MessageSquare },
@@ -27,14 +28,6 @@ const pages = [
   { id: "graph", label: "图谱", icon: Network },
   { id: "settings", label: "设置", icon: Settings },
 ] as const;
-function subscribeToNavigation(onChange: () => void) {
-  window.addEventListener("hashchange", onChange);
-  return () => window.removeEventListener("hashchange", onChange);
-}
-function currentPage() {
-  const id = window.location.hash.replace("#/", "");
-  return pages.find((page) => page.id === id)?.id ?? "chat";
-}
 export default function App() {
   const studio = useStudio();
   const [edgeEdit, setEdgeEdit] = useState<EditEdge | null>(null);
@@ -46,7 +39,29 @@ export default function App() {
     id: string;
   } | null>(null);
   const [knowledgeRevision, setKnowledgeRevision] = useState(0);
-  const page = useSyncExternalStore(subscribeToNavigation, currentPage);
+  const route = useNavigation();
+  const page = route.page;
+  useEffect(() => {
+    if (studio.loading || !studio.data || !route.workspace) return;
+    if (!studio.data.workspaces.some((item) => item.id === route.workspace)) {
+      studio.reportError("目标工作区不存在。请选择可用工作区。");
+      return;
+    }
+    let current = true;
+    void (async () => {
+      if (studio.workspaceId !== route.workspace)
+        await studio.openWorkspace(route.workspace!);
+      if (
+        current &&
+        route.conversation &&
+        studio.conversationId !== route.conversation
+      )
+        await studio.openConversation(route.workspace!, route.conversation);
+    })().catch(studio.reportError);
+    return () => {
+      current = false;
+    };
+  }, [route.workspace, route.conversation, studio.loading, !!studio.data]);
   const mainRef = useRef<HTMLElement>(null);
   const previousPage = useRef(page);
   const workspaceDialog = useRef<HTMLDialogElement>(null);
@@ -60,7 +75,8 @@ export default function App() {
   };
   useEffect(() => {
     document.title = `${pages.find((item) => item.id === page)?.label} · CortexOS`;
-    if (previousPage.current !== page) mainRef.current?.focus();
+    if (previousPage.current !== page && !(page === "chat" && route.message))
+      mainRef.current?.focus();
     previousPage.current = page;
   }, [page]);
   return (
@@ -91,6 +107,7 @@ export default function App() {
             onChange={(event) => {
               void studio
                 .openWorkspace(event.target.value)
+                .then(() => navigate(page))
                 .catch(studio.reportError);
             }}
           >
@@ -113,7 +130,7 @@ export default function App() {
         </div>
         <div className="header-status">
           <span className="preview-label">
-            {studio.desktop ? "本地对话 Alpha" : "界面预览"}
+            {studio.desktop ? "认知工作台 Alpha" : "界面预览"}
           </span>
           <a
             href="#/settings"
@@ -189,6 +206,11 @@ export default function App() {
             </button>
           </div>
         )}
+        {route.back && (
+          <a className="button text-button return-to-trace" href={route.back}>
+            返回执行轨迹
+          </a>
+        )}
         {page === "chat" && (
           <ChatPage
             studio={studio}
@@ -207,17 +229,23 @@ export default function App() {
             key={studio.workspaceId ?? "preview"}
             studio={studio}
             selected={
-              knowledgeSelection?.workspace === studio.workspaceId
+              route.node ??
+              (knowledgeSelection?.workspace === studio.workspaceId
                 ? knowledgeSelection.id
-                : null
+                : null)
             }
-            onSelect={(id) =>
+            requestedVersion={route.version}
+            onSelect={(id) => {
               setKnowledgeSelection(
                 id && studio.workspaceId
                   ? { workspace: studio.workspaceId, id }
                   : null,
-              )
-            }
+              );
+              navigate("knowledge", {
+                workspace: studio.workspaceId,
+                node: id,
+              });
+            }}
             revision={knowledgeRevision}
             onEdit={setKnowledgeEdit}
           />
@@ -250,8 +278,15 @@ export default function App() {
             setKnowledgeEdit(null);
             setKnowledgeSelection({ workspace, id });
             setKnowledgeRevision((n) => n + 1);
-            location.hash =
-              knowledgeEdit.returnTo === "graph" ? "/graph" : "/knowledge";
+            navigate(
+              knowledgeEdit.returnTo === "graph" ? "graph" : "knowledge",
+              {
+                workspace,
+                node: id,
+                mode:
+                  knowledgeEdit.returnTo === "graph" ? "knowledge" : undefined,
+              },
+            );
           }}
         />
       )}
@@ -270,7 +305,10 @@ export default function App() {
             setWorkspaceError(null);
             void studio
               .createWorkspace(workspaceName)
-              .then(() => workspaceDialog.current?.close())
+              .then(() => {
+                navigate(page);
+                workspaceDialog.current?.close();
+              })
               .catch((value) => setWorkspaceError(errorText(value)))
               .finally(() => setCreating(false));
           }}

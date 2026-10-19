@@ -11,8 +11,8 @@ import {
 } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import type { KnowledgeNode } from "./Knowledge";
-import type { GraphEdge, Point } from "./graph-data";
+
+import type { Point } from "./graph-data";
 
 export interface ViewportApi {
   capture: () => { camera: Point; target: Point };
@@ -21,9 +21,23 @@ export interface ViewportApi {
   fit: () => void;
   restore: (camera: Point, target: Point) => void;
 }
+export interface DisplayNode {
+  id: string;
+  title: string;
+  kind: string;
+  badge?: string;
+}
+export interface DisplayEdge {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  relation: string;
+}
 interface Props {
-  nodes: KnowledgeNode[];
-  edges: GraphEdge[];
+  label?: string;
+  onReady?: () => void;
+  nodes: DisplayNode[];
+  edges: DisplayEdge[];
   positions: Record<string, Point>;
   selected: string | null;
   camera: Point;
@@ -35,6 +49,8 @@ interface Props {
 }
 function NodeShape({ kind }: { kind: string }) {
   switch (kind) {
+    case "event":
+    case "input":
     case "context":
       return <boxGeometry args={[0.7, 0.7, 0.7]} />;
     case "hypothesis":
@@ -43,6 +59,7 @@ function NodeShape({ kind }: { kind: string }) {
       return <coneGeometry args={[0.47, 0.9, 5]} />;
     case "evidence":
       return <cylinderGeometry args={[0.37, 0.37, 0.8, 12]} />;
+    case "error":
     case "conflict":
       return <octahedronGeometry args={[0.53]} />;
     default:
@@ -60,6 +77,10 @@ function Scene(props: Props) {
     const styles = getComputedStyle(document.documentElement);
     return Object.fromEntries(
       [
+        "event",
+        "input",
+        "output",
+        "error",
         "knowledge",
         "context",
         "hypothesis",
@@ -71,8 +92,9 @@ function Scene(props: Props) {
   }, []);
   useEffect(() => {
     const canvas = gl.domElement;
-    canvas.setAttribute("aria-label", "3D 知识画布");
+    canvas.setAttribute("aria-label", props.label ?? "3D 知识画布");
     canvas.dataset.webglReady = "true";
+    props.onReady?.();
     const lost = (event: Event) => {
       event.preventDefault();
       props.onFailure();
@@ -147,13 +169,26 @@ function Scene(props: Props) {
   const links = useMemo(
     () =>
       edges.map((edge) => {
-        const version = edge.versions[0];
+        const version = edge;
         const from = new THREE.Vector3(...positions[version.fromNodeId]);
         const to = new THREE.Vector3(...positions[version.toNodeId]);
         const direction = to.clone().sub(from).normalize();
         const tip = to.clone().addScaledVector(direction, -0.7);
         return {
           id: edge.id,
+          color: new THREE.Color(
+            getComputedStyle(document.documentElement)
+              .getPropertyValue(
+                edge.relation === "executed_before"
+                  ? "--trace-order"
+                  : edge.relation === "included_in_context"
+                    ? "--trace-context"
+                    : edge.relation === "saved_output"
+                      ? "--trace-output"
+                      : "--graph-edge",
+              )
+              .trim(),
+          ),
           from,
           to,
           tip,
@@ -172,12 +207,22 @@ function Scene(props: Props) {
       ),
     [links],
   );
+  const lineColors = useMemo(
+    () =>
+      new Float32Array(
+        links.flatMap((link) => [
+          ...link.color.toArray(),
+          ...link.color.toArray(),
+        ]),
+      ),
+    [links],
+  );
   const labels = useMemo(() => {
     const ids = new Set<string>(
       selected ? [selected] : nodes.slice(0, 5).map((node) => node.id),
     );
     for (const edge of edges) {
-      const v = edge.versions[0];
+      const v = edge;
       if (v.fromNodeId === selected) ids.add(v.toNodeId);
       if (v.toNodeId === selected) ids.add(v.fromNodeId);
       if (ids.size >= 7) break;
@@ -192,9 +237,9 @@ function Scene(props: Props) {
       const element = document.createElement("span");
       element.className = `graph-node-label ${node.id === selected ? "is-selected" : ""}`;
       element.textContent = node.title;
-      if (node.latestVersion !== node.effectiveVersion) {
+      if (node.badge) {
         const mark = document.createElement("em");
-        mark.textContent = "草案";
+        mark.textContent = node.badge;
         element.append(mark);
       }
       layer.append(element);
@@ -233,21 +278,14 @@ function Scene(props: Props) {
       <lineSegments>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[points, 3]} />
+          <bufferAttribute attach="attributes-color" args={[lineColors, 3]} />
         </bufferGeometry>
-        <lineBasicMaterial
-          color={getComputedStyle(document.documentElement)
-            .getPropertyValue("--graph-edge")
-            .trim()}
-        />
+        <lineBasicMaterial vertexColors />
       </lineSegments>
       {links.map((link) => (
         <mesh key={link.id} position={link.tip} quaternion={link.quaternion}>
           <coneGeometry args={[0.13, 0.4, 6]} />
-          <meshBasicMaterial
-            color={getComputedStyle(document.documentElement)
-              .getPropertyValue("--graph-arrow")
-              .trim()}
-          />
+          <meshBasicMaterial color={link.color} />
         </mesh>
       ))}
       {nodes.map((node) => (
