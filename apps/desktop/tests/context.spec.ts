@@ -72,7 +72,7 @@ test("effective knowledge reaches the exact saved model request and survives res
         changeReason: "修订",
       },
     });
-    await page.getByText("本次上下文：0 项知识", { exact: true }).click();
+    await page.getByText("手动选择：0 项知识", { exact: true }).click();
     await page.getByRole("button", { name: "刷新知识列表" }).click();
     await page.getByRole("checkbox", { name: /发布日/ }).check();
     await page
@@ -105,6 +105,8 @@ test("effective knowledge reaches the exact saved model request and survives res
     expect(JSON.stringify(requests[0])).not.toContain("周二");
     expect(first.events.map((e) => e.kind)).toEqual([
       "request_received",
+      "retrieval_started",
+      "retrieval_completed",
       "context_prepared",
       "model_inspection_started",
       "model_inspection_completed",
@@ -126,7 +128,7 @@ test("effective knowledge reaches the exact saved model request and survives res
     await expect(
       page.getByRole("textbox", { name: "你的问题", exact: true }),
     ).toHaveValue("现在何时发布？");
-    await page.getByText("本次上下文：1 项知识", { exact: true }).click();
+    await page.getByText("手动选择：1 项知识", { exact: true }).click();
     await page.getByRole("button", { name: "刷新知识列表" }).click();
     const choice = page.getByRole("checkbox", { name: /发布日/ });
     await expect(page.getByText(/生效 v2/)).toBeVisible();
@@ -177,6 +179,8 @@ test("effective knowledge reaches the exact saved model request and survives res
     });
     expect(failed.events.map((e) => e.kind)).toEqual([
       "request_received",
+      "retrieval_started",
+      "retrieval_completed",
       "context_prepared",
       "model_inspection_started",
       "run_failed",

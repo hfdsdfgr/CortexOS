@@ -1,3 +1,4 @@
+import { RetrievalSummary } from "./RetrievalSummary";
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { errorText, type RunDetail, type Studio } from "../studio";
@@ -11,6 +12,8 @@ const statusNames: Record<string, string> = {
 const eventNames: Record<string, string> = {
   request_received: "收到问题",
   context_prepared: "准备上下文",
+  retrieval_started: "开始检索知识",
+  retrieval_completed: "知识检索完成",
   model_called: "开始本地模型调用尝试（旧记录）",
   model_inspection_started: "开始检查本地模型",
   model_inspection_completed: "本地模型检查完成",
@@ -146,13 +149,19 @@ export function CognitiveInspector({
             ))}
           </ol>
           <h3>使用的上下文</h3>
+          <RetrievalSummary report={detail.contextManifest.retrieval} />
           {detail.contextManifest.knowledgeRefs?.map((item) => (
             <details key={item.nodeId} className="knowledge-disclosure">
               <summary>
                 {item.title} · 本次使用 v{item.version}
               </summary>
               <p className="context-content">{item.content}</p>
-              <p>用户选定的参考资料；纳入上下文不代表回答已验证。</p>
+              <p>
+                {item.reason === "automatic_effective_knowledge"
+                  ? "自动检索纳入的参考资料"
+                  : "用户选定的参考资料"}
+                ；纳入上下文不代表回答已验证。
+              </p>
               <code>{item.nodeId}</code>
             </details>
           ))}

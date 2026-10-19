@@ -347,3 +347,29 @@ Python默认cp950读取中文失败后改用 `py -3 -X utf8 -`；首次 Rust 测
 原生默认DPR1.25；通过Playwright设置WebView2 CSS视口，不等于更改Windows显示缩放。未完成150%/200%系统缩放、完整读屏或长会话性能专项。参考没有对话/加载状态，这些按产品状态补充；视觉差异与下一轮建议见visual-review。本轮完成后等待用户确认，不进入P1或重做其他模块。
 
 最终增量检查 **8/8通过，18.9秒**（7项浏览器导航/尺寸，1项原生视觉与行为专项8.4秒）；工作区选择器唯一性断言通过。最终截图覆盖至artifacts/ui-chat。完整回归后仅追加了抽屉挂载修正，使用此针对性回归验证，未把前一轮结果冒称为最终二进制全量重跑。
+
+
+# 2026-10-19 P1-A 生效知识自动检索
+
+用户确认三项推荐：进入P1-A、自动检索默认开启且按会话关闭、优先中文夹杂英文术语和代码。本轮保留对话设计，交付审核知识→索引→实际检索→请求快照→执行图的完整闭环，停在P1-A验收点。
+
+## 实现与文件
+
+新增 migrations/0006_knowledge_retrieval.sql、src-tauri/src/retrieval.rs、components/RetrievalSummary.tsx、tests/retrieval.spec.ts、ADR0008。后端 db/knowledge/models/commands 与命令能力声明接入索引、偏好、预算和真实事件；前端 studio、Chat、ContextPicker、ChatComposer、CognitiveInspector、ExecutionTrace、execution-data 和局部CSS接入实际状态与候选说明。既有上下文、聊天、Ollama和执行图测试更新默认检索语义；README、架构、schema、规范、计划、权限和测试文档同步。
+
+FTS5使用中文相邻双字与英文数字词项、BM25排序；仅检索当前工作区已生效的knowledge/context/decision版本。最多记录20候选、自动纳入5项，使用手动资料后剩余预算的一半，历史使用余量。候选记录版本、分数和纳入/排除原因。审核更新与索引原子提交；草案不覆盖生效内容。schemaVersion3保存当次检索和完整请求，实际检索开始/完成事件进入既有执行图。新旧会话默认开启，独立偏好重启保留；关闭不清除已有会话历史。
+
+## 实际验证
+
+- `cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check` 通过。
+- `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --lib` 最终14/14，0.30秒。包括8条固定混合语言查询、v5迁移回填、候选/预算上限、版本审核、跨工作区隔离、偏好恢复、事务失败回滚、不可变记录和外键检查。初轮旧断言仍预期默认不检索，修正后通过。
+- apps/desktop中 `npm.cmd run typecheck`、`npm.cmd run build`、`npm.cmd run tauri -- build --debug --no-bundle` 成功。最终内嵌资源index-BmqIDbuv.js、index-Czr1-CGQ.css、GraphViewport-CzpYtZik.js。未新增依赖、系统安装或模型下载。
+- 设置 `$env:CORTEXOS_REAL_CONTEXT='1'` 后 `npx.cmd playwright test`：初轮16通过/1失败，发现异步保存时复选框短暂恢复旧值；增加按会话隔离的即时反馈，失败恢复并保留草稿。重建后二次完整回归 **17/17通过，1.5分钟**：8项Edge、8项原生桌面、1项真实Ollama（4.8秒）。真实模型自动获得已审核知识，实际请求与快照相同。
+- `npx.cmd playwright test retrieval.spec.ts --project desktop`：修复后专项1/1；全量通过后补充等待WebGL就绪、适应图和展开原因再截图，再次专项 **1/1，7.0秒**（用例4.4秒）。最后只修改测试截图等待，未改变运行代码或二进制。
+- 隔离测试数据，原生WebView2默认1440×900/DPR1.25，对话专项覆盖1366×768及1920×1080。测试验证首次开关操作保留草稿、预览不调用模型、v1到v2审核影响下一请求、无命中、关闭不生成检索事件、重启偏好与旧快照不变、新会话重新默认开启。
+
+## 证据、限制与停止点
+
+artifacts/p1-a保留实际检索输入条、执行图截图、真实Ollama截图及观察JSON，沿用忽略规则作为本机证据。已查看检索输入条与就绪执行图；最初截图早于画布就绪，已用专项截图替换。执行图仍有相邻标签重叠的既有视觉限制，后续可单独优化；不影响事件列表和详情查阅。
+
+本轮为词项检索，无语义向量、同义词或单字中文召回；8条固定样例不代表通用检索质量。BM25共享索引统计但候选按工作区严格过滤。上下文准备沿用原子提交边界，准备失败不调用模型且保留草稿，但不持久化独立失败运行。预览只读，发送重新读取有效版本。图模块约933kB及Three.Clock弃用提示仍存在；大图性能、150%系统缩放、完整读屏、安装包尚未验证。P1-B文件授权导入、Decision Lab、评估及LoRA未实现。本轮完成后停止，下一阶段先澄清用户决策。

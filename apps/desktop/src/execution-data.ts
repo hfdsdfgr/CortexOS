@@ -14,6 +14,8 @@ export interface ExecutionData {
 export const eventLabels: Record<string, string> = {
   request_received: "收到问题",
   context_prepared: "保存上下文",
+  retrieval_started: "开始检索知识",
+  retrieval_completed: "知识检索完成",
   model_called: "模型调用尝试（旧记录）",
   model_inspection_started: "开始检查模型",
   model_inspection_completed: "模型检查完成",
@@ -55,6 +57,8 @@ export function projectExecution(data: ExecutionData) {
         : {};
     const descriptions: Record<string, string> = {
       request_received: "问题已保存，并创建本次运行。",
+      retrieval_started: "按当前问题检索本工作区的已确认知识。",
+      retrieval_completed: `检索完成：${detail.contextManifest.retrieval?.candidates.length ?? 0} 项候选，${detail.contextManifest.retrieval?.includedCount ?? 0} 项自动纳入。`,
       context_prepared: `已固定 ${(detail.contextManifest.knowledgeRefs ?? []).length} 项知识与 ${detail.contextManifest.messageRefs?.length ?? 0} 条消息。`,
       model_called: "旧记录表示开始调用尝试，不能据此确认模型已收到请求。",
       model_inspection_started: "开始检查所选本地模型。",
@@ -120,6 +124,10 @@ export function projectExecution(data: ExecutionData) {
       nodeId: item.nodeId,
       version: item.version,
       hash: item.contentHash,
+      summary:
+        item.reason === "automatic_effective_knowledge"
+          ? "自动检索纳入的生效知识"
+          : "用户手动选择的生效知识",
     }),
   );
   if (detail.snapshot) {

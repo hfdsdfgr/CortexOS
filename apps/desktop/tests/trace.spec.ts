@@ -80,7 +80,7 @@ test("execution graph uses real events and navigates to exact versions and messa
       nodeId,
       expectedRevision: 1,
     });
-    await page.getByText("本次上下文：0 项知识", { exact: true }).click();
+    await page.getByText("手动选择：0 项知识", { exact: true }).click();
     await page.getByRole("button", { name: "刷新知识列表" }).click();
     await page.getByRole("checkbox", { name: /发布约定/ }).check();
     await page
@@ -128,11 +128,7 @@ test("execution graph uses real events and navigates to exact versions and messa
     expect(projection.nodes.filter((n) => n.seq !== undefined)).toHaveLength(
       data.detail.events.length,
     );
-    expect(
-      projection.nodes.some(
-        (n) => n.title.includes("检索") || n.title.includes("验证"),
-      ),
-    ).toBe(false);
+    expect(projection.nodes.some((n) => n.title.includes("验证"))).toBe(false);
     expect(
       projection.edges.filter((e) => e.relation === "executed_before"),
     ).toHaveLength(data.detail.events.length - 1);
@@ -222,7 +218,7 @@ test("execution graph uses real events and navigates to exact versions and messa
     await page.setViewportSize({ width: 1440, height: 900 });
     slow = true;
     await page.getByRole("button", { name: "定位回答", exact: true }).click();
-    await page.getByText("本次上下文：1 项知识", { exact: true }).click();
+    await page.getByText("手动选择：1 项知识", { exact: true }).click();
     await page.getByRole("checkbox", { name: /发布约定/ }).uncheck();
     await page
       .getByRole("textbox", { name: "你的问题", exact: true })

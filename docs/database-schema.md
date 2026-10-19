@@ -78,3 +78,9 @@ manifest schemaVersion=2，保留原 messageRefs/systemHash/systemVersion/budget
 `execution_runs(workspace_id,id)` 增加唯一索引；`execution_layouts` 以 run_id 为主键，保存 workspace_id、revision、camera_json、target_json、updated_at，复合外键引用同一工作区运行。写入检查有限坐标、相机距离与 expectedRevision，事务内比较后递增版本。知识布局及执行事件保持独立。
 
 执行节点是事件、快照与消息的读取投影，坐标按事件顺序生成。当前无需 execution_positions 或另一份 ExecutionStep 表；工作流真正产生依赖时再扩充。迁移文件保持 LF，已有迁移内容和校验和保持不变。
+
+## 0006_knowledge_retrieval（P1-A）
+
+knowledge_fts为FTS5派生索引，node_id/workspace_id/version为未索引定位列，title_terms/body_terms为预处理词。迁移事务调用Rust回填已生效版本，approve_knowledge事务同步更新。保持原迁移字节，0006使用LF。
+
+conversation_retrieval_settings保存conversation_id主键、workspace_id、enabled布尔，复合外键约束会话归属；缺省true。retrieval_results以run_id/ordinal为主键，保存node_id/version、score、included、reason、cost_units；版本外键、工作区触发器和不可变保护。候选完整快照与查询算法/预算信息保存在manifest schema3及事件payload中。无命中不插候选行，manifest和事件仍区分无命中与关闭。

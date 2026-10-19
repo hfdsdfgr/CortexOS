@@ -91,6 +91,25 @@ export function ChatComposer({
         </div>
       </div>
       <div className="composer-context">
+        {studio.desktop && studio.workspaceId && (
+          <label className="retrieval-switch">
+            <input
+              type="checkbox"
+              checked={studio.autoRetrieval}
+              disabled={
+                studio.savingRetrieval ||
+                studio.sending ||
+                !!studio.activeRun ||
+                studio.loadingMessages ||
+                studio.creatingConversation
+              }
+              onChange={(event) => {
+                void studio.setAutoRetrieval(event.target.checked);
+              }}
+            />
+            {studio.savingRetrieval ? "正在保存…" : "自动检索知识"}
+          </label>
+        )}
         <span className="local-label">
           <HardDrive size={15} aria-hidden="true" />
           本地
@@ -104,7 +123,7 @@ export function ChatComposer({
         <summary>对话说明与快捷键</summary>
         <p>
           Enter 发送，Shift+Enter
-          换行。上下文按预算选取最近完整对话，当前不使用文件检索。回答请结合依据判断。
+          换行。上下文按预算选取最近完整对话，自动检索仅使用当前工作区的已确认知识，尚不检索文件。回答请结合依据判断。
         </p>
         {!studio.desktop && <p>浏览器预览不会读取或保存本地数据。</p>}
       </details>

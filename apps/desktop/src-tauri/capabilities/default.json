@@ -19,6 +19,7 @@
     "allow-load-execution-graph",
     "allow-save-execution-view",
     "allow-preview-context",
+    "allow-set-conversation-retrieval",
     "allow-cancel-run",
     "allow-start-chat",
     "allow-list-knowledge",

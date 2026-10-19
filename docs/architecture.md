@@ -88,3 +88,9 @@ prepare_context_run 复用既有组装函数，同时服务 preview_context 和 
 `execution.rs` 读取工作区限定的 RunDetail、输出和视角；`execution-data.ts` 将不可变事件、实际请求消息及知识引用投影为展示节点。`ExecutionTrace.tsx` 复用 `GraphViewport.tsx`，运行中每秒刷新，终态停止。事件顺序边、上下文纳入边、输出保存边各有独立解释；历史缺失快照保留缺失状态。
 
 `navigation.ts` 用 URL hash 保存 workspace/conversation/run/node/version/message/event/mode 及返回执行图位置。App 验证工作区并加载会话；知识检查器读取精确版本；Chat 滚动并聚焦消息。异步结果按当前运行清理，工作区切换清除旧定位。详情正文不进入 URL。知识图和执行图共享渲染器及导航，使用独立事实来源和视角存储。见 ADR 0007。
+
+## P1-A 生效知识检索
+
+retrieval.rs维护CJK双字词/拉丁词索引、工作区限定搜索和持久化会话开关。db.prepare_context_run统一完成手动选择→自动候选与预算→历史消息→精确请求快照；preview_context复用同一逻辑但不持久化。approve_knowledge在同一事务刷新索引。候选记录、快照和真实查询边界与运行原子提交，细节见ADR0008。
+
+前端studio读取Conversation.autoRetrieval并保存会话偏好；ChatComposer提供开关，RetrievalSummary复用于预览、CognitiveInspector和执行图的检索完成节点。图的新增事件来自保存事实，历史运行不会补造检索。

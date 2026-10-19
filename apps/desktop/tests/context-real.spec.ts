@@ -32,9 +32,9 @@ test("real local model receives approved knowledge with an immutable request sna
       nodeId,
       expectedRevision: 1,
     });
-    await page.getByText("本次上下文：0 项知识", { exact: true }).click();
-    await page.getByRole("button", { name: "刷新知识列表" }).click();
-    await page.getByRole("checkbox", { name: /测试项目代号/ }).check();
+    await expect(
+      page.getByRole("checkbox", { name: "自动检索知识", exact: true }),
+    ).toBeChecked();
     await page
       .getByRole("textbox", { name: "你的问题", exact: true })
       .fill("请根据本次参考资料，用一句话说出验收项目代号和发布时间。");
@@ -62,6 +62,7 @@ test("real local model receives approved knowledge with an immutable request sna
     expect(detail.contextManifest.knowledgeRefs?.[0]).toMatchObject({
       nodeId,
       version: 1,
+      reason: "automatic_effective_knowledge",
     });
     expect(JSON.stringify(detail.snapshot?.request.messages)).toContain(
       "青鹭-742",
@@ -85,6 +86,7 @@ test("real local model receives approved knowledge with an immutable request sna
           wallMs: Date.now() - started,
           answer: answer.content,
           knowledgeVersion: 1,
+          retrieval: detail.contextManifest.retrieval,
           requestHash: detail.snapshot?.requestHash,
           events: detail.events.map((e) => e.kind),
         },

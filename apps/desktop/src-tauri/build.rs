@@ -14,6 +14,7 @@ fn main() {
             "load_execution_graph",
             "save_execution_view",
             "preview_context",
+            "set_conversation_retrieval",
             "cancel_run",
             "start_chat",
             "list_knowledge",

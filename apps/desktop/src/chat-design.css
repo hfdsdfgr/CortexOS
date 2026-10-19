@@ -595,3 +595,36 @@
     gap: 10px;
   }
 }
+
+.reference-chat .retrieval-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.reference-chat .retrieval-switch input {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+}
+.retrieval-summary {
+  margin: 12px 0;
+  font-size: 13px;
+}
+.retrieval-summary ul {
+  list-style: none;
+  padding: 0;
+}
+.retrieval-summary li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.retrieval-summary li span {
+  color: var(--muted);
+}

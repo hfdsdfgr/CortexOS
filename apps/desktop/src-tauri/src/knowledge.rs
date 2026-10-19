@@ -215,6 +215,7 @@ impl Database {
         let timestamp = now();
         tx.execute("INSERT INTO knowledge_approval_events(id,node_id,version,actor,created_at) VALUES(?1,?2,?3,'user',?4)",params![new_id(),id,current.latest_version,timestamp]).map_err(error)?;
         tx.execute("UPDATE knowledge_nodes SET effective_version=latest_version,revision=revision+1,updated_at=?2 WHERE id=?1",params![id,timestamp]).map_err(error)?;
+        crate::retrieval::index_node(&tx, id)?;
         tx.commit().map_err(error)?;
         Ok(())
     }

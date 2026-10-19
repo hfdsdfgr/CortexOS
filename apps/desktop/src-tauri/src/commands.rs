@@ -528,3 +528,16 @@ pub async fn save_execution_view(
     })
     .await
 }
+
+#[tauri::command]
+pub async fn set_conversation_retrieval(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    conversation_id: String,
+    enabled: bool,
+) -> AppResult<()> {
+    blocking(state.database.clone()?, move |db| {
+        db.set_conversation_retrieval(&workspace_id, &conversation_id, enabled)
+    })
+    .await
+}

@@ -5,6 +5,7 @@ mod graph;
 mod knowledge;
 mod models;
 mod ollama;
+mod retrieval;
 
 use std::sync::atomic::Ordering;
 use tauri::Manager;
@@ -52,6 +53,7 @@ pub fn run() {
             commands::load_execution_graph,
             commands::save_execution_view,
             commands::preview_context,
+            commands::set_conversation_retrieval,
             commands::cancel_run,
             commands::list_knowledge,
             commands::get_knowledge,

@@ -38,6 +38,7 @@ export function ChatPage({
     !!studio.draft.trim() &&
     !studio.activeRun &&
     !studio.sending &&
+    !studio.savingRetrieval &&
     !studio.loadingMessages;
   const scroller = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);

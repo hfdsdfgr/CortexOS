@@ -1,3 +1,4 @@
+import { RetrievalSummary } from "./components/RetrievalSummary";
 import { invoke } from "@tauri-apps/api/core";
 import {
   lazy,
@@ -369,6 +370,13 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                   {selected.seq !== undefined ? (
                     <>
                       <p>{selected.summary}</p>
+                      {data.detail.events.find(
+                        (event) => event.seq === selected.seq,
+                      )?.kind === "retrieval_completed" && (
+                        <RetrievalSummary
+                          report={data.detail.contextManifest.retrieval}
+                        />
+                      )}
                       <details>
                         <summary>审计数据</summary>
                         <pre>{selected.content}</pre>

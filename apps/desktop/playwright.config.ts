@@ -29,6 +29,7 @@ export default defineConfig({
         "chat.spec.ts",
         "chat-design.spec.ts",
         "context.spec.ts",
+        "retrieval.spec.ts",
         "trace.spec.ts",
         "knowledge.spec.ts",
         "graph.spec.ts",

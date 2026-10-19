@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
 import { errorText, type ContextManifest, type Studio } from "./studio";
+import { RetrievalSummary } from "./components/RetrievalSummary";
 import type { KnowledgeNode, KnowledgeDetail } from "./Knowledge";
 
 export function ContextPicker({ studio }: { studio: Studio }) {
@@ -53,11 +54,16 @@ export function ContextPicker({ studio }: { studio: Studio }) {
   useEffect(() => {
     previewGeneration.current++;
     setPreview(null);
-  }, [studio.draft, studio.contextSelection, studio.settings]);
+  }, [
+    studio.draft,
+    studio.contextSelection,
+    studio.settings,
+    studio.autoRetrieval,
+  ]);
   if (!studio.desktop || !studio.workspaceId) return null;
   return (
     <details className="context-picker">
-      <summary>本次上下文：{studio.contextSelection.length} 项知识</summary>
+      <summary>手动选择：{studio.contextSelection.length} 项知识</summary>
       <div className="context-toolbar">
         <span>选择已确认的知识、上下文或决策。每次发送固定所选生效版本。</span>
         <button
@@ -107,7 +113,7 @@ export function ContextPicker({ studio }: { studio: Studio }) {
       <button
         type="button"
         className="button secondary"
-        disabled={busy || !studio.draft.trim()}
+        disabled={busy || !studio.draft.trim() || studio.savingRetrieval}
         onClick={() => {
           setBusy(true);
           setError(null);
@@ -141,6 +147,7 @@ export function ContextPicker({ studio }: { studio: Studio }) {
             预算 {preview.estimatedUnits} / {preview.budgetUnits}（UTF-8
             字节估算）；{preview.messageRefs.length} 条会话消息。
           </p>
+          <RetrievalSummary report={preview.retrieval} />
           {preview.knowledgeRefs?.map((item) => (
             <details key={item.nodeId}>
               <summary>

@@ -72,7 +72,7 @@ test("installed local Ollama answers, cancels and retains conversations after re
       runId: completed.modelRunId,
     });
     expect(detail.run.status).toBe("completed");
-    expect(detail.contextManifest.retrievalUsed).toBe(false);
+    expect(detail.contextManifest.retrievalUsed).toBe(true);
     const terminal = detail.events.at(-1)!;
     expect(terminal.kind).toBe("response_completed");
     const metrics = (

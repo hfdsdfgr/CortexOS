@@ -18,6 +18,7 @@ export interface Conversation {
   workspaceId: string;
   title: string;
   updatedAt: string;
+  autoRetrieval: boolean;
 }
 export interface Message {
   id: string;
@@ -52,6 +53,25 @@ export interface KnowledgeReference extends ContextSelection {
   contentHash: string;
   reason: string;
 }
+export interface RetrievalReport {
+  enabled: boolean;
+  status: "disabled" | "no_search_terms" | "no_match" | "matched";
+  algorithm?: string;
+  includedCount: number;
+  candidateLimit?: number;
+  candidatesTruncated?: boolean;
+  queryTruncated?: boolean;
+  candidates: {
+    nodeId: string;
+    version: number;
+    title: string;
+    content: string;
+    score: number;
+    included: boolean;
+    reason: string;
+    costUnits: number;
+  }[];
+}
 export interface ContextManifest {
   strategy: string;
   estimatedUnits: number;
@@ -59,6 +79,7 @@ export interface ContextManifest {
   estimateNote: string;
   messageRefs: { messageId: string; contentHash: string }[];
   retrievalUsed: boolean;
+  retrieval?: RetrievalReport;
   knowledgeRefs?: KnowledgeReference[];
 }
 export interface ContextSnapshot {
@@ -157,6 +178,12 @@ export function useStudio() {
   const [loading, setLoading] = useState(desktop);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [savingRetrieval, setSavingRetrieval] = useState(false);
+  const [retrievalChange, setRetrievalChange] = useState<{
+    workspaceId: string;
+    conversationId: string | null;
+    value: boolean;
+  } | null>(null);
   const [creatingConversation, setCreatingConversation] = useState(false);
   const view = useRef({ workspaceId, conversationId });
   view.current = { workspaceId, conversationId };
@@ -360,11 +387,68 @@ export function useStudio() {
   const setDraft = (text: string) =>
     setDrafts((current) => ({ ...current, [draftKey]: text }));
 
+  const autoRetrieval =
+    retrievalChange?.workspaceId === workspaceId &&
+    retrievalChange?.conversationId === conversationId
+      ? retrievalChange.value
+      : (conversations.find((item) => item.id === conversationId)
+          ?.autoRetrieval ?? true);
+  const setAutoRetrieval = async (enabled: boolean) => {
+    const workspace = view.current.workspaceId;
+    if (!workspace || savingRetrieval) return;
+    setSavingRetrieval(true);
+    setRetrievalChange({
+      workspaceId: workspace,
+      conversationId: view.current.conversationId,
+      value: enabled,
+    });
+    const savedDraft = draft;
+    const savedSelection = contextSelection;
+    try {
+      let conversation = view.current.conversationId;
+      if (!conversation) {
+        conversation = (await newConversation()).id;
+        setRetrievalChange({
+          workspaceId: workspace,
+          conversationId: conversation,
+          value: enabled,
+        });
+        setDrafts((previous) => ({
+          ...previous,
+          [`${workspace}:${conversation}`]: savedDraft,
+          [draftKey]: "",
+        }));
+        setContexts((previous) => ({
+          ...previous,
+          [`${workspace}:${conversation}`]: savedSelection,
+        }));
+      }
+      await invoke("set_conversation_retrieval", {
+        workspaceId: workspace,
+        conversationId: conversation,
+        enabled,
+      });
+      await refreshConversations(workspace);
+    } catch (value) {
+      reportError(value);
+    } finally {
+      setSavingRetrieval(false);
+      setRetrievalChange(null);
+    }
+  };
+
   const send = async (override?: string) => {
     const workspace = view.current.workspaceId;
     const content = (override ?? draft).trim();
     const selectedContext = contextSelection;
-    if (!workspace || !content || activeRun || pendingSend.current) return;
+    if (
+      !workspace ||
+      !content ||
+      activeRun ||
+      pendingSend.current ||
+      savingRetrieval
+    )
+      return;
     pendingSend.current = true;
     setSending(true);
     setError(null);
@@ -472,6 +556,9 @@ export function useStudio() {
     setDraft,
     contextSelection,
     setContextSelection,
+    autoRetrieval,
+    setAutoRetrieval,
+    savingRetrieval,
     health,
     checking,
     connectionError,

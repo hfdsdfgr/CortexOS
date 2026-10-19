@@ -60,6 +60,7 @@ pub struct Conversation {
     pub workspace_id: String,
     pub title: String,
     pub updated_at: String,
+    pub auto_retrieval: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
