@@ -27,6 +27,7 @@ export default defineConfig({
       testMatch: [
         "desktop.spec.ts",
         "chat.spec.ts",
+        "chat-design.spec.ts",
         "context.spec.ts",
         "trace.spec.ts",
         "knowledge.spec.ts",

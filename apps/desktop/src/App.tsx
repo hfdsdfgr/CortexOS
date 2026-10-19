@@ -1,15 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  BookOpen,
-  CheckCircle2,
-  ChevronRight,
-  MessageSquare,
-  Network,
-  Plus,
-  Settings,
-  Unplug,
-  X,
-} from "lucide-react";
+import { X } from "lucide-react";
+import { AppShell, pages } from "./components/AppShell";
 import {
   KnowledgePage,
   KnowledgeEditor,
@@ -20,14 +11,9 @@ import { GraphPage, RelationshipEditor, type EditEdge } from "./Graph";
 import { SettingsPage } from "./Settings";
 import { errorText, useStudio } from "./studio";
 import "./App.css";
+import "./chat-design.css";
 import { useNavigation, navigate } from "./navigation";
 
-const pages = [
-  { id: "chat", label: "对话", icon: MessageSquare },
-  { id: "knowledge", label: "知识", icon: BookOpen },
-  { id: "graph", label: "图谱", icon: Network },
-  { id: "settings", label: "设置", icon: Settings },
-] as const;
 export default function App() {
   const studio = useStudio();
   const [edgeEdit, setEdgeEdit] = useState<EditEdge | null>(null);
@@ -80,96 +66,11 @@ export default function App() {
     previousPage.current = page;
   }, [page]);
   return (
-    <div className="app-shell">
-      <a
-        className="skip-link"
-        href="#main-content"
-        onClick={(event) => {
-          event.preventDefault();
-          mainRef.current?.focus();
-        }}
-      >
-        跳到主要内容
-      </a>
-      <header className="app-header">
-        <a className="brand" href="#/chat" aria-label="CortexOS 首页">
-          <img src="/cortex.svg" width="30" height="30" alt="" />
-          <span>CortexOS</span>
-        </a>
-        <div className="workspace-picker">
-          <label className="sr-only" htmlFor="current-workspace">
-            当前工作区
-          </label>
-          <select
-            id="current-workspace"
-            value={studio.workspaceId ?? ""}
-            disabled={!studio.desktop || !studio.data || studio.loading}
-            onChange={(event) => {
-              void studio
-                .openWorkspace(event.target.value)
-                .then(() => navigate(page))
-                .catch(studio.reportError);
-            }}
-          >
-            {!studio.workspaceId && <option value="">尚未创建工作区</option>}
-            {studio.data?.workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </select>
-          <button
-            className="icon-button"
-            aria-label="新建工作区"
-            title="新建工作区"
-            disabled={!studio.desktop || !studio.data || studio.loading}
-            onClick={openCreateWorkspace}
-          >
-            <Plus size={17} aria-hidden="true" />
-          </button>
-        </div>
-        <div className="header-status">
-          <span className="preview-label">
-            {studio.desktop ? "认知工作台 Alpha" : "界面预览"}
-          </span>
-          <a
-            href="#/settings"
-            className={`model-status ${studio.health ? "connected" : ""}`}
-          >
-            {studio.health ? (
-              <CheckCircle2 size={15} aria-hidden="true" />
-            ) : (
-              <Unplug size={15} aria-hidden="true" />
-            )}
-            <span>
-              {studio.checking
-                ? "正在检测…"
-                : studio.health
-                  ? studio.health.models.length
-                    ? "Ollama 已连接"
-                    : "尚未安装模型"
-                  : "模型未连接"}
-            </span>
-            <ChevronRight size={14} aria-hidden="true" />
-          </a>
-        </div>
-      </header>
-      <nav className="main-navigation" aria-label="主导航">
-        {pages.map(({ id, label, icon: Icon }) => (
-          <a
-            key={id}
-            href={`#/${id}`}
-            className={`navigation-link ${id === "settings" ? "settings-link" : ""}`}
-            aria-current={page === id ? "page" : undefined}
-          >
-            <Icon size={22} strokeWidth={1.7} aria-hidden="true" />
-            <span>{label}</span>
-          </a>
-        ))}
-        <span className="navigation-version" aria-label="版本 0.1">
-          v0.1
-        </span>
-      </nav>
+    <AppShell
+      studio={studio}
+      page={page}
+      openCreateWorkspace={openCreateWorkspace}
+    >
       <main
         id="main-content"
         className="main-content"
@@ -348,6 +249,6 @@ export default function App() {
           </div>
         </form>
       </dialog>
-    </div>
+    </AppShell>
   );
 }

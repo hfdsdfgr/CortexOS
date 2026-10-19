@@ -317,3 +317,33 @@ Python默认cp950读取中文失败后改用 `py -3 -X utf8 -`；首次 Rust 测
 最终完整回归 **15/15通过，1.2分钟**：8项Edge浏览器、6项原生桌面、1项真实Ollama（4.3秒）。最终观察回答为“验收项目代号为青鹭-742，发布时间是周四。”，使用知识v1，保存7个真实事件，重启快照一致。观察wallMs=1031包含UI检查开销，不作为模型性能基准。artifacts/p0-b已更新为最终测试产物。
 
 提交前 `git diff --cached --check` 通过；0005工作区与索引逐字节相等、均为LF，SHA-256为730b644b5b5b8174b7b11712e148ef7e9c8ca61a69808d27484a8505668edb83。artifacts沿用仓库忽略规则，截图和观察JSON作为本机验收材料保留；测试源码与记录入库。Gittoken.txt未被跟踪。
+
+
+# 2026-10-19 参考图驱动的AI对话UI重构
+
+用户明确要求按参考图重构对话页及必要共享布局，完成后停止。实际文件是docs/design/reference/ai-chat.jpg（4797×2763），非提示中的PNG。用内置view_image读取并分析；本机未找到see技能或脚本，如实说明后使用内置工具。未读取另一张document-history.jpg内容，也未变更知识引擎/数据库/3D语义。
+
+## 实现
+
+拆分AppShell、TopBar、Sidebar、WorkspaceSwitcher、ConversationList、ChatMessage、ChatComposer、ModelStatus、EmptyState、CognitiveInspector；TopBar与AppShell同文件，其余按行为独立。保留studio作为状态与服务接口，原消息操作、IME防误发送、取消/错误/草稿、知识保存和执行快照沿用。浅色设计Tokens限定在reference-chat作用域，其余页面保留现状。参考品牌与未实现功能替换为CortexOS及真实入口；全部使用HTML/CSS/SVG和现有lucide，没有整图背景或新依赖。
+
+新增ui-spec、component-map、visual-review，同步规范和计划覆盖关系。实际文件清单见component-map。用户在工作中自行修改的AGENTS.md不回滚、不纳入UI提交。
+
+## 实际命令与验证
+
+- apps/desktop中 `npm.cmd run typecheck` 首次发现提取后的modelReady未使用；将其用于模型设置入口的真实状态提示后通过。
+- `npm.cmd run build` 通过；`npm.cmd run tauri -- build --debug --no-bundle` 首次因用户运行的exe被占用而失败。未强制结束进程，用户确认“关了”后构建成功。
+- `npm.cmd exec --yes --package=prettier@3.9.10 -- prettier --write ...` 整理本轮组件、CSS、测试与配置，未修改项目依赖或锁文件。
+- `npx.cmd playwright test --project edge` 初次6/8：两项窄屏测试仍假设导航常驻。测试改为先打开实际侧栏抽屉后导航，后续完整回归通过。
+- `npx.cmd playwright test chat-design.spec.ts --project desktop` 原生专项1/1通过，10.3秒。检查1366×768、1920×1080空态/消息、流式停止入口、真实执行检查器、离线草稿、375px抽屉及Escape焦点。
+- 先设置 `$env:CORTEXOS_REAL_CONTEXT='1'`，再运行 `npx.cmd playwright test`：完整 **16/16通过，1.6分钟**（8项Edge、7项原生桌面、1项真实Ollama）。真实模型检查17.8秒；运行与快照链路继续通过，观察JSON保留在artifacts/ui-chat。取消、异常、重启持久化、知识审核与图谱定位沿用既有测试。
+- 在上述回归后补充窄屏抽屉只挂载一份Sidebar，避免重复工作区label/id；再次构建成功。最终产物index-DuLV9sH4.js、index-DsGy0J-I.css、GraphViewport-ye0uV-Ea.js。图模块933kB警告和既有Three.Clock弃用提示仍保留，未声称解决图谱性能。
+- 最终增量检查命令 `npx.cmd playwright test app.spec.ts chat-design.spec.ts`，结果记录在下方。
+
+## 截图与限制
+
+实际截图位于artifacts/ui-chat，均为独立测试工作区。使用Windows System.Drawing将参考与实际截图等比例缩小并排，未安装Pillow（尝试导入后提示缺失）。人工查看参考、空态、对话、窄屏与对比图，调整欢迎区垂直位置和重复焦点框。未生成虚构相似度分数。
+
+原生默认DPR1.25；通过Playwright设置WebView2 CSS视口，不等于更改Windows显示缩放。未完成150%/200%系统缩放、完整读屏或长会话性能专项。参考没有对话/加载状态，这些按产品状态补充；视觉差异与下一轮建议见visual-review。本轮完成后等待用户确认，不进入P1或重做其他模块。
+
+最终增量检查 **8/8通过，18.9秒**（7项浏览器导航/尺寸，1项原生视觉与行为专项8.4秒）；工作区选择器唯一性断言通过。最终截图覆盖至artifacts/ui-chat。完整回归后仅追加了抽屉挂载修正，使用此针对性回归验证，未把前一轮结果冒称为最终二进制全量重跑。

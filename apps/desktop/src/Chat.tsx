@@ -1,127 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  BookOpen,
-  ArrowDown,
-  ArrowUp,
-  Check,
-  Copy,
-  GitBranch,
-  HardDrive,
-  MessageSquare,
-  PanelLeft,
-  Pencil,
-  Plus,
-  Square,
-  X,
-} from "lucide-react";
+import { ArrowDown, Pencil } from "lucide-react";
 import { navigate, useNavigation } from "./navigation";
-import { ContextPicker } from "./ContextPicker";
-import { errorText, type Message, type RunDetail, type Studio } from "./studio";
-
-const statusNames: Record<string, string> = {
-  streaming: "生成中",
-  completed: "已完成",
-  cancelled: "已停止",
-  failed: "生成失败",
-  interrupted: "生成中断",
-};
-const eventNames: Record<string, string> = {
-  request_received: "收到问题",
-  context_prepared: "准备上下文",
-  model_called: "开始本地模型调用尝试（旧记录）",
-  model_inspection_started: "开始检查本地模型",
-  model_inspection_completed: "本地模型检查完成",
-  model_request_started: "开始发送模型请求",
-  model_response_received: "收到模型服务响应",
-  response_completed: "回答完成",
-  run_cancelled: "用户停止生成",
-  run_failed: "生成失败",
-  run_interrupted: "恢复中断记录",
-};
-
-function Conversations({
-  studio,
-  onSelect,
-}: {
-  studio: Studio;
-  onSelect?: () => void;
-}) {
-  return (
-    <>
-      <div className="sidebar-heading">
-        <h2>会话</h2>
-        <span className="count">{studio.conversations.length}</span>
-      </div>
-      <button
-        className="button secondary new-conversation"
-        disabled={
-          !studio.desktop ||
-          !studio.workspaceId ||
-          studio.loading ||
-          studio.creatingConversation ||
-          studio.sending
-        }
-        onClick={() => {
-          void studio
-            .newConversation()
-            .then((conversation) => {
-              navigate("chat", {
-                workspace: conversation.workspaceId,
-                conversation: conversation.id,
-              });
-              onSelect?.();
-            })
-            .catch(studio.reportError);
-        }}
-      >
-        <Plus size={16} aria-hidden="true" />
-        {studio.creatingConversation ? "正在创建…" : "新建对话"}
-      </button>
-      {studio.conversations.length ? (
-        <ul className="conversation-list">
-          {studio.conversations.map((conversation) => (
-            <li key={conversation.id}>
-              <button
-                className="conversation-item"
-                aria-current={
-                  conversation.id === studio.conversationId ? "true" : undefined
-                }
-                title={conversation.title}
-                onClick={() => {
-                  void studio
-                    .openConversation(conversation.workspaceId, conversation.id)
-                    .then(() => {
-                      navigate("chat", {
-                        workspace: conversation.workspaceId,
-                        conversation: conversation.id,
-                      });
-                      onSelect?.();
-                    })
-                    .catch(studio.reportError);
-                }}
-              >
-                <MessageSquare size={15} aria-hidden="true" />
-                <span>{conversation.title}</span>
-                {studio.activeRun?.conversationId === conversation.id && (
-                  <span className="running-mark" aria-label="生成中" />
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="sidebar-empty">
-          <MessageSquare size={22} aria-hidden="true" />
-          <p>还没有会话</p>
-        </div>
-      )}
-      <p className="sidebar-footer">
-        <HardDrive size={14} aria-hidden="true" />
-        {studio.desktop ? "会话自动保存在本机" : "浏览器仅供界面预览"}
-      </p>
-    </>
-  );
-}
+import { ChatMessage } from "./components/ChatMessage";
+import { ChatComposer } from "./components/ChatComposer";
+import { EmptyState } from "./components/EmptyState";
+import { CognitiveInspector } from "./components/CognitiveInspector";
+import { errorText, type Message, type Studio } from "./studio";
 
 export function ChatPage({
   studio,
@@ -160,7 +44,6 @@ export function ChatPage({
   const [showJump, setShowJump] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  const drawer = useRef<HTMLDialogElement>(null);
   const renameDialog = useRef<HTMLDialogElement>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [renameError, setRenameError] = useState<string | null>(null);
@@ -201,10 +84,9 @@ export function ChatPage({
   };
 
   return (
-    <div className="chat-layout live-chat-layout">
-      <aside className="conversation-sidebar" aria-label="会话列表">
-        <Conversations studio={studio} />
-      </aside>
+    <div
+      className={`chat-layout live-chat-layout ${studio.messages.length ? "has-messages" : "is-empty"}`}
+    >
       <section className="chat-main" aria-labelledby="page-title">
         <header className="page-heading">
           <div>
@@ -214,14 +96,6 @@ export function ChatPage({
             )}
           </div>
           <div className="heading-actions">
-            <button
-              className="button text-button mobile-conversation-button"
-              aria-label="打开会话列表"
-              onClick={() => drawer.current?.showModal()}
-            >
-              <PanelLeft size={18} aria-hidden="true" />
-              会话
-            </button>
             {conversation && (
               <button
                 className="icon-button"
@@ -277,181 +151,26 @@ export function ChatPage({
           ) : studio.messages.length ? (
             <div className="messages">
               {studio.messages.map((message) => (
-                <article
-                  className={`message ${message.role}`}
+                <ChatMessage
                   key={message.id}
-                  id={`message-${message.id}`}
-                  tabIndex={-1}
-                  data-located={route.message === message.id || undefined}
-                  aria-label={message.role === "user" ? "你的问题" : "模型回答"}
-                >
-                  <div className="message-heading">
-                    <strong>
-                      {message.role === "user" ? "你" : "本地助手"}
-                    </strong>
-                    {message.role === "assistant" && (
-                      <span
-                        className={`message-status ${message.finishReason === "length" ? "limited" : message.status}`}
-                      >
-                        {message.finishReason === "length"
-                          ? "达到输出上限"
-                          : (statusNames[message.status] ?? message.status)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="message-content">
-                    {message.content ||
-                      (message.status === "streaming"
-                        ? "正在准备回答…"
-                        : "本次未生成可用文字。")}
-                  </div>
-                  {message.role === "assistant" &&
-                    message.finishReason === "length" && (
-                      <p className="output-limit-note">
-                        已达到输出上限，回答可能未完整。可在设置中增加“最大输出”后重试。
-                      </p>
-                    )}
-                  {message.role === "assistant" && (
-                    <div className="message-actions">
-                      <button
-                        className="button text-button"
-                        disabled={!message.content}
-                        onClick={() => {
-                          void copy(message.id, message.content);
-                        }}
-                      >
-                        {copied === message.id ? (
-                          <Check size={14} aria-hidden="true" />
-                        ) : (
-                          <Copy size={14} aria-hidden="true" />
-                        )}
-                        {copied === message.id ? "已复制" : "复制"}
-                      </button>
-                      <button
-                        className="button text-button"
-                        disabled={
-                          !message.content || message.status === "streaming"
-                        }
-                        onClick={(event) => {
-                          const selection = window.getSelection();
-                          const article =
-                            event.currentTarget.closest("article");
-                          const selected = selection?.toString() ?? "";
-                          const inside =
-                            selection?.anchorNode &&
-                            selection?.focusNode &&
-                            article
-                              ?.querySelector(".message-content")
-                              ?.contains(selection.anchorNode) &&
-                            article
-                              ?.querySelector(".message-content")
-                              ?.contains(selection.focusNode);
-                          onSaveKnowledge(
-                            message,
-                            Array.from(
-                              inside &&
-                                selected &&
-                                message.content.includes(selected)
-                                ? selected
-                                : message.content,
-                            )
-                              .slice(0, 20000)
-                              .join(""),
-                          );
-                        }}
-                      >
-                        <BookOpen size={14} aria-hidden="true" />
-                        保存为知识
-                      </button>
-                      {message.modelRunId && (
-                        <>
-                          <button
-                            className="button text-button"
-                            onClick={() => setSelectedRun(message.modelRunId)}
-                          >
-                            <GitBranch size={14} aria-hidden="true" />
-                            执行过程
-                          </button>
-                          <button
-                            className="button text-button"
-                            onClick={() =>
-                              navigate("graph", {
-                                workspace: message.workspaceId,
-                                mode: "execution",
-                                run: message.modelRunId,
-                              })
-                            }
-                          >
-                            3D 执行轨迹
-                          </button>
-                        </>
-                      )}
-                      {(["failed", "cancelled", "interrupted"].includes(
-                        message.status,
-                      ) ||
-                        message.finishReason === "length") && (
-                        <button
-                          className="button text-button"
-                          disabled={
-                            !modelReady || !!studio.activeRun || studio.sending
-                          }
-                          onClick={() => {
-                            const question = studio.messages.find(
-                              (item) =>
-                                item.role === "user" &&
-                                item.modelRunId === message.modelRunId,
-                            );
-                            if (question) void send(question.content);
-                          }}
-                        >
-                          重试
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </article>
+                  message={message}
+                  located={route.message === message.id}
+                  copied={copied}
+                  copy={copy}
+                  onSaveKnowledge={onSaveKnowledge}
+                  setSelectedRun={setSelectedRun}
+                  modelReady={modelReady}
+                  studio={studio}
+                  send={send}
+                />
               ))}
             </div>
           ) : (
-            <div className="chat-empty">
-              <div className="empty-symbol">
-                <MessageSquare size={30} strokeWidth={1.5} aria-hidden="true" />
-              </div>
-              <h2>
-                {!studio.desktop
-                  ? "在桌面程序中开始"
-                  : !studio.workspaceId
-                    ? "给项目一个独立的工作区"
-                    : !modelReady
-                      ? "连接本地模型，开始讨论"
-                      : "从一个问题开始"}
-              </h2>
-              <p>
-                {!studio.desktop
-                  ? "打开桌面程序，创建工作区并开始对话。"
-                  : !studio.workspaceId
-                    ? "创建工作区，集中保存这个项目的讨论。"
-                    : !modelReady
-                      ? "在设置中检测 Ollama，选择已安装模型。"
-                      : "梳理想法、拆解问题，继续推进你的项目。"}
-              </p>
-              {studio.desktop && !studio.workspaceId ? (
-                <button
-                  className="button primary"
-                  disabled={!studio.data || studio.loading}
-                  onClick={onCreateWorkspace}
-                >
-                  <Plus size={16} aria-hidden="true" />
-                  创建工作区
-                </button>
-              ) : (
-                !modelReady && (
-                  <a className="button primary" href="#/settings">
-                    查看模型设置
-                  </a>
-                )
-              )}
-            </div>
+            <EmptyState
+              studio={studio}
+              modelReady={modelReady}
+              onCreateWorkspace={onCreateWorkspace}
+            />
           )}
         </div>
         {showJump && (
@@ -469,107 +188,20 @@ export function ChatPage({
             回到最新内容
           </button>
         )}
-        <div className="composer-area">
-          <ContextPicker
-            key={`${studio.workspaceId}:${studio.conversationId}`}
-            studio={studio}
-          />
-          <div className="composer">
-            <label className="sr-only" htmlFor="message">
-              你的问题
-            </label>
-            <textarea
-              id="message"
-              rows={2}
-              value={studio.draft}
-              onChange={(event) => studio.setDraft(event.target.value)}
-              placeholder={
-                studio.workspaceId
-                  ? "输入问题…"
-                  : "创建工作区后，在这里输入问题…"
-              }
-              disabled={
-                !studio.desktop ||
-                !studio.workspaceId ||
-                studio.sending ||
-                studio.creatingConversation ||
-                studio.loadingMessages
-              }
-              onKeyDown={(event) => {
-                if (
-                  event.key === "Enter" &&
-                  !event.shiftKey &&
-                  !event.nativeEvent.isComposing &&
-                  event.keyCode !== 229
-                ) {
-                  event.preventDefault();
-                  if (canSend) void send();
-                }
-              }}
-            />
-            <div className="composer-toolbar">
-              <span>
-                {studio.settings.model}
-                {!modelReady && " · 尚未就绪"}
-              </span>
-              {currentRunning ? (
-                <button
-                  className="button secondary stop-button"
-                  disabled={cancelling}
-                  onClick={() => {
-                    setCancelling(true);
-                    void studio.cancel().catch((value) => {
-                      setCancelling(false);
-                      studio.reportError(value);
-                    });
-                  }}
-                >
-                  <Square size={13} aria-hidden="true" />
-                  {cancelling ? "正在停止…" : "停止生成"}
-                </button>
-              ) : (
-                <button
-                  className="send-button"
-                  disabled={!canSend}
-                  onClick={() => {
-                    void send();
-                  }}
-                  aria-label={studio.sending ? "正在发送" : "发送消息"}
-                >
-                  <ArrowUp size={19} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          </div>
-          <details className="composer-help">
-            <summary>对话说明与快捷键</summary>
-            <p>
-              Enter 发送，Shift+Enter
-              换行。上下文按预算选取最近完整对话，当前不使用文件检索。回答请结合依据判断。
-            </p>
-            {!studio.desktop && <p>浏览器预览不会读取或保存本地数据。</p>}
-          </details>
-        </div>
+        <ChatComposer
+          studio={studio}
+          modelReady={modelReady}
+          currentRunning={currentRunning}
+          cancelling={cancelling}
+          setCancelling={setCancelling}
+          canSend={canSend}
+          send={send}
+        />
         <p className="sr-only" role="status">
           {currentRunning ? "本地助手正在生成回答" : "当前没有生成任务"}
           {copied ? "，回答已复制" : ""}
         </p>
       </section>
-      <dialog className="side-drawer" ref={drawer} aria-label="会话列表">
-        <div className="drawer-close">
-          <button
-            className="icon-button"
-            aria-label="关闭会话列表"
-            onClick={() => drawer.current?.close()}
-          >
-            <X size={20} aria-hidden="true" />
-          </button>
-        </div>
-        <Conversations
-          studio={studio}
-          onSelect={() => drawer.current?.close()}
-        />
-      </dialog>
       <dialog
         className="form-dialog"
         ref={renameDialog}
@@ -617,193 +249,11 @@ export function ChatPage({
           </div>
         </form>
       </dialog>
-      <RunInspector
+      <CognitiveInspector
         runId={selectedRun}
         studio={studio}
         onClose={() => setSelectedRun(null)}
       />
     </div>
-  );
-}
-
-function RunInspector({
-  runId,
-  studio,
-  onClose,
-}: {
-  runId: string | null;
-  studio: Studio;
-  onClose: () => void;
-}) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const [detail, setDetail] = useState<RunDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const completion = detail?.events.find(
-    (event) => event.kind === "response_completed",
-  )?.payload as { metrics?: { finishReason?: string } } | undefined;
-  const outputLimited = completion?.metrics?.finishReason === "length";
-  useEffect(() => {
-    if (!runId) return;
-    let current = true;
-    setDetail(null);
-    setError(null);
-    dialog.current?.showModal();
-    const load = () =>
-      studio
-        .getRun(runId)
-        .then((result) => {
-          if (current) setDetail(result);
-        })
-        .catch((value) => {
-          if (current) setError(errorText(value));
-        });
-    void load();
-    const timer = window.setInterval(() => {
-      void load();
-    }, 1000);
-    return () => {
-      current = false;
-      window.clearInterval(timer);
-    };
-  }, [runId, studio.getRun]);
-  return (
-    <dialog
-      ref={dialog}
-      className="side-drawer run-drawer"
-      aria-labelledby="run-title"
-      onClose={onClose}
-    >
-      <div className="drawer-heading">
-        <h2 id="run-title">本次执行</h2>
-        <button
-          className="icon-button"
-          aria-label="关闭执行详情"
-          onClick={() => dialog.current?.close()}
-        >
-          <X size={20} aria-hidden="true" />
-        </button>
-      </div>
-      {error ? (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      ) : !detail ? (
-        <p role="status">正在读取执行记录…</p>
-      ) : (
-        <>
-          <dl className="run-summary">
-            <div>
-              <dt>模型</dt>
-              <dd>{detail.run.modelId}</dd>
-            </div>
-            <div>
-              <dt>状态</dt>
-              <dd>
-                {outputLimited
-                  ? "达到输出上限"
-                  : (statusNames[detail.run.status] ??
-                    (detail.run.status === "running"
-                      ? "生成中"
-                      : detail.run.status))}
-              </dd>
-            </div>
-            <div>
-              <dt>开始时间</dt>
-              <dd>{new Date(detail.run.startedAt).toLocaleString("zh-CN")}</dd>
-            </div>
-            <div>
-              <dt>上下文 / 最大输出</dt>
-              <dd>
-                {detail.settings.numCtx} / {detail.settings.numPredict}
-              </dd>
-            </div>
-            <div>
-              <dt>温度 / 超时</dt>
-              <dd>
-                {detail.settings.temperature} / {detail.settings.timeoutSeconds}{" "}
-                秒
-              </dd>
-            </div>
-          </dl>
-          {detail.run.errorMessage && (
-            <p className="form-error">{detail.run.errorMessage}</p>
-          )}
-          <h3>实际执行步骤</h3>
-          <ol className="execution-timeline">
-            {detail.events.map((event) => (
-              <li key={event.seq}>
-                <span className="timeline-dot" />
-                <div>
-                  <strong>{eventNames[event.kind] ?? event.kind}</strong>
-                  <span>
-                    {new Date(event.occurredAt).toLocaleTimeString("zh-CN")} ·
-                    距开始{" "}
-                    {Math.max(
-                      0,
-                      new Date(event.occurredAt).getTime() -
-                        new Date(detail.run.startedAt).getTime(),
-                    )}{" "}
-                    ms
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <h3>使用的上下文</h3>
-          {detail.contextManifest.knowledgeRefs?.map((item) => (
-            <details key={item.nodeId} className="knowledge-disclosure">
-              <summary>
-                {item.title} · 本次使用 v{item.version}
-              </summary>
-              <p className="context-content">{item.content}</p>
-              <p>用户选定的参考资料；纳入上下文不代表回答已验证。</p>
-              <code>{item.nodeId}</code>
-            </details>
-          ))}
-          {detail.snapshot ? (
-            <details className="advanced-settings">
-              <summary>完整请求快照</summary>
-              <p>本地保存的实际请求；模型仅按标签记录，不保证逐字重现。</p>
-              {detail.snapshot.request.messages.map((item, index) => (
-                <details key={index}>
-                  <summary>
-                    {index + 1}. {item.role}
-                  </summary>
-                  <p className="context-content">{item.content}</p>
-                </details>
-              ))}
-              <p className="identifier">
-                SHA-256：{detail.snapshot.requestHash}
-              </p>
-            </details>
-          ) : (
-            <p>历史记录未保存完整快照，仅有上下文清单。</p>
-          )}
-          <p className="muted">
-            {detail.contextManifest.messageRefs.length}{" "}
-            条会话消息；未使用文件检索。
-          </p>
-          <p className="small-note">
-            预算占用 {detail.contextManifest.estimatedUnits} /{" "}
-            {detail.contextManifest.budgetUnits}。
-            {detail.contextManifest.estimateNote}。
-          </p>
-          <details className="advanced-settings">
-            <summary>运行标识与消息定位</summary>
-            <p className="identifier">{detail.run.id}</p>
-            {detail.contextManifest.messageRefs.map((reference) => (
-              <p className="identifier" key={reference.messageId}>
-                {reference.messageId}
-                <br />
-                SHA-256：{reference.contentHash}
-              </p>
-            ))}
-          </details>
-          <p className="small-note">
-            这些记录来自应用实际执行的步骤，不代表模型的内部思维。
-          </p>
-        </>
-      )}
-    </dialog>
   );
 }
