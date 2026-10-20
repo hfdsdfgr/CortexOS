@@ -112,7 +112,7 @@ export default function App() {
         )}
         {route.back && (
           <a className="button text-button return-to-trace" href={route.back}>
-            返回执行轨迹
+            {route.back.startsWith("#/chat?") ? "返回回答" : "返回执行轨迹"}
           </a>
         )}
         {page === "chat" && (

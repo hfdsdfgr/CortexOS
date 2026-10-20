@@ -22,6 +22,7 @@ export const eventLabels: Record<string, string> = {
   model_request_started: "开始请求模型",
   model_response_received: "收到模型响应",
   response_completed: "回答完成",
+  citations_checked: "检查引用位置",
   run_failed: "运行失败",
   run_cancelled: "用户停止",
   run_interrupted: "恢复中断记录",
@@ -66,6 +67,8 @@ export function projectExecution(data: ExecutionData) {
       model_request_started: "开始向本机模型服务发送已保存的请求。",
       model_response_received: "本机模型服务已返回成功响应。",
       response_completed: "生成已结束，回答已保存。",
+      citations_checked:
+        "已检查引用编号和文字范围是否存在于本次资料；没有核实回答内容是否正确。",
       run_cancelled: "用户停止了生成，保留已收到的文字。",
       run_interrupted:
         "启动时发现上次运行未结束；此时间为恢复记录时间，实际中断时刻未知。",

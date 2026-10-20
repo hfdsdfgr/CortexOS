@@ -474,3 +474,35 @@ artifacts/p1-b1保留真正原生选择后显示的来源窗口截图，已查�
 实际验证：`npm.cmd --prefix apps/desktop run typecheck`通过；固定版本Prettier整理修改组件；`cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml`完成。`npm.cmd run tauri -- build --debug --no-bundle`包含类型检查与前端构建，最终结果记录于下方。按代码逐项核对旧字段/事件ID/参数范围与新显示名称，不将构建通过当作界面实测。既有图模块约933kB告警保留；本轮未生成新截图，先前截图的用词不代表最新版本。
 
 桌面构建成功：index-CU-C3x5Z.js、index-B2jBWQkw.css、GraphViewport-BdwdcTdd.js。`git diff --check`通过；未运行测试、未新增截图。
+
+# 2026-10-20 P1-B2 回答引用与固定文字定位
+
+用户要求继续推进；按已定 P1-B1→B2 顺序完成引用切片，停止在 B2 门槛。先检查总纲、开发规范、实施/纠偏计划、数据库终态保存/恢复、上下文组装、消息读取、聊天及来源窗口。采用 ADR0010：请求内资料编号 `[资料1]` 或 `[资料1:2-3]`，后者是本次知识正文的1基闭区间，不是原文件行号。知识编号及格式说明真实进入发送请求，其完整字节开销使用原容量计算；不改变模型服务接口或权限。
+
+## 实际修改
+
+- 新增 `src-tauri/src/citations.rs`：从固定 manifest 解析实际回答标记，检查编号及行范围，保留原文、无效原因及 UTF-16 位置；扫描残缺标记有128字符边界，避免逐标记扫描全部剩余输出。
+- 修改 Rust `db.rs`、`models.rs`、`lib.rs`：manifest 升至4，保存 citationProtocol/citationId；统一 finish 事务追加实际 citations_checked 与回答/终态，取消、失败和启动恢复复用；load_messages 返回已保存结果。已有 SQL 迁移、数据库版本7及锁文件均无改动，无新增命令/能力。
+- 新增 `components/AnswerContent.tsx`，复用 `ChatMessage`、SourceBrowser（onDraft 可选，知识页原回调保留）、知识版本导航及聊天样式。编号按钮打开固定全文及高亮行，错误/缺失引用持续提示，来源起源和说明按需展开。复制/保存知识仍用原始消息文字。导航/App 支持从知识版本返回原回答并恢复焦点；studio 增加可选引用类型。
+- `CognitiveInspector.tsx`、`execution-data.ts` 展示真实“检查引用位置”事件，明确没有核实回答内容。不存在的编号不回退到未选知识、其他运行或最新版本。来源起源与知识正文分别展示，避免知识修订被误解为文件也已修改。
+- 新增 `tests/citations.spec.ts` 一条必要原生整链路场景并加入 Playwright 配置；更新 README、ADR0010、architecture、database-schema、implementation-plan、refactoring-plan、test-plan 和本日志。保留用户 AGENTS.md、desktop.spec.ts 行尾状态以及 reference 文件，不纳入本次提交。
+
+## 实际命令及结果
+
+- `npm.cmd run typecheck`（apps/desktop）：通过；两次桌面构建内也执行类型检查。
+- `cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml`完成。随后的 `cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked` 初次发现 Message 的 Value 类型缺少限定名，改为 serde_json::Value 后通过。恢复与本任务无关的 ollama.rs 格式变化。
+- 第一次 apply_patch 因 manifest 的整行上下文不匹配失败，未写入部分文件；修正匹配后成功。窄范围读取曾有错误路径/PowerShell通配符，随后按实际文件读取，不把读取失败当实现缺陷。
+- `npm.cmd exec --offline --package=prettier@3.9.10 -- prettier --write ...` 因离线缓存响应缺失失败；正常 `npm.cmd exec --yes --package=prettier@3.9.10 -- prettier --write ...` 完成（AnswerContent、ChatMessage、CognitiveInspector、SourceBrowser、navigation、App、studio、execution-data、chat-design.css、citations.spec.ts、playwright.config.ts；部分未变）。未新增依赖。
+- `npm.cmd run tauri -- build --debug --no-bundle`两次成功，最终资源 index-BIsfhK4W.js、index-BTe-S12r.css、GraphViewport-7-EKIW-4.js；最终二进制位于 src-tauri/target/debug/cortexos-desktop.exe。
+- `npx.cmd playwright test citations.spec.ts --project desktop --output ../../artifacts/p1-b2` 首轮 **1/1通过，6.7秒**；补上实际引用检查事件在3D图中的入口和说明，最终二进制复查 **1/1通过，5.9秒**（用例3.8秒）。未跑单元测试或全量回归。
+- `git diff --check`通过；`git rev-parse --show-toplevel`确认 D:/vibecoding/CortexOS。提交/推送见本轮最终记录。
+
+该场景捕获真实 HTTP 请求并与保存请求逐项比较；验证全文及指定行、重复同文行、中文/emoji位置、未选编号/越界/错误起点/残缺标记、无引用、生成时未检查、停止后部分引用、知识版本跳转与返回焦点、实际图节点、知识v2/文件v2/停用后的历史v1、跨工作区拒绝、正常关闭重启。1366×768、1600×900、1920×1080无页面横向溢出，抽屉范围及Escape恢复焦点通过。artifacts/p1-b2有三个真实原生截图（DPR1.25），已查看1366和1920；非静态背景。
+
+## 限制及停止点
+
+本轮模型由可控本地 HTTP 服务返回合成回答，未重跑真实 Ollama；不能据此保证模型总会标注引用。位置检查不验证论断真伪、引文是否支持论断或模型是否遵守文件里的指令；权限边界保持由Rust控制。无本协议的旧运行直接保留原样，失败/启动恢复共用 finish 路径做代码检查，未新增故障重启或旧迁移实测。系统150%缩放、完整读屏、安装包及性能基准未验收；既有约933kB图模块告警仍在。
+
+当前 P1-B 约定的文件→确认知识→真实请求→引用→历史资料闭环已交付。文件仍不直接全文检索，不支持PDF/Office、目录监控或永久删除；P1-C图交互与性能、P2决策/比较/评估保持待实施。完成本切片后停止。
+
+仓库操作：已确认独立根目录后 `git switch -c codex/answer-citations`，显式 `git add -- ...` 本轮23个文件，`git diff --cached --check`通过。使用 `git commit -m "feat: resolve answer citations against saved run inputs"` 提交，正常 `git push -u origin codex/answer-citations` 复用仓库凭据；最终结果以本轮工具输出及汇报为准。补看最终1600px截图，三个目标尺寸均已查看。

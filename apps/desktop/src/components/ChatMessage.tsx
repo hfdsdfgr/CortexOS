@@ -1,6 +1,7 @@
 import { BookOpen, Check, Copy, GitBranch } from "lucide-react";
 import { navigate } from "../navigation";
 import type { Message, Studio } from "../studio";
+import { AnswerContent } from "./AnswerContent";
 const statusNames: Record<string, string> = {
   streaming: "生成中",
   completed: "已完成",
@@ -49,12 +50,15 @@ export function ChatMessage({
           </span>
         )}
       </div>
-      <div className="message-content">
-        {message.content ||
-          (message.status === "streaming"
+      {message.content ? (
+        <AnswerContent message={message} />
+      ) : (
+        <div className="message-content">
+          {message.status === "streaming"
             ? "正在准备回答…"
-            : "本次未生成可用文字。")}
-      </div>
+            : "本次未生成可用文字。"}
+        </div>
+      )}
       {message.role === "assistant" && message.finishReason === "length" && (
         <p className="output-limit-note">
           已达到长度上限，回答可能不完整。可在设置中增加“回答长度上限（Token）”后重试。

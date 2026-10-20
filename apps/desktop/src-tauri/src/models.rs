@@ -75,6 +75,7 @@ pub struct Message {
     pub model_run_id: Option<String>,
     pub created_at: String,
     pub finish_reason: Option<String>,
+    pub citations: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Serialize)]

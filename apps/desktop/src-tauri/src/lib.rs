@@ -1,3 +1,4 @@
+mod citations;
 mod commands;
 mod db;
 mod execution;

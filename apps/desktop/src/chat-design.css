@@ -628,3 +628,83 @@
 .retrieval-summary li span {
   color: var(--muted);
 }
+
+.answer-citation {
+  display: inline;
+  padding: 2px 3px;
+  border: 0;
+  border-radius: 2px;
+  color: var(--primary);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.answer-citation:hover {
+  background: var(--surface-hover);
+}
+.answer-citation.invalid {
+  color: var(--warning);
+  text-decoration-style: wavy;
+}
+.citation-warning {
+  color: var(--warning);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.citation-drawer {
+  width: min(640px, calc(100vw - 24px));
+  gap: 16px;
+}
+.citation-drawer h3,
+.citation-drawer p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.citation-drawer h3 {
+  font-size: 20px;
+}
+.citation-meta {
+  font-size: 14px;
+}
+.citation-lines {
+  max-height: 52dvh;
+  overflow: auto;
+  flex-shrink: 0;
+}
+.citation-line {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  padding: 6px 8px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.citation-line[data-selected] {
+  background: var(--selected);
+}
+.citation-line-number {
+  font-size: 13px;
+  user-select: none;
+}
+.citation-origin {
+  line-height: 1.7;
+}
+.citation-origin summary {
+  cursor: pointer;
+}
+.citation-origin p,
+.citation-origin button {
+  margin-top: 12px;
+}
+.citation-origin blockquote {
+  margin: 12px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.citation-origin code {
+  overflow-wrap: anywhere;
+}

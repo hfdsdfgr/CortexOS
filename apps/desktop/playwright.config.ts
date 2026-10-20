@@ -34,6 +34,7 @@ export default defineConfig({
         "knowledge.spec.ts",
         "knowledge-layout.spec.ts",
         "sources.spec.ts",
+        "citations.spec.ts",
         "graph.spec.ts",
       ],
     },

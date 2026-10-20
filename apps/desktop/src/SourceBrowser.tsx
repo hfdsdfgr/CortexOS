@@ -46,7 +46,7 @@ export function SourceBrowser({
   workspace: string;
   initial?: SourceRef;
   onClose: () => void;
-  onDraft: (request: EditKnowledge) => void;
+  onDraft?: (request: EditKnowledge) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const revoke = useRef<HTMLDialogElement>(null);
@@ -332,30 +332,32 @@ export function SourceBrowser({
                         onChange={(event) => setEnd(Number(event.target.value))}
                       />
                     </label>
-                    <button
-                      className="button primary"
-                      disabled={
-                        busy ||
-                        !selected.document.enabled ||
-                        !excerpt.trim() ||
-                        [...excerpt].length > 20000
-                      }
-                      onClick={() => {
-                        onDraft({
-                          workspaceId: workspace,
-                          sourceDocument: {
-                            sourceId: selected.document.id,
-                            version: selected.version,
-                            startLine: start,
-                            endLine: end,
-                          },
-                          sourceName: selected.document.name,
-                          excerpt,
-                        });
-                      }}
-                    >
-                      将所选文字存为知识草稿
-                    </button>
+                    {onDraft && (
+                      <button
+                        className="button primary"
+                        disabled={
+                          busy ||
+                          !selected.document.enabled ||
+                          !excerpt.trim() ||
+                          [...excerpt].length > 20000
+                        }
+                        onClick={() => {
+                          onDraft({
+                            workspaceId: workspace,
+                            sourceDocument: {
+                              sourceId: selected.document.id,
+                              version: selected.version,
+                              startLine: start,
+                              endLine: end,
+                            },
+                            sourceName: selected.document.name,
+                            excerpt,
+                          });
+                        }}
+                      >
+                        将所选文字存为知识草稿
+                      </button>
+                    )}
                   </div>
                   {!valid && (
                     <p role="alert" className="form-error">

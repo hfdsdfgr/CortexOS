@@ -29,6 +29,7 @@ export interface Message {
   status: string;
   modelRunId: string | null;
   finishReason: string | null;
+  citations?: CitationReport | null;
   createdAt: string;
 }
 export interface RunSummary {
@@ -47,11 +48,32 @@ export interface ContextSelection {
   version: number;
 }
 export interface KnowledgeReference extends ContextSelection {
+  citationId?: string;
   title: string;
   kind: string;
   content: string;
   contentHash: string;
   reason: string;
+  sourceEvidence?: Omit<
+    import("./SourceBrowser").SourceEvidence,
+    "knowledgeVersion"
+  >[];
+}
+export interface CitationOccurrence {
+  start: number;
+  end: number;
+  label: string;
+  referenceId: string | null;
+  startLine: number | null;
+  endLine: number | null;
+  error: string | null;
+}
+export interface CitationReport {
+  version: number;
+  scope: "reference_locations_only";
+  references: KnowledgeReference[];
+  occurrences: CitationOccurrence[];
+  availableCount: number;
 }
 export interface RetrievalReport {
   enabled: boolean;

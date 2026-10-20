@@ -20,6 +20,7 @@ const eventNames: Record<string, string> = {
   model_request_started: "开始发送模型请求",
   model_response_received: "收到模型服务响应",
   response_completed: "回答完成",
+  citations_checked: "检查引用位置",
   run_cancelled: "用户停止生成",
   run_failed: "生成失败",
   run_interrupted: "恢复中断记录",

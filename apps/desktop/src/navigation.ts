@@ -26,7 +26,7 @@ export function useNavigation() {
       message: params.get("message"),
       version: Number.isSafeInteger(number) && number > 0 ? number : undefined,
       mode: params.get("mode") === "execution" ? "execution" : "knowledge",
-      back: params.get("back")?.startsWith("#/graph?")
+      back: /^(#\/graph\?|#\/chat\?)/.test(params.get("back") ?? "")
         ? params.get("back")
         : null,
     };

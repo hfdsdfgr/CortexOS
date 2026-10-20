@@ -91,3 +91,9 @@ conversation_retrieval_settings保存conversation_id主键、workspace_id、enab
 source_documents按工作区/规范路径唯一，保存当前版本、启用状态和并发revision；source_versions保存不可变UTF-8规范化文本、文本哈希、原字节哈希及时间。source_events追加imported/reimported/reauthorized/revoked。knowledge_source_links按(node_id,knowledge_version)固定source_id/source_version与1基起止行/摘录；复合外键与工作区触发器阻止串域，更新/删除不可变。来源行定位基于移除BOM、CRLF转LF后的快照。
 
 知识修订继承原来源链接，含义是内容起源而非新版本已被该文件证明。停用与重导入和相关FTS更新共用事务。既有0001–0006文件保持原校验和，升级沿用备份与完整事务；旧无文件来源知识不受影响。来源快照不会自动建成已审核知识，也不直接进入FTS。
+
+## P1-B2 数据协议（无迁移）
+
+manifest schemaVersion=4 增加 citationProtocol=knowledge_lines_v1，knowledgeRefs 增加请求内 citationId，原知识/文件版本和正文不变。编号/引用说明也出现在实际 request_json 中，容量计算覆盖完整资料消息。
+
+execution_events 新增实际事件种类 citations_checked：payload.version=1、scope=reference_locations_only、availableCount、references（仅有效引用涉及的固定知识项）、occurrences（输出 UTF-16 起止偏移、原标记、referenceId、1基闭区间 startLine/endLine、错误原因）。同一 finish 事务只对 running→终态成功更新的运行追加一次，继承既有不可变保护。messages API 的 citations 字段为该事件的只读投影，未完成和旧记录返回 null。数据库仍为迁移版本7；既有 SQL 文件校验和不变。
