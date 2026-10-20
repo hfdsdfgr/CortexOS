@@ -94,3 +94,8 @@ prepare_context_run 复用既有组装函数，同时服务 preview_context 和 
 retrieval.rs维护CJK双字词/拉丁词索引、工作区限定搜索和持久化会话开关。db.prepare_context_run统一完成手动选择→自动候选与预算→历史消息→精确请求快照；preview_context复用同一逻辑但不持久化。approve_knowledge在同一事务刷新索引。候选记录、快照和真实查询边界与运行原子提交，细节见ADR0008。
 
 前端studio读取Conversation.autoRetrieval并保存会话偏好；ChatComposer提供开关，RetrievalSummary复用于预览、CognitiveInspector和执行图的检索完成节点。图的新增事件来自保存事实，历史运行不会补造检索。
+
+
+## P1-B1来源证据闭环
+
+知识页通过工作区命令调用Rust原生文件选择器；短期预览票据绑定工作区，确认后原子保存source_documents/source_versions和来源事件。UI读取数据库快照并指定行范围，KnowledgeEditor复用原保存/审核事务，新增版本证据链接；后续修改继承起源。FTS、手动选择和审核均校验来源启用状态。请求快照的知识引用增加sourceEvidence（来源ID/版本/行/摘录/文本哈希），不伪造文件检索、工具或验证事件。来源不属于一级导航，仍从知识任务进入。回答引用解析是后续P1-B2。

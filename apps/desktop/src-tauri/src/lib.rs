@@ -6,6 +6,7 @@ mod knowledge;
 mod models;
 mod ollama;
 mod retrieval;
+mod sources;
 
 use std::sync::atomic::Ordering;
 use tauri::Manager;
@@ -30,6 +31,7 @@ pub fn run() {
         context
     };
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let mut directory = app.path().app_data_dir()?;
             #[cfg(debug_assertions)]
@@ -40,6 +42,13 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::discard_source,
+            commands::choose_source,
+            commands::commit_source,
+            commands::list_sources,
+            commands::get_source,
+            commands::revoke_source,
+            commands::save_source_knowledge,
             commands::bootstrap,
             commands::create_workspace,
             commands::list_conversations,

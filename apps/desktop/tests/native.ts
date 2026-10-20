@@ -10,6 +10,7 @@ export async function launchNative(
     endpoint?: string;
     dataDirectory?: string;
     profileDirectory?: string;
+    sourcePath?: string;
   } = {},
 ) {
   const reservation = createServer();
@@ -39,6 +40,7 @@ export async function launchNative(
       windowsHide: true,
       env: {
         ...process.env,
+        ...(options.sourcePath ? {CORTEXOS_TEST_SOURCE_PATH:options.sourcePath} : {}),
         CORTEXOS_TEST_CDP_PORT: String(port),
         CORTEXOS_TEST_DATA_DIR:
           options.dataDirectory ?? testInfo.outputPath("data"),
@@ -129,7 +131,7 @@ export async function launchNative(
     page.on("console", (message) => {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
-    return { page, context, consoleErrors, stop, closeWindow };
+    return { page, context, consoleErrors, stop, closeWindow, processId:application.pid };
   } catch (error) {
     await stop();
     throw error;

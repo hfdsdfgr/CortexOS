@@ -32,6 +32,11 @@ export function ContextPicker({ studio }: { studio: Studio }) {
               )!;
               return {
                 ...detail.node,
+                sourceAvailable: (detail.sourceEvidence ?? [])
+                  .filter(
+                    (e) => e.knowledgeVersion === detail.node.effectiveVersion,
+                  )
+                  .every((e) => e.enabled),
                 title: version.title,
                 kind: version.kind,
               };
@@ -39,8 +44,10 @@ export function ContextPicker({ studio }: { studio: Studio }) {
         );
         if (current)
           setItems(
-            effective.filter((item) =>
-              ["knowledge", "context", "decision"].includes(item.kind),
+            effective.filter(
+              (item) =>
+                ["knowledge", "context", "decision"].includes(item.kind) &&
+                item.sourceAvailable,
             ),
           );
       })

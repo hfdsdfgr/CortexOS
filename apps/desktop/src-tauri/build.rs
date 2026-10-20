@@ -1,6 +1,13 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "discard_source",
+            "choose_source",
+            "commit_source",
+            "list_sources",
+            "get_source",
+            "revoke_source",
+            "save_source_knowledge",
             "bootstrap",
             "create_workspace",
             "list_conversations",

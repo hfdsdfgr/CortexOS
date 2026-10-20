@@ -15,6 +15,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("../migrations/0004_context_audit.sql"),
     include_str!("../migrations/0005_execution_views.sql"),
     include_str!("../migrations/0006_knowledge_retrieval.sql"),
+    include_str!("../migrations/0007_source_evidence.sql"),
 ];
 const MIGRATION: &str = include_str!("../migrations/0001_initial.sql");
 const RUN_COLUMNS: &str = "id,workspace_id,conversation_id,assistant_message_id,model_id,status,started_at,finished_at,error_message";
@@ -420,13 +421,16 @@ impl Database {
             let Some((title, kind, text, version)) = resolved else {
                 return Err("所选知识尚未确认或不属于当前工作区。请重新选择。".into());
             };
+            if !crate::sources::available(&connection, &item.node_id, version)? {
+                return Err("所选知识的文件来源已停用，请移除该项或重新授权来源。".into());
+            }
             if version != item.version {
                 return Err("知识生效版本已变化。问题已保留，请更新上下文预览后重新发送。".into());
             }
             if !matches!(kind.as_str(), "knowledge" | "context" | "decision") {
                 return Err("当前仅支持已确认的知识、上下文和决策。".into());
             }
-            knowledge.push(json!({"nodeId":item.node_id,"version":version,"title":title,"kind":kind,"content":text,"contentHash":hash(&text),"reason":"user_selected_effective_version"}));
+            knowledge.push(json!({"nodeId":item.node_id,"version":version,"title":title,"kind":kind,"content":text,"contentHash":hash(&text),"reason":"user_selected_effective_version","sourceEvidence":crate::sources::evidence(&connection,&item.node_id,version)?}));
         }
         let user_id = new_id();
         let budget = (settings.num_ctx - settings.num_predict - 256) as usize;
@@ -463,7 +467,7 @@ impl Database {
         let mut auto_count = 0;
         for item in retrieval["candidates"].as_array_mut().unwrap() {
             let id = item["nodeId"].as_str().unwrap();
-            let reference = json!({"nodeId":id,"version":item["version"],"title":item["title"],"kind":item["kind"],"content":item["content"],"contentHash":hash(item["content"].as_str().unwrap()),"reason":"automatic_effective_knowledge"});
+            let reference = json!({"nodeId":id,"version":item["version"],"title":item["title"],"kind":item["kind"],"content":item["content"],"contentHash":hash(item["content"].as_str().unwrap()),"reason":"automatic_effective_knowledge","sourceEvidence":crate::sources::evidence(&connection,id,item["version"].as_i64().unwrap())?});
             let duplicate = knowledge.iter().any(|k| k["nodeId"] == item["nodeId"]);
             knowledge.push(reference);
             let proposed = block(&knowledge)?;

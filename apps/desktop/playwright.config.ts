@@ -33,6 +33,7 @@ export default defineConfig({
         "trace.spec.ts",
         "knowledge.spec.ts",
         "knowledge-layout.spec.ts",
+        "sources.spec.ts",
         "graph.spec.ts",
       ],
     },

@@ -425,3 +425,37 @@ artifacts/ui-knowledge保存原生截图（本机忽略文件），已检查1366
 截图保存在忽略目录artifacts/ui-knowledge-compact，是真实隔离测试数据库中显示的知识内容，非静态页面背景。视口1366×768、1600×900、1920×1080，原生DPR1.25。此前375px浏览器及知识原生流程通过。图标为手写SVG，不使用emoji。导航展开仅保留当前进程状态，未新增偏好数据库；正文仍为纯文本，版本对照沿用生效版内容，不新增行级diff。未验证系统150%缩放、完整读屏、安装包或图性能；既有933kB图模块和Three.Clock告警仍保留。完成本UI切片后停止。
 
 最终布局专项 npx.cmd playwright test knowledge-layout.spec.ts --project desktop：1/1通过，5.3秒（用例2.9秒）。三个目标尺寸均验证正文右边界不超出抽屉左边界，最终截图已覆盖。全量17项在最后排版修正前通过，未将其冒称为最终二进制全量重跑。
+
+
+# 2026-10-20 P1-B1 授权文件来源与知识证据
+
+用户要求按计划继续，确认三项推荐：明确选择的UTF-8 TXT/Markdown、单文件2MiB；本地版本快照与手动更新；停用未来使用并保留历史。P1-B拆为B1来源证据闭环与B2回答引用解析，本轮交付B1后停止。权限设计先记录在ADR0009，沿用紧凑UI且主界面不增加小灰字说明。
+
+## 实现与修改文件
+
+新增src-tauri/migrations/0007_source_evidence.sql、src-tauri/src/sources.rs、前端SourceBrowser.tsx/source-browser.css、tests/sources.spec.ts、ADR0009。修改commands/lib/build/capabilities注册7个受限来源命令，Cargo.toml/Cargo.lock加入官方tauri-plugin-dialog（2.8.3，传递依赖rfd/tauri-plugin-fs；前端没有fs或dialog插件权限）。未安装系统软件或新增npm依赖。
+
+knowledge.rs复用原事务保存知识版本和固定来源/行链接，后续修订继承起源；db/retrieval对显式和自动纳入检查来源启用，快照知识引用携带真实sourceEvidence。SourceBrowser提供预览/导入、快照版本、固定行范围、200行分页、建立草案和停用；Knowledge.tsx复用编辑/审核并提供原文入口，ContextPicker隐藏已停用来源项，App.tsx引入样式。native测试辅助只在隔离目录使用debug选择替身，另提供本测试进程PID用于真正原生选择器验收。README、architecture、schema、security、test-plan、implementation-plan、refactoring-plan同步。
+
+票据一次性/10分钟过期，取消即作废；提交不静默重读文件，原文改变也保存预览内容。重新选择同路径且字节变化新增来源版本；未变化不重复建版本；停用来源需重新明确选择导入才能恢复。停用与相关FTS变更同事务，旧会话内容与旧运行快照保留。来源内容仅作为数据，审核不等于事实验证。
+
+## 实际检查与修复
+
+- `cargo add tauri-plugin-dialog@2 --manifest-path apps/desktop/src-tauri/Cargo.toml`完成，Cargo.lock新增14个传递包；既有版本未整体升级。
+- `cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml`及`cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked`通过。中间一次检查发现debug路径变量替换遗漏，修正后通过；移除未使用import。
+- `npm.cmd --prefix apps/desktop run typecheck`通过；后续apps/desktop中`npm.cmd run tauri -- build --debug --no-bundle`通过。首轮构建因测试replaceAll超出项目目标库失败，改为兼容replace后成功。最终资源index-QnfIlpq5.js、index-Ca-1QCrO.css、GraphViewport-Om0OCpjN.js。
+- `npm.cmd exec --yes --package=prettier@3.9.10 -- prettier --write ...`整理本轮组件/样式/测试，无依赖改动。
+- `npx.cmd playwright test sources.spec.ts --project desktop`初轮2项失败，均为Playwright将IPC拒绝包装为Error，字符串包含断言不适用；改为toThrow后 **2/2通过，9.3秒**。覆盖预览不落库、预览后原文件改变仍保存预览、来源v2与知识源v1独立、知识修订继承、审核/实际HTTP请求与快照等值、跨工作区/票据重放/取消/通用fs拒绝、停用自动/手动拒绝、重启/重新授权，以及v6迁移、非UTF-8/超限/空文件/敏感名称/重解析路径拒绝。
+- 必要相关回归 `npx.cmd playwright test sources.spec.ts context.spec.ts knowledge.spec.ts retrieval.spec.ts --project desktop`：前5项通过，30.2秒整轮中真正原生选择器验收脚本失败。应用选择窗口已打开；本机UIAutomation把文件名Edit暴露为Pane且不提供ValuePattern。脚本几次适配/检查控件元数据后，改为按测试进程PID定位窗口/原生Edit句柄，以Win32设置文件名并向该对话框发送IDOK；不操作其他进程，不读取桌面文件列表内容，不更改剪贴板。
+- 最终 `npx.cmd playwright test sources.spec.ts --project desktop -g "Windows native picker"` **1/1通过，4.7秒**（用例2.5秒）。真正通过Windows文件选择器选择项目隔离目录文件→原文预览→确认导入；1366×768/1920×1080无横向溢出并截图。最终只修改测试适配，运行代码/二进制与上述5项通过版本一致，因此本切片6项相关验收均通过；没有声称全项目19项全量重跑。
+
+遵循用户新规范，未运行Rust或其他单元测试。v6夹具升级后PRAGMA integrity_check=ok、foreign_key_check为空、迁移版本7；旧知识内容保持。未新增系统权限或访问项目根目录真实令牌，敏感名称验证仅用隔离合成夹具。
+
+## 证据、限制与停止点
+
+artifacts/p1-b1保留真正原生选择后显示的来源窗口截图，已查看1366px；最终来源专项重新生成并保留了来源版本/证据截图。数据库/索引检查和运行快照核对见可重跑测试源。Windows原生WebView2，默认DPR1.25；未验证系统150%缩放、完整读屏、大文件长期性能或安装包。未重跑真实Ollama，模型输入由本地HTTP测试服务捕获；原生文件选择使用真实系统对话框。
+
+仅支持本机普通UTF-8文本/Markdown，不支持PDF/Office、目录扫描/监控或网络路径。原文快照不自动全文检索，只有从片段建立并审核的知识进入P1-A；正文仍纯文本。撤销不抹去历史内容，永久删除尚无界面。源路径仅本地留存；固定行范围基于BOM/CRLF规范化快照。历史回放不重新读取原文件。P1-B2回答引用解析、片段引用校验和点击引用定位未实现，本轮停止在B1验收。
+
+
+最终代码审查将commit_source改为数据库任务前原子取出票据，失败时在未被新选择覆盖的情况下恢复重试；同时提交只能成功一次。一次辅助修改脚本因工作目录下相对路径错误失败，改用绝对路径后修正并重新构建。最终 `npx.cmd playwright test sources.spec.ts --project desktop` **3/3通过，12.6秒**，含并发提交断言及真实选择器；截图已覆盖至artifacts/p1-b1。此前context/knowledge/retrieval三项原生回归通过，最终后端改动仅票据提交逻辑，使用来源专项复查，无单元/全量重跑。

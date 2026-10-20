@@ -6,6 +6,13 @@
     "main"
   ],
   "permissions": [
+    "allow-discard-source",
+    "allow-choose-source",
+    "allow-commit-source",
+    "allow-list-sources",
+    "allow-get-source",
+    "allow-revoke-source",
+    "allow-save-source-knowledge",
     "allow-bootstrap",
     "allow-create-workspace",
     "allow-list-conversations",

@@ -84,3 +84,10 @@ manifest schemaVersion=2，保留原 messageRefs/systemHash/systemVersion/budget
 knowledge_fts为FTS5派生索引，node_id/workspace_id/version为未索引定位列，title_terms/body_terms为预处理词。迁移事务调用Rust回填已生效版本，approve_knowledge事务同步更新。保持原迁移字节，0006使用LF。
 
 conversation_retrieval_settings保存conversation_id主键、workspace_id、enabled布尔，复合外键约束会话归属；缺省true。retrieval_results以run_id/ordinal为主键，保存node_id/version、score、included、reason、cost_units；版本外键、工作区触发器和不可变保护。候选完整快照与查询算法/预算信息保存在manifest schema3及事件payload中。无命中不插候选行，manifest和事件仍区分无命中与关闭。
+
+
+## 0007_source_evidence
+
+source_documents按工作区/规范路径唯一，保存当前版本、启用状态和并发revision；source_versions保存不可变UTF-8规范化文本、文本哈希、原字节哈希及时间。source_events追加imported/reimported/reauthorized/revoked。knowledge_source_links按(node_id,knowledge_version)固定source_id/source_version与1基起止行/摘录；复合外键与工作区触发器阻止串域，更新/删除不可变。来源行定位基于移除BOM、CRLF转LF后的快照。
+
+知识修订继承原来源链接，含义是内容起源而非新版本已被该文件证明。停用与重导入和相关FTS更新共用事务。既有0001–0006文件保持原校验和，升级沿用备份与完整事务；旧无文件来源知识不受影响。来源快照不会自动建成已审核知识，也不直接进入FTS。

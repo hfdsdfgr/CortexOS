@@ -21,6 +21,7 @@ pub struct AppState {
     provider: AppResult<Ollama>,
     active: Arc<Mutex<Option<ActiveRun>>>,
     pub closing: Arc<AtomicBool>,
+    pending_source: Arc<Mutex<Option<crate::sources::PendingSource>>>,
 }
 
 struct ActiveRun {
@@ -33,6 +34,7 @@ impl AppState {
     pub fn new(directory: &Path) -> Self {
         Self {
             database: Database::open(directory).map(Arc::new),
+            pending_source: Arc::new(Mutex::new(None)),
             provider: Ollama::new(),
             active: Arc::new(Mutex::new(None)),
             closing: Arc::new(AtomicBool::new(false)),
@@ -540,4 +542,155 @@ pub async fn set_conversation_retrieval(
         db.set_conversation_retrieval(&workspace_id, &conversation_id, enabled)
     })
     .await
+}
+
+#[tauri::command]
+pub async fn choose_source(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    workspace_id: String,
+) -> AppResult<Option<crate::sources::SourcePreview>> {
+    use tauri::Manager;
+    use tauri_plugin_dialog::DialogExt;
+    let database = state.database.clone()?;
+    let pending = tauri::async_runtime::spawn_blocking(
+        move || -> AppResult<Option<crate::sources::PendingSource>> {
+            database.source_previous(&workspace_id, "")?;
+            let mut chosen = None;
+            #[cfg(debug_assertions)]
+            if let (Ok(root), Ok(file)) = (
+                std::env::var("CORTEXOS_TEST_DATA_DIR"),
+                std::env::var("CORTEXOS_TEST_SOURCE_PATH"),
+            ) {
+                let root =
+                    std::fs::canonicalize(root).map_err(|_| "测试数据目录不存在。".to_string())?;
+                let selected_path = std::path::PathBuf::from(&file);
+                let file =
+                    std::fs::canonicalize(file).map_err(|_| "测试文件不存在。".to_string())?;
+                if !file.starts_with(&root) {
+                    return Err("测试选择文件必须在隔离测试数据目录内。".into());
+                }
+                chosen = Some(selected_path);
+            }
+            let chosen = match chosen {
+                Some(file) => Some(file),
+                None => {
+                    let window = app.get_webview_window("main").ok_or("主窗口不存在。")?;
+                    app.dialog()
+                        .file()
+                        .set_parent(&window)
+                        .set_title("选择文件来源")
+                        .add_filter("UTF-8 文本", &["txt", "md"])
+                        .blocking_pick_file()
+                        .map(|file| file.into_path().map_err(|_| "请选择本地文件。".to_string()))
+                        .transpose()?
+                }
+            };
+            chosen
+                .map(|path| crate::sources::read_selected(&path, &workspace_id, &database))
+                .transpose()
+        },
+    )
+    .await
+    .map_err(|_| "文件选择未完成，请重试。".to_string())??;
+    let preview = pending.as_ref().map(|p| p.preview.clone());
+    *state
+        .pending_source
+        .lock()
+        .map_err(|_| "文件预览忙，请重试。".to_string())? = pending;
+    Ok(preview)
+}
+#[tauri::command]
+pub async fn commit_source(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    ticket: String,
+) -> AppResult<crate::sources::Source> {
+    let pending = {
+        let mut slot = state
+            .pending_source
+            .lock()
+            .map_err(|_| "文件预览忙，请重试。".to_string())?;
+        if !slot.as_ref().is_some_and(|p| {
+            p.workspace == workspace_id
+                && p.preview.ticket == ticket
+                && p.created.elapsed() < Duration::from_secs(600)
+        }) {
+            return Err("文件预览已失效，请重新选择。".into());
+        }
+        slot.take().unwrap()
+    };
+    let payload = pending.clone();
+    match blocking(state.database.clone()?, move |db| db.import_source(payload)).await {
+        Ok(saved) => Ok(saved),
+        Err(error) => {
+            if let Ok(mut slot) = state.pending_source.lock() {
+                if slot.is_none() && pending.created.elapsed() < Duration::from_secs(600) {
+                    *slot = Some(pending);
+                }
+            }
+            Err(error)
+        }
+    }
+}
+#[tauri::command]
+pub async fn list_sources(
+    state: State<'_, AppState>,
+    workspace_id: String,
+) -> AppResult<Vec<crate::sources::Source>> {
+    blocking(state.database.clone()?, move |db| db.sources(&workspace_id)).await
+}
+#[tauri::command]
+pub async fn get_source(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    source_id: String,
+    version: i64,
+) -> AppResult<crate::sources::Snapshot> {
+    blocking(state.database.clone()?, move |db| {
+        db.source_snapshot(&workspace_id, &source_id, version)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn revoke_source(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    source_id: String,
+    expected_revision: i64,
+) -> AppResult<()> {
+    blocking(state.database.clone()?, move |db| {
+        db.revoke_source(&workspace_id, &source_id, expected_revision)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn save_source_knowledge(
+    state: State<'_, AppState>,
+    input: crate::knowledge::SaveKnowledge,
+    source: crate::sources::SourceRef,
+) -> AppResult<String> {
+    blocking(state.database.clone()?, move |db| {
+        db.save_knowledge_with_evidence(input, Some(source))
+    })
+    .await
+}
+
+#[tauri::command]
+pub fn discard_source(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    ticket: String,
+) -> AppResult<()> {
+    let mut pending = state
+        .pending_source
+        .lock()
+        .map_err(|_| "文件预览忙，请重试。".to_string())?;
+    if pending
+        .as_ref()
+        .is_some_and(|p| p.workspace == workspace_id && p.preview.ticket == ticket)
+    {
+        *pending = None;
+    }
+    Ok(())
 }

@@ -14,6 +14,7 @@ import "./App.css";
 import "./chat-design.css";
 import "./knowledge-design.css";
 import "./compact-shell.css";
+import "./source-browser.css";
 import { useNavigation, navigate } from "./navigation";
 
 export default function App() {

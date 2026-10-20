@@ -38,6 +38,7 @@ pub struct KnowledgeDetail {
     pub source_conversation_id: Option<String>,
     pub source_excerpt: Option<String>,
     pub source_hash: Option<String>,
+    pub source_evidence: Vec<serde_json::Value>,
 }
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -111,15 +112,40 @@ impl Database {
             .collect::<rusqlite::Result<Vec<_>>>()
             .map_err(error)?;
         let (source_conversation_id,source_excerpt,source_hash) = connection.query_row("SELECT source_conversation_id,source_excerpt,source_hash FROM knowledge_nodes WHERE id=?1",params![id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(error)?;
+        let source_evidence = versions
+            .iter()
+            .map(|v| {
+                crate::sources::evidence(&connection, id, v.version).map(|items| {
+                    items
+                        .into_iter()
+                        .map(|mut item| {
+                            item["knowledgeVersion"] = serde_json::json!(v.version);
+                            item
+                        })
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect::<AppResult<Vec<_>>>()?
+            .into_iter()
+            .flatten()
+            .collect();
         Ok(KnowledgeDetail {
             node,
             versions,
             source_conversation_id,
             source_excerpt,
             source_hash,
+            source_evidence,
         })
     }
     pub fn save_knowledge(&self, input: SaveKnowledge) -> AppResult<String> {
+        self.save_knowledge_with_evidence(input, None)
+    }
+    pub fn save_knowledge_with_evidence(
+        &self,
+        input: SaveKnowledge,
+        source: Option<crate::sources::SourceRef>,
+    ) -> AppResult<String> {
         let title = validate_name(&input.title)?;
         if ![
             "context",
@@ -146,6 +172,21 @@ impl Database {
         }
         let mut connection = self.connection()?;
         let tx = connection.transaction().map_err(error)?;
+        let source_excerpt = if let Some(reference) = source.as_ref() {
+            if input.node_id.is_some()
+                || input.source_message_id.is_some()
+                || input.source_excerpt.is_some()
+            {
+                return Err("新来源证据仅可用于新建知识。".into());
+            }
+            Some(crate::sources::excerpt(
+                &tx,
+                &input.workspace_id,
+                reference,
+            )?)
+        } else {
+            None
+        };
         let timestamp = now();
         let (id, version) = if let Some(id) = input.node_id.as_ref() {
             if input.source_message_id.is_some() || input.source_excerpt.is_some() {
@@ -201,6 +242,23 @@ impl Database {
             (id, 1)
         };
         tx.execute("INSERT INTO knowledge_versions(node_id,version,title,kind,content,author,change_reason,created_at) VALUES(?1,?2,?3,?4,?5,'user',?6,?7)",params![id,version,title,input.kind,content,reason,timestamp]).map_err(error)?;
+        if let Some(reference) = source {
+            tx.execute(
+                "INSERT INTO knowledge_source_links VALUES(?1,?2,?3,?4,?5,?6,?7)",
+                params![
+                    id,
+                    version,
+                    reference.source_id,
+                    reference.version,
+                    reference.start_line as i64,
+                    reference.end_line as i64,
+                    source_excerpt
+                ],
+            )
+            .map_err(error)?;
+        } else if version > 1 {
+            tx.execute("INSERT INTO knowledge_source_links SELECT node_id,?2,source_id,source_version,start_line,end_line,excerpt FROM knowledge_source_links WHERE node_id=?1 AND knowledge_version=?2-1",params![id,version]).map_err(error)?;
+        }
         tx.commit().map_err(error)?;
         Ok(id)
     }
@@ -211,6 +269,9 @@ impl Database {
         revision(&current, Some(expected))?;
         if current.effective_version == Some(current.latest_version) {
             return Err("该版本已确认。".into());
+        }
+        if !crate::sources::available(&tx, id, current.latest_version)? {
+            return Err("知识的文件来源已停用，请重新授权来源后再审核。".into());
         }
         let timestamp = now();
         tx.execute("INSERT INTO knowledge_approval_events(id,node_id,version,actor,created_at) VALUES(?1,?2,?3,'user',?4)",params![new_id(),id,current.latest_version,timestamp]).map_err(error)?;

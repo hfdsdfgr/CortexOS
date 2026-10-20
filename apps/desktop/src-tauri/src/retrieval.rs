@@ -41,6 +41,9 @@ pub fn index_node(connection: &Connection, id: &str) -> AppResult<()> {
         .map_err(error)?;
     let row: Option<(String,i64,String,String)>=connection.query_row("SELECT n.workspace_id,v.version,v.title,v.content FROM knowledge_nodes n JOIN knowledge_versions v ON v.node_id=n.id AND v.version=n.effective_version WHERE n.id=?1 AND v.kind IN ('knowledge','context','decision')",params![id],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?,r.get(3)?))).optional().map_err(error)?;
     if let Some((workspace, version, title, body)) = row {
+        if !crate::sources::available(connection, id, version)? {
+            return Ok(());
+        }
         connection
             .execute(
                 "INSERT INTO knowledge_fts VALUES(?1,?2,?3,?4,?5)",
@@ -121,7 +124,7 @@ pub fn search(connection: &Connection, workspace: &str, query: &str) -> AppResul
         .join(" OR ");
     let mut candidates = Vec::new();
     if !expression.is_empty() {
-        let mut statement=connection.prepare("SELECT n.id,v.version,v.title,v.kind,v.content,bm25(knowledge_fts,0,0,0,5,1) FROM knowledge_fts JOIN knowledge_nodes n ON n.id=knowledge_fts.node_id AND n.workspace_id=knowledge_fts.workspace_id JOIN knowledge_versions v ON v.node_id=n.id AND v.version=n.effective_version AND v.version=knowledge_fts.version WHERE knowledge_fts MATCH ?1 AND n.workspace_id=?2 AND v.kind IN ('knowledge','context','decision') ORDER BY bm25(knowledge_fts,0,0,0,5,1),n.id LIMIT 21").map_err(error)?;
+        let mut statement=connection.prepare("SELECT n.id,v.version,v.title,v.kind,v.content,bm25(knowledge_fts,0,0,0,5,1) FROM knowledge_fts JOIN knowledge_nodes n ON n.id=knowledge_fts.node_id AND n.workspace_id=knowledge_fts.workspace_id JOIN knowledge_versions v ON v.node_id=n.id AND v.version=n.effective_version AND v.version=knowledge_fts.version WHERE knowledge_fts MATCH ?1 AND n.workspace_id=?2 AND v.kind IN ('knowledge','context','decision') AND NOT EXISTS(SELECT 1 FROM knowledge_source_links l JOIN source_documents s ON s.id=l.source_id WHERE l.node_id=n.id AND l.knowledge_version=v.version AND s.enabled=0) ORDER BY bm25(knowledge_fts,0,0,0,5,1),n.id LIMIT 21").map_err(error)?;
         candidates=statement.query_map(params![expression,workspace],|r|Ok(json!({"nodeId":r.get::<_,String>(0)?,"version":r.get::<_,i64>(1)?,"title":r.get::<_,String>(2)?,"kind":r.get::<_,String>(3)?,"content":r.get::<_,String>(4)?,"score":r.get::<_,f64>(5)?,"included":false,"reason":"pending_budget","costUnits":0}))).map_err(error)?.collect::<rusqlite::Result<Vec<_>>>().map_err(error)?;
     }
     let capped = candidates.len() > 20;

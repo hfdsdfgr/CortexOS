@@ -1,3 +1,8 @@
+import {
+  SourceBrowser,
+  type SourceEvidence,
+  type SourceRef,
+} from "./SourceBrowser";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState } from "react";
@@ -48,6 +53,7 @@ export interface KnowledgeDetail {
   sourceConversationId: string | null;
   sourceExcerpt: string | null;
   sourceHash: string | null;
+  sourceEvidence?: SourceEvidence[];
 }
 export interface EditKnowledge {
   returnTo?: "graph";
@@ -55,6 +61,8 @@ export interface EditKnowledge {
   detail?: KnowledgeDetail;
   source?: Message;
   excerpt?: string;
+  sourceDocument?: SourceRef;
+  sourceName?: string;
 }
 export const getKnowledge = (workspaceId: string, nodeId: string) =>
   invoke<KnowledgeDetail>("get_knowledge", { workspaceId, nodeId });
@@ -83,6 +91,7 @@ export function KnowledgePage({
 }) {
   const workspace = studio.workspaceId;
   const [listOpen, setListOpen] = useState(true);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   const [items, setItems] = useState<KnowledgeNode[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -123,6 +132,16 @@ export function KnowledgePage({
       className="standard-page knowledge-page"
       aria-labelledby="page-title"
     >
+      {sourcesOpen && workspace && (
+        <SourceBrowser
+          workspace={workspace}
+          onClose={() => setSourcesOpen(false)}
+          onDraft={(request) => {
+            setSourcesOpen(false);
+            onEdit(request);
+          }}
+        />
+      )}
       <header className="page-heading">
         <div className="knowledge-page-location">
           <button
@@ -135,14 +154,23 @@ export function KnowledgePage({
           </button>
           <h1 id="page-title">知识</h1>
         </div>
-        <button
-          className="button primary"
-          disabled={!studio.desktop || !workspace}
-          onClick={() => onEdit({ workspaceId: workspace! })}
-        >
-          <Plus size={16} />
-          新建知识
-        </button>
+        <div className="source-actions">
+          <button
+            className="button secondary"
+            disabled={!studio.desktop || !workspace}
+            onClick={() => setSourcesOpen(true)}
+          >
+            来源
+          </button>
+          <button
+            className="button primary"
+            disabled={!studio.desktop || !workspace}
+            onClick={() => onEdit({ workspaceId: workspace! })}
+          >
+            <Plus size={16} />
+            新建知识
+          </button>
+        </div>
       </header>
       {error && (
         <div className="error-banner" role="alert">
@@ -277,6 +305,7 @@ export function KnowledgeInspector({
   requestedVersion?: number;
 }) {
   const route = useNavigation();
+  const [sourceFocus, setSourceFocus] = useState<SourceRef | null>(null);
   const [detail, setDetail] = useState<KnowledgeDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [version, setVersion] = useState<number | null>(null);
@@ -291,6 +320,7 @@ export function KnowledgeInspector({
   };
   useEffect(() => {
     historyDialog.current?.close();
+    setSourceFocus(null);
   }, [workspace, selected]);
   const approval = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -340,7 +370,11 @@ export function KnowledgeInspector({
         className="knowledge-disclosure version-history"
         open={route.page === "knowledge" ? true : undefined}
       >
-        <summary>{route.page === "knowledge" ? `${detail.versions.length} 个版本` : `版本历史（${detail.versions.length}）`}</summary>
+        <summary>
+          {route.page === "knowledge"
+            ? `${detail.versions.length} 个版本`
+            : `版本历史（${detail.versions.length}）`}
+        </summary>
         <div className="version-picker">
           <label htmlFor="knowledge-version">查看版本</label>
           <select
@@ -399,6 +433,18 @@ export function KnowledgeInspector({
     );
   return (
     <>
+      {sourceFocus && workspace && (
+        <SourceBrowser
+          key={`${workspace}:${selected}`}
+          workspace={workspace}
+          initial={sourceFocus}
+          onClose={() => setSourceFocus(null)}
+          onDraft={(request) => {
+            setSourceFocus(null);
+            onEdit(request);
+          }}
+        />
+      )}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -430,7 +476,8 @@ export function KnowledgeInspector({
                 </span>
                 <h2>{currentVersion.title}</h2>
                 <p className="knowledge-state">
-                  {route.page === "knowledge" && `${kinds[currentVersion.kind]} · v${currentVersion.version} · `}
+                  {route.page === "knowledge" &&
+                    `${kinds[currentVersion.kind]} · v${currentVersion.version} · `}
                   {status(detail.node)}
                   {detail.node.effectiveVersion
                     ? ` · 生效版本 v${detail.node.effectiveVersion}`
@@ -523,9 +570,37 @@ export function KnowledgeInspector({
             ) : (
               history
             )}
+            {(detail.sourceEvidence ?? [])
+              .filter((e) => e.knowledgeVersion === currentVersion.version)
+              .map((evidence) => (
+                <details
+                  key={`${evidence.sourceId}:${evidence.version}`}
+                  className="knowledge-disclosure"
+                >
+                  <summary>
+                    文件来源：{evidence.name}
+                    {!evidence.enabled && "（已停用）"}
+                  </summary>
+                  <p>
+                    来源 v{evidence.version} · 第 {evidence.startLine}–
+                    {evidence.endLine} 行
+                  </p>
+                  <blockquote>{evidence.excerpt}</blockquote>
+                  <button
+                    className="button secondary"
+                    onClick={() => setSourceFocus(evidence)}
+                  >
+                    查看来源原文
+                  </button>
+                </details>
+              ))}
             <details className="knowledge-disclosure">
               <summary>
-                {detail.sourceExcerpt ? "回答来源" : "来源：手动记录"}
+                {detail.sourceEvidence?.length
+                  ? "来源记录说明"
+                  : detail.sourceExcerpt
+                    ? "回答来源"
+                    : "来源：手动记录"}
               </summary>
               {detail.sourceExcerpt ? (
                 <>
@@ -557,7 +632,11 @@ export function KnowledgeInspector({
                   </code>
                 </>
               ) : (
-                <p>由用户手动记录，没有引用模型回答。</p>
+                <p>
+                  {detail.sourceEvidence?.length
+                    ? "从文件片段建立，后续修改沿用该起源；内容仍需单独审核。"
+                    : "由用户手动记录，没有引用模型回答。"}
+                </p>
               )}
             </details>
             <dialog
@@ -634,13 +713,23 @@ export function KnowledgeEditor({
   onSaved: (workspaceId: string, nodeId: string) => void;
 }) {
   const original = request.detail?.versions[0];
-  const [title, setTitle] = useState(original?.title ?? "");
+  const [title, setTitle] = useState(
+    original?.title ??
+      request.sourceName?.replace(/\.(md|txt)$/i, "").slice(0, 80) ??
+      "",
+  );
   const [kind, setKind] = useState(original?.kind ?? "knowledge");
   const [content, setContent] = useState(
     original?.content ?? request.excerpt ?? "",
   );
   const [reason, setReason] = useState(
-    original ? "" : request.source ? "从回答保存草案" : "手动记录",
+    original
+      ? ""
+      : request.source
+        ? "从回答保存草案"
+        : request.sourceDocument
+          ? "从文件片段记录"
+          : "手动记录",
   );
   const [excerpt, setExcerpt] = useState(request.excerpt ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -659,7 +748,14 @@ export function KnowledgeEditor({
     title !== (original?.title ?? "") ||
     kind !== (original?.kind ?? "knowledge") ||
     content !== (original?.content ?? "") ||
-    reason !== (original ? "" : request.source ? "从回答保存草案" : "手动记录");
+    reason !==
+      (original
+        ? ""
+        : request.source
+          ? "从回答保存草案"
+          : request.sourceDocument
+            ? "从文件片段记录"
+            : "手动记录");
   const dirty = useRef(changed);
   dirty.current = changed;
   const listener = useRef<Promise<() => void> | null>(null);
@@ -701,19 +797,23 @@ export function KnowledgeEditor({
     setSaving(true);
     setError(null);
     try {
-      const id = await invoke<string>("save_knowledge", {
-        input: {
-          workspaceId: request.workspaceId,
-          nodeId: request.detail?.node.id ?? null,
-          expectedRevision: expected,
-          title,
-          kind,
-          content,
-          changeReason: reason,
-          sourceMessageId: request.source?.id ?? null,
-          sourceExcerpt: request.source ? excerpt : null,
+      const id = await invoke<string>(
+        request.sourceDocument ? "save_source_knowledge" : "save_knowledge",
+        {
+          ...(request.sourceDocument ? { source: request.sourceDocument } : {}),
+          input: {
+            workspaceId: request.workspaceId,
+            nodeId: request.detail?.node.id ?? null,
+            expectedRevision: expected,
+            title,
+            kind,
+            content,
+            changeReason: reason,
+            sourceMessageId: request.source?.id ?? null,
+            sourceExcerpt: request.source ? excerpt : null,
+          },
         },
-      });
+      );
       dirty.current = false;
       if (closeAfter && exitWindow.current) await finishClose();
       else onSaved(request.workspaceId, id);
@@ -797,6 +897,13 @@ export function KnowledgeEditor({
               onChange={(e) => setContent(e.target.value)}
             />
           </div>
+          {request.sourceDocument && (
+            <p>
+              来源：{request.sourceName} · v{request.sourceDocument.version} ·
+              第 {request.sourceDocument.startLine}–
+              {request.sourceDocument.endLine} 行
+            </p>
+          )}
           {request.source && (
             <details className="knowledge-disclosure">
               <summary>来源摘录（可缩短为原文片段）</summary>
