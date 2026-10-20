@@ -159,7 +159,7 @@ export function SourceBrowser({
         }}
       >
         <header className="source-toolbar">
-          <h2 id="sources-title">文件来源</h2>
+          <h2 id="sources-title">资料文件</h2>
           <div className="source-actions">
             <button
               className="button secondary"
@@ -174,11 +174,11 @@ export function SourceBrowser({
               }
             >
               <Plus size={16} />
-              {busy ? "正在处理…" : "选择文件"}
+              {busy ? "正在处理…" : "添加文件"}
             </button>
             <button
               className="icon-button"
-              aria-label="关闭文件来源"
+              aria-label="关闭资料文件"
               disabled={busy}
               onClick={close}
             >
@@ -196,15 +196,15 @@ export function SourceBrowser({
             <h3>{preview.name}</h3>
             <p>
               {preview.previousVersion
-                ? `已保存 v${preview.previousVersion}，确认后保存更新；停用来源将重新启用。`
-                : "将保存本地快照，原文件保持不变。"}
+                ? `已保存版本 v${preview.previousVersion}。内容有变化会另存一个版本；文件已停用时，会恢复使用。`
+                : "会在本机保存一份文字副本，不修改原文件。"}
             </p>
             <pre className="source-text">{preview.content}</pre>
             <details>
-              <summary>导入范围与快照</summary>
+              <summary>会保存哪些内容</summary>
               <p>
-                仅此文件的 UTF-8 文本，不读取目录。上限2
-                MiB。导入后可从指定行建立待审核草案，原文件变化时需重新选择。
+                只保存这个文件的 UTF-8 文字，不读取文件夹。最多2
+                MiB。保存的是文字内容，不包含原文件的其他属性；行号以这里显示的内容为准。添加后可选择文字保存为知识草稿，确认后才用于回答。原文件修改后，需重新添加。
               </p>
               <code className="source-hash">SHA-256 {preview.contentHash}</code>
             </details>
@@ -238,7 +238,7 @@ export function SourceBrowser({
           </section>
         ) : (
           <div className="source-workbench">
-            <aside className="source-list" aria-label="已导入来源">
+            <aside className="source-list" aria-label="已添加的文件">
               {items.map((item) => (
                 <button
                   key={item.id}
@@ -260,12 +260,12 @@ export function SourceBrowser({
                 </button>
               ))}
               {!items.length && !loading && (
-                <p>还没有来源，选择 TXT 或 Markdown 文件开始。</p>
+                <p>还没有文件，点击“添加文件”选择 TXT 或 Markdown 文件。</p>
               )}
             </aside>
-            <section className="source-reader" aria-label="来源原文">
+            <section className="source-reader" aria-label="文件内容">
               {loading ? (
-                <p role="status">正在读取来源…</p>
+                <p role="status">正在读取文件…</p>
               ) : selected ? (
                 <>
                   <header className="source-toolbar">
@@ -274,9 +274,9 @@ export function SourceBrowser({
                       {!selected.document.enabled && " · 已停用"}
                     </h3>
                     <label>
-                      来源版本
+                      文件版本
                       <select
-                        aria-label="来源版本"
+                        aria-label="文件版本"
                         disabled={busy}
                         value={selected.version}
                         onChange={(event) =>
@@ -354,7 +354,7 @@ export function SourceBrowser({
                         });
                       }}
                     >
-                      从所选行建立草案
+                      将所选文字存为知识草稿
                     </button>
                   </div>
                   {!valid && (
@@ -408,11 +408,11 @@ export function SourceBrowser({
                       })}
                   </pre>
                   <details>
-                    <summary>来源快照与权限</summary>
+                    <summary>保存记录与使用权限</summary>
                     <p>
                       保存于{" "}
                       {new Date(selected.createdAt).toLocaleString("zh-CN")}
-                      。文件更新不会改写此快照。停用来源会阻止关联知识进入未来上下文；既有会话和历史证据仍保留。
+                      。这是当时保存的副本，不会随原文件变化。停用后，从此文件建立的知识不再用于新的检索或选用；以前的对话和保存记录仍保留。
                     </p>
                     <code className="source-hash">
                       SHA-256 {selected.contentHash}
@@ -423,13 +423,13 @@ export function SourceBrowser({
                         disabled={busy}
                         onClick={() => revoke.current?.showModal()}
                       >
-                        停用来源
+                        停用文件
                       </button>
                     )}
                   </details>
                 </>
               ) : (
-                <p>选择来源查看原文和版本。</p>
+                <p>选择一个文件，查看内容和以前保存的版本。</p>
               )}
             </section>
           </div>
@@ -443,9 +443,9 @@ export function SourceBrowser({
           if (busy) event.preventDefault();
         }}
       >
-        <h2 id="revoke-source-title">停用此来源？</h2>
+        <h2 id="revoke-source-title">停用这个文件？</h2>
         <p>
-          关联知识将停止用于新的检索和上下文。历史运行、知识版本和来源快照会保留。
+          从这个文件建立的知识将不再用于新的检索或选用。以前的对话、知识版本和文件副本仍保留，其中可能包含这个文件的内容。
         </p>
         <div className="dialog-actions">
           <button

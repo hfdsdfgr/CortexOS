@@ -13,10 +13,10 @@ use std::{
 };
 
 fn error(_: rusqlite::Error) -> String {
-    "来源读写失败，请保留当前内容并重试。".into()
+    "文件资料保存或读取失败，请保留当前内容并重试。".into()
 }
 fn missing() -> String {
-    "来源不存在或不属于当前工作区。".into()
+    "文件不存在，或不在当前工作区里。".into()
 }
 fn hash(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
@@ -69,7 +69,7 @@ pub struct PendingSource {
 
 pub fn read_selected(path: &Path, workspace: &str, db: &Database) -> AppResult<PendingSource> {
     if !path.is_absolute() {
-        return Err("请选择本地绝对路径文件。".into());
+        return Err("请用文件选择窗口选择本机文件。".into());
     }
     #[cfg(windows)]
     {
@@ -86,11 +86,14 @@ pub fn read_selected(path: &Path, workspace: &str, db: &Database) -> AppResult<P
         {
             use std::os::windows::fs::MetadataExt;
             if meta.file_attributes() & 0x400 != 0 {
-                return Err("请直接选择原文件，暂不支持符号链接或重解析目录。".into());
+                return Err(
+                    "文件或所在文件夹有链接跳转（符号链接或重解析点），请从实际位置选择原文件。"
+                        .into(),
+                );
             }
         }
         if meta.file_type().is_symlink() {
-            return Err("请直接选择原文件，暂不支持符号链接。".into());
+            return Err("这个路径是符号链接，请从实际位置选择原文件。".into());
         }
     }
     let name = path
@@ -110,9 +113,12 @@ pub fn read_selected(path: &Path, workspace: &str, db: &Database) -> AppResult<P
             .iter()
             .any(|term| lower.contains(term))
     {
-        return Err("仅可导入普通 .txt/.md 文件，凭据或敏感文件名不允许导入。".into());
+        return Err(
+            "只支持 .txt/.md 文本文件；名称涉及密码、访问密钥等敏感信息的文件不能导入。".into(),
+        );
     }
-    let canonical = std::fs::canonicalize(path).map_err(|_| "无法解析所选文件。".to_string())?;
+    let canonical =
+        std::fs::canonicalize(path).map_err(|_| "无法找到所选文件的实际位置。".to_string())?;
     let mut options = std::fs::OpenOptions::new();
     options.read(true);
     #[cfg(windows)]
@@ -219,7 +225,7 @@ pub fn excerpt(
     reference: &SourceRef,
 ) -> AppResult<String> {
     let content:Option<String>=connection.query_row("SELECT v.content FROM source_versions v JOIN source_documents s ON s.id=v.source_id WHERE s.workspace_id=?1 AND s.id=?2 AND v.version=?3 AND s.enabled=1",params![workspace,reference.source_id,reference.version],|r|r.get(0)).optional().map_err(error)?;
-    let content = content.ok_or("来源不存在、已停用或不属于当前工作区。")?;
+    let content = content.ok_or("文件不存在、已停用，或不在当前工作区里。")?;
     let lines: Vec<_> = content.split('\n').collect();
     if reference.start_line == 0
         || reference.end_line < reference.start_line
@@ -229,7 +235,7 @@ pub fn excerpt(
     }
     let text = lines[reference.start_line - 1..reference.end_line].join("\n");
     if text.trim().is_empty() || text.chars().count() > 20000 {
-        return Err("来源片段需为1–20000字，请缩小行范围。".into());
+        return Err("选中的文字需为1–20000字，请减少选择的行数。".into());
     }
     Ok(text)
 }
@@ -273,7 +279,7 @@ impl Database {
                 .previous_version
                 .zip(pending.preview.previous_revision)
         {
-            return Err("来源已被更新，请重新选择并预览。".into());
+            return Err("文件资料已被更新，请重新选择文件并预览。".into());
         }
         let timestamp = now();
         let (id, version, kind) = if let Some((old, raw)) = previous {
@@ -351,7 +357,7 @@ impl Database {
         let tx = c.transaction().map_err(error)?;
         let changed=tx.execute("UPDATE source_documents SET enabled=0,revision=revision+1,updated_at=?4 WHERE workspace_id=?1 AND id=?2 AND revision=?3 AND enabled=1",params![workspace,id,expected,now()]).map_err(error)?;
         if changed != 1 {
-            return Err("来源已变化或不属于当前工作区，请刷新。".into());
+            return Err("文件状态已变化，或不在当前工作区里，请刷新。".into());
         }
         tx.execute(
             "INSERT INTO source_events VALUES(?1,?2,'revoked',?3)",

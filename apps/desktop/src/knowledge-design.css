@@ -324,3 +324,5 @@
 .reference-knowledge .page-heading h1 { color: var(--text); }
 .reference-knowledge .knowledge-disclosure p { color: var(--text); font-size: 14px; }
 .reference-knowledge .knowledge-row-meta { font-size: 14px; }
+
+.reference-knowledge .page-heading { flex-wrap: wrap; }

@@ -579,7 +579,7 @@ pub async fn choose_source(
                     app.dialog()
                         .file()
                         .set_parent(&window)
-                        .set_title("选择文件来源")
+                        .set_title("选择资料文件")
                         .add_filter("UTF-8 文本", &["txt", "md"])
                         .blocking_pick_file()
                         .map(|file| file.into_path().map_err(|_| "请选择本地文件。".to_string()))
@@ -616,7 +616,7 @@ pub async fn commit_source(
                 && p.preview.ticket == ticket
                 && p.created.elapsed() < Duration::from_secs(600)
         }) {
-            return Err("文件预览已失效，请重新选择。".into());
+            return Err("文件预览已失效，请重新添加文件。".into());
         }
         slot.take().unwrap()
     };

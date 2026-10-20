@@ -177,7 +177,9 @@ impl Database {
                 || input.source_message_id.is_some()
                 || input.source_excerpt.is_some()
             {
-                return Err("新来源证据仅可用于新建知识。".into());
+                return Err(
+                    "从文件选择的原文只能用于新建知识，不能替换已有知识的原始出处。".into(),
+                );
             }
             Some(crate::sources::excerpt(
                 &tx,
@@ -271,7 +273,9 @@ impl Database {
             return Err("该版本已确认。".into());
         }
         if !crate::sources::available(&tx, id, current.latest_version)? {
-            return Err("知识的文件来源已停用，请重新授权来源后再审核。".into());
+            return Err(
+                "这条知识使用的文件已停用，请重新添加文件以恢复使用，再检查并确认知识。".into(),
+            );
         }
         let timestamp = now();
         tx.execute("INSERT INTO knowledge_approval_events(id,node_id,version,actor,created_at) VALUES(?1,?2,?3,'user',?4)",params![new_id(),id,current.latest_version,timestamp]).map_err(error)?;

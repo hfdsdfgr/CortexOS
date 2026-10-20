@@ -33,7 +33,7 @@ test("real local model receives approved knowledge with an immutable request sna
       expectedRevision: 1,
     });
     await expect(
-      page.getByRole("checkbox", { name: "自动检索知识", exact: true }),
+      page.getByRole("checkbox", { name: "自动查找知识", exact: true }),
     ).toBeChecked();
     await page
       .getByRole("textbox", { name: "你的问题", exact: true })
@@ -105,7 +105,7 @@ test("real local model receives approved knowledge with an immutable request sna
       .getByRole("button", { name: "测试项目代号 · v1", exact: true })
       .click();
     await expect(page.getByLabel("执行节点详情")).toContainText("青鹭-742");
-    await page.getByRole("button", { name: "适应执行图", exact: true }).click();
+    await page.getByRole("button", { name: "显示完整流程", exact: true }).click();
     await page.screenshot({
       path: testInfo.outputPath("native-real-execution-trace.png"),
     });

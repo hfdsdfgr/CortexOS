@@ -57,7 +57,7 @@ export function ChatMessage({
       </div>
       {message.role === "assistant" && message.finishReason === "length" && (
         <p className="output-limit-note">
-          已达到输出上限，回答可能未完整。可在设置中增加“最大输出”后重试。
+          已达到长度上限，回答可能不完整。可在设置中增加“回答长度上限（Token）”后重试。
         </p>
       )}
       {message.role === "assistant" && (

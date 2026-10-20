@@ -73,7 +73,7 @@ test("keyboard navigation and graph choice work; unavailable operations stay hon
   await expect(page.getByRole("button", { name: "检测连接" })).toBeDisabled();
   await expect(page.getByLabel("服务地址")).toHaveAttribute("readonly", "");
   await page.getByText("生成参数", { exact: true }).click();
-  await expect(page.getByLabel("上下文长度", { exact: true })).toHaveValue(
+  await expect(page.getByLabel("输入与回答总容量（Token）", { exact: true })).toHaveValue(
     "4096",
   );
 });

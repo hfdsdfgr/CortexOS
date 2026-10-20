@@ -46,19 +46,19 @@ test("automatic retrieval records actual requests, approved versions and persist
       .getByRole("textbox", { name: "你的问题", exact: true })
       .fill("切换检索时保留草稿");
     await page
-      .getByRole("checkbox", { name: "自动检索知识", exact: true })
+      .getByRole("checkbox", { name: "自动查找知识", exact: true })
       .uncheck();
     await expect(
-      page.getByRole("checkbox", { name: "自动检索知识", exact: true }),
+      page.getByRole("checkbox", { name: "自动查找知识", exact: true }),
     ).not.toBeChecked();
     await expect(
       page.getByRole("textbox", { name: "你的问题", exact: true }),
     ).toHaveValue("切换检索时保留草稿");
     await page
-      .getByRole("checkbox", { name: "自动检索知识", exact: true })
+      .getByRole("checkbox", { name: "自动查找知识", exact: true })
       .check();
     await expect(
-      page.getByRole("checkbox", { name: "自动检索知识", exact: true }),
+      page.getByRole("checkbox", { name: "自动查找知识", exact: true }),
     ).toBeChecked();
     const input = {
       workspaceId,
@@ -88,14 +88,14 @@ test("automatic retrieval records actual requests, approved versions and persist
       },
     });
     await expect(
-      page.getByRole("checkbox", { name: "自动检索知识", exact: true }),
+      page.getByRole("checkbox", { name: "自动查找知识", exact: true }),
     ).toBeChecked();
     await page
       .getByRole("textbox", { name: "你的问题", exact: true })
       .fill("何时发布？");
     await page.getByText("手动选择：0 项知识", { exact: true }).click();
-    await page.getByRole("button", { name: "预览上下文", exact: true }).click();
-    await expect(page.getByLabel("知识检索结果")).toContainText("1 项自动纳入");
+    await page.getByRole("button", { name: "查看本次会用的资料", exact: true }).click();
+    await expect(page.getByLabel("知识查找结果")).toContainText("自动选用 1 条");
     expect(requests).toHaveLength(0);
     await page.getByText("手动选择：0 项知识", { exact: true }).click();
     await page.getByRole("button", { name: "发送消息", exact: true }).click();
@@ -127,11 +127,11 @@ test("automatic retrieval records actual requests, approved versions and persist
     await page
       .getByRole("button", { name: "3D 执行轨迹", exact: true })
       .click();
-    await page.getByRole("button", { name: /知识检索完成/ }).click();
-    await expect(page.getByLabel("执行节点详情")).toContainText("1 项自动纳入");
+    await page.getByRole("button", { name: /知识查找完成/ }).click();
+    await expect(page.getByLabel("执行节点详情")).toContainText("自动选用 1 条");
     await expect(page.locator('canvas[data-webgl-ready="true"]')).toBeVisible();
-    await page.getByRole("button", {name:"适应执行图",exact:true}).click();
-    await page.getByText("查看命中与排除原因",{exact:true}).click();
+    await page.getByRole("button", {name:"显示完整流程",exact:true}).click();
+    await page.getByText("查看哪些知识被选用及原因",{exact:true}).click();
     await page.screenshot({
       path: testInfo.outputPath("retrieval-execution.png"),
     });
@@ -162,10 +162,10 @@ test("automatic retrieval records actual requests, approved versions and persist
     );
     expect(preview.retrieval?.status).toBe("no_match");
     await page
-      .getByRole("checkbox", { name: "自动检索知识", exact: true })
+      .getByRole("checkbox", { name: "自动查找知识", exact: true })
       .uncheck();
     await expect(
-      page.getByRole("checkbox", { name: "自动检索知识", exact: true }),
+      page.getByRole("checkbox", { name: "自动查找知识", exact: true }),
     ).not.toBeChecked();
     await page
       .getByRole("textbox", { name: "你的问题", exact: true })
@@ -185,7 +185,7 @@ test("automatic retrieval records actual requests, approved versions and persist
     app = await launchNative(testInfo, { endpoint });
     page = app.page;
     await expect(
-      page.getByRole("checkbox", { name: "自动检索知识", exact: true }),
+      page.getByRole("checkbox", { name: "自动查找知识", exact: true }),
     ).not.toBeChecked();
     expect(
       (
@@ -197,7 +197,7 @@ test("automatic retrieval records actual requests, approved versions and persist
     ).toEqual(first.snapshot?.request);
     await page.getByRole("button", { name: "新建对话", exact: true }).click();
     await expect(
-      page.getByRole("checkbox", { name: "自动检索知识", exact: true }),
+      page.getByRole("checkbox", { name: "自动查找知识", exact: true }),
     ).toBeChecked();
     await page.screenshot({
       path: testInfo.outputPath("retrieval-composer.png"),

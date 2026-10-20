@@ -149,7 +149,7 @@ test("execution graph uses real events and navigates to exact versions and messa
     await expect(page.getByLabel("执行节点详情")).toContainText(
       "旧版约定：周一发布。",
     );
-    await page.getByRole("button", { name: "聚焦节点", exact: true }).click();
+    await page.getByRole("button", { name: "移到选中节点", exact: true }).click();
     await page
       .getByRole("button", { name: "保存执行视角", exact: true })
       .click();
@@ -182,7 +182,7 @@ test("execution graph uses real events and navigates to exact versions and messa
       page.locator(`[id="message-${messages[0].id}"]`),
     ).toBeFocused();
     await page.getByRole("link", { name: "返回执行轨迹" }).click();
-    await page.getByRole("button", { name: "适应执行图", exact: true }).click();
+    await page.getByRole("button", { name: "显示完整流程", exact: true }).click();
     await page.screenshot({
       path: testInfo.outputPath("native-execution-trace.png"),
     });
@@ -234,7 +234,7 @@ test("execution graph uses real events and navigates to exact versions and messa
       timeout: 10000,
     });
     await expect(page.getByRole("button", { name: /回答完成/ })).toBeVisible();
-    await page.getByLabel("运行", { exact: true }).selectOption(runId);
+    await page.getByLabel("回答记录", { exact: true }).selectOption(runId);
     const terminal = await nativeInvoke<ExecutionData>(
       page,
       "load_execution_graph",

@@ -93,7 +93,7 @@ test("installed local Ollama answers, cancels and retains conversations after re
     await assistant
       .getByRole("button", { name: "执行过程", exact: true })
       .click();
-    await expect(page.getByRole("dialog", { name: "本次执行" })).toContainText(
+    await expect(page.getByRole("dialog", { name: "本次回答的处理记录" })).toContainText(
       "回答完成",
     );
     await page.screenshot({

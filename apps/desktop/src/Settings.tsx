@@ -83,11 +83,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
             </div>
             <div className="field">
               <label htmlFor="endpoint">服务地址</label>
-              <input
-                id="endpoint"
-                value="http://127.0.0.1:11434"
-                readOnly
-              />
+              <input id="endpoint" value="http://127.0.0.1:11434" readOnly />
             </div>
             <button
               type="button"
@@ -135,21 +131,24 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                 )}
                 {studio.health?.models.map((model) => (
                   <option key={model.name} value={model.name}>
-                    {model.name} · {model.quantization ?? "量化未知"} ·{" "}
+                    {model.name} · {model.quantization ?? "模型压缩方式未知"} ·{" "}
                     {(model.size / 1e9).toFixed(1)} GB
                   </option>
                 ))}
               </select>
               <details className="field-help">
                 <summary>如何选择模型</summary>
-                <p>建议 qwen3:4b-instruct。Thinking 模型可能需要更高的最大输出。更改在下一次回答生效。</p>
+                <p>
+                  建议
+                  qwen3:4b-instruct。带思考功能的模型可能需要更高的回答长度上限。更改从下一次回答开始使用。
+                </p>
               </details>
             </div>
             <details className="advanced-settings">
               <summary>生成参数</summary>
               <div className="parameter-fields">
                 <div className="field">
-                  <label htmlFor="num-ctx">上下文长度</label>
+                  <label htmlFor="num-ctx">输入与回答总容量（Token）</label>
                   <input
                     id="num-ctx"
                     type="number"
@@ -163,7 +162,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="num-predict">最大输出</label>
+                  <label htmlFor="num-predict">回答长度上限（Token）</label>
                   <input
                     id="num-predict"
                     type="number"
@@ -179,7 +178,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="temperature">温度</label>
+                  <label htmlFor="temperature">回答变化程度（温度）</label>
                   <input
                     id="temperature"
                     type="number"
@@ -212,8 +211,8 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                 </div>
               </div>
               <p>
-                默认单任务生成、模型保留 5
-                分钟。上下文需要为输出留出空间；较长上下文会增加显存占用。
+                一次只生成一个回答，模型空闲 5 分钟后可从内存卸载。Token
+                是模型计算文字长度的单位，不等于字数。总容量包含说明、资料、对话与回答，需为回答留出空间；容量越大，通常越占显卡内存。“温度”越高，回答的措辞和选取通常越多变，不代表更正确。
               </p>
             </details>
             {error && (
@@ -229,11 +228,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                 {saving ? "正在保存…" : "保存设置"}
               </button>
               <span className="inline-help" role="status">
-                {saved
-                  ? "设置已保存"
-                  : changed
-                    ? "有未保存的更改"
-                    : ""}
+                {saved ? "设置已保存" : changed ? "有未保存的更改" : ""}
               </span>
             </div>
           </form>
@@ -251,17 +246,17 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                 <dt>工作区与会话保存</dt>
                 <dd>
                   {studio.desktop && studio.data
-                    ? "自动保存至 SQLite"
+                    ? "自动保存在本机数据库"
                     : "桌面程序中可用"}
                 </dd>
               </div>
               <div>
                 <dt>文件访问</dt>
-                <dd>尚未授权任何来源</dd>
+                <dd>只读取你在“知识”页主动选择的文件</dd>
               </div>
               <div>
                 <dt>备份与导出</dt>
-                <dd>后续版本提供</dd>
+                <dd>暂不支持</dd>
               </div>
             </dl>
             {studio.data?.dataPath && (
@@ -273,7 +268,9 @@ export function SettingsPage({ studio }: { studio: Studio }) {
             )}
             <details className="field-help">
               <summary>隐私与存储说明</summary>
-              <p>模型请求只发往本机。文件导入开放前，不会读取项目资料。会话保存在本机数据库中。</p>
+              <p>
+                问题和所选资料只发给本机模型。添加文件后，会在本机保存副本；不会自动扫描文件夹。对话保存在本机数据库中。
+              </p>
             </details>
           </div>
         </section>
@@ -287,11 +284,9 @@ export function SettingsPage({ studio }: { studio: Studio }) {
           <div className="settings-fields">
             <div className="about-line">
               <strong>CortexOS</strong>
-              <span className="version-label">0.1.0 · 本地对话 Alpha</span>
+              <span className="version-label">0.1.0 · 本地工作台测试版</span>
             </div>
-            <p className="muted">
-              知识草案、版本记录与 3D 知识图谱已开放。
-            </p>
+            <p className="muted">知识草稿、版本记录与 3D 知识图谱已开放。</p>
           </div>
         </section>
       </div>

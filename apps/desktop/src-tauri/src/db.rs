@@ -422,7 +422,9 @@ impl Database {
                 return Err("所选知识尚未确认或不属于当前工作区。请重新选择。".into());
             };
             if !crate::sources::available(&connection, &item.node_id, version)? {
-                return Err("所选知识的文件来源已停用，请移除该项或重新授权来源。".into());
+                return Err(
+                    "所选知识使用的文件已停用，请移除这条知识，或重新添加文件以恢复使用。".into(),
+                );
             }
             if version != item.version {
                 return Err("知识生效版本已变化。问题已保留，请更新上下文预览后重新发送。".into());
@@ -453,7 +455,7 @@ impl Database {
         used += block_cost;
         if used > budget {
             return Err(
-                "所选知识与问题超出上下文预算，请移除部分知识、缩短问题或增加上下文长度。".into(),
+                "所选知识和问题超过发送内容的容量上限，请移除部分知识、缩短问题，或在设置中增加“输入与回答总容量”。".into(),
             );
         }
         let enabled = crate::retrieval::enabled(&connection, workspace_id, conversation_id)?;

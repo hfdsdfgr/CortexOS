@@ -61,7 +61,7 @@ test("native graph persists relationships, independent views and knowledge edits
       .toBeGreaterThan(0);
     const loadMs = Date.now() - started;
     await page
-      .getByRole("button", { name: "项目目标 背景 · 草案", exact: true })
+      .getByRole("button", { name: "项目目标 背景 · 草稿", exact: true })
       .click();
     await expect(
       page.getByRole("heading", { name: "项目目标", exact: true }),
@@ -80,7 +80,7 @@ test("native graph persists relationships, independent views and knowledge edits
     await leaving.getByRole("button", { name: "继续编辑" }).click();
     await editor.getByRole("button", { name: "保存关系", exact: true }).click();
     await expect(editor).not.toBeVisible();
-    await page.getByRole("button", { name: "聚焦节点", exact: true }).click();
+    await page.getByRole("button", { name: "移到选中节点", exact: true }).click();
     await page.getByText("节点位置", { exact: true }).click();
     await page.getByLabel("X", { exact: true }).fill("4");
     await page.getByRole("button", { name: "应用位置", exact: true }).click();
@@ -134,9 +134,9 @@ test("native graph persists relationships, independent views and knowledge edits
       .click();
     await editor.getByRole("button", { name: "保存关系", exact: true }).click();
     await expect(editor).not.toBeVisible();
-    await page.getByRole("button", { name: "修改草案", exact: true }).click();
+    await page.getByRole("button", { name: "修改草稿", exact: true }).click();
     const knowledgeEditor = page.getByRole("dialog", {
-      name: "修改知识草案",
+      name: "修改知识草稿",
       exact: true,
     });
     await knowledgeEditor
@@ -146,7 +146,7 @@ test("native graph persists relationships, independent views and knowledge edits
       .getByLabel("修改说明", { exact: true })
       .fill("图谱编辑复用");
     await knowledgeEditor
-      .getByRole("button", { name: "保存草案", exact: true })
+      .getByRole("button", { name: "保存草稿", exact: true })
       .click();
     await expect(knowledgeEditor).not.toBeVisible();
     await expect(
@@ -155,13 +155,13 @@ test("native graph persists relationships, independent views and knowledge edits
     await expect(
       page.locator(".graph-inspector .knowledge-prose").first(),
     ).toHaveText("从图谱修订的项目目标。");
-    await page.getByRole("button", { name: "审核并确认", exact: true }).click();
+    await page.getByRole("button", { name: "检查并确认", exact: true }).click();
     await page.getByRole("button", { name: "确认此版本", exact: true }).click();
     await expect(
       page.locator(".graph-inspector .knowledge-state"),
-    ).toContainText("生效版本 v2");
+    ).toContainText("回答使用 v2");
     await page
-      .getByRole("button", { name: "适应全部节点", exact: true })
+      .getByRole("button", { name: "显示全部节点", exact: true })
       .click();
     await page.screenshot({
       path: testInfo.outputPath("native-knowledge-graph.png"),

@@ -72,7 +72,9 @@ export function ContextPicker({ studio }: { studio: Studio }) {
     <details className="context-picker">
       <summary>手动选择：{studio.contextSelection.length} 项知识</summary>
       <div className="context-toolbar">
-        <span>选择已确认的知识、上下文或决策。每次发送固定所选生效版本。</span>
+        <span>
+          可选择已确认的知识、背景或决定。发送时会保存本次使用的版本。
+        </span>
         <button
           type="button"
           className="button text-button"
@@ -107,8 +109,8 @@ export function ContextPicker({ studio }: { studio: Studio }) {
                 }}
               />
               <span>
-                {item.title} <strong>生效 v{item.effectiveVersion}</strong>
-                {item.latestVersion !== item.effectiveVersion && " · 有新草案"}
+                {item.title} <strong>当前使用 v{item.effectiveVersion}</strong>
+                {item.latestVersion !== item.effectiveVersion && " · 有新草稿"}
                 {selected &&
                   selected.version !== item.effectiveVersion &&
                   " · 所选版本已变化，请取消后重新选择"}
@@ -141,7 +143,7 @@ export function ContextPicker({ studio }: { studio: Studio }) {
             .finally(() => setBusy(false));
         }}
       >
-        {busy ? "正在准备…" : "预览上下文"}
+        {busy ? "正在准备…" : "查看本次会用的资料"}
       </button>
       {error && (
         <p role="alert" className="form-error">
@@ -151,8 +153,9 @@ export function ContextPicker({ studio }: { studio: Studio }) {
       {preview && (
         <div>
           <p>
-            预算 {preview.estimatedUnits} / {preview.budgetUnits}（UTF-8
-            字节估算）；{preview.messageRefs.length} 条会话消息。
+            预计发送内容用量 {preview.estimatedUnits} / {preview.budgetUnits}
+            （按 UTF-8 字节估算，不是模型实际的 Token 数）；包含{" "}
+            {preview.messageRefs.length} 条对话消息。
           </p>
           <RetrievalSummary report={preview.retrieval} />
           {preview.knowledgeRefs?.map((item) => (

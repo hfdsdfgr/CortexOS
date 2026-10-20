@@ -116,7 +116,7 @@ test("reference chat layouts retain compose, streaming, inspection and offline s
       });
     }
     await page.getByRole("button", { name: "执行过程", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "本次执行" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "本次回答的处理记录" })).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath("chat-inspector-1920.png"),
     });

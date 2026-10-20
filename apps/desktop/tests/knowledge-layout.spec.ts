@@ -10,7 +10,7 @@ test("compact navigation and reading layout preserve knowledge actions", async (
     const data = await nativeInvoke<Bootstrap>(page, "bootstrap");
     const workspaceId = data.workspaces[0].id;
     const content =
-      "本地认知工作台的知识管理\n\n知识应保留来源、修改说明和审核记录。用户修改知识后，系统保存新草案；确认版本之后，下一次检索才会采用新的内容。\n\n阅读与追溯\n\n正文聚焦当前版本。来源记录最初的回答摘录，执行记录保留当次模型实际使用的资料。历史版本用于理解内容如何变化，不会因为切换查看而改变生效版本。\n\n实施原则\n\n先交付可以验证的功能，再逐步完善体验。每次操作应保留清晰反馈，失败时保护草稿，并允许用户返回继续编辑。";
+      "本地认知工作台的知识管理\n\n知识应保留来源、修改说明和审核记录。用户修改知识后，系统保存新草稿；确认版本之后，下一次检索才会采用新的内容。\n\n阅读与追溯\n\n正文聚焦当前版本。来源记录最初的回答摘录，执行记录保留当次模型实际使用的资料。历史版本用于理解内容如何变化，不会因为切换查看而改变生效版本。\n\n实施原则\n\n先交付可以验证的功能，再逐步完善体验。每次操作应保留清晰反馈，失败时保护草稿，并允许用户返回继续编辑。";
     const id = await nativeInvoke<string>(page, "save_knowledge", {
       input: {
         workspaceId,

@@ -13,10 +13,10 @@ export interface ExecutionData {
 }
 export const eventLabels: Record<string, string> = {
   request_received: "收到问题",
-  context_prepared: "保存上下文",
-  retrieval_started: "开始检索知识",
-  retrieval_completed: "知识检索完成",
-  model_called: "模型调用尝试（旧记录）",
+  context_prepared: "保存回答资料",
+  retrieval_started: "开始查找知识",
+  retrieval_completed: "知识查找完成",
+  model_called: "尝试联系模型（旧记录）",
   model_inspection_started: "开始检查模型",
   model_inspection_completed: "模型检查完成",
   model_request_started: "开始请求模型",
@@ -56,13 +56,13 @@ export function projectExecution(data: ExecutionData) {
         ? (event.payload as Record<string, unknown>)
         : {};
     const descriptions: Record<string, string> = {
-      request_received: "问题已保存，并创建本次运行。",
-      retrieval_started: "按当前问题检索本工作区的已确认知识。",
-      retrieval_completed: `检索完成：${detail.contextManifest.retrieval?.candidates.length ?? 0} 项候选，${detail.contextManifest.retrieval?.includedCount ?? 0} 项自动纳入。`,
-      context_prepared: `已固定 ${(detail.contextManifest.knowledgeRefs ?? []).length} 项知识与 ${detail.contextManifest.messageRefs?.length ?? 0} 条消息。`,
-      model_called: "旧记录表示开始调用尝试，不能据此确认模型已收到请求。",
+      request_received: "已保存问题，并建立本次回答记录。",
+      retrieval_started: "根据当前问题查找这个工作区已确认的知识。",
+      retrieval_completed: `找到 ${detail.contextManifest.retrieval?.candidates.length ?? 0} 条相关知识，自动选用 ${detail.contextManifest.retrieval?.includedCount ?? 0} 条。`,
+      context_prepared: `已保存这次使用的 ${(detail.contextManifest.knowledgeRefs ?? []).length} 条知识与 ${detail.contextManifest.messageRefs?.length ?? 0} 条消息。`,
+      model_called: "旧记录只说明开始联系模型，无法确认模型是否收到了问题。",
       model_inspection_started: "开始检查所选本地模型。",
-      model_inspection_completed: "本地模型来源检查通过。",
+      model_inspection_completed: "已确认本机安装了所选模型。",
       model_request_started: "开始向本机模型服务发送已保存的请求。",
       model_response_received: "本机模型服务已返回成功响应。",
       response_completed: "生成已结束，回答已保存。",
@@ -73,7 +73,7 @@ export function projectExecution(data: ExecutionData) {
     const summary =
       typeof payload.errorMessage === "string"
         ? payload.errorMessage
-        : (descriptions[event.kind] ?? "已保存的实际应用事件。");
+        : (descriptions[event.kind] ?? "应用当时实际做过并保存的操作。");
     nodes.push({
       id,
       title: eventLabels[event.kind] ?? event.kind,
@@ -126,8 +126,8 @@ export function projectExecution(data: ExecutionData) {
       hash: item.contentHash,
       summary:
         item.reason === "automatic_effective_knowledge"
-          ? "自动检索纳入的生效知识"
-          : "用户手动选择的生效知识",
+          ? "自动找到并选用的已确认知识"
+          : "你手动选择的已确认知识",
     }),
   );
   if (detail.snapshot) {

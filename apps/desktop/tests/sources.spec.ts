@@ -50,8 +50,8 @@ test("authorized snapshots preserve exact evidence and stop future use after rev
       .getByRole("navigation")
       .getByRole("link", { name: "知识", exact: true })
       .click();
-    await page.getByRole("button", { name: "来源", exact: true }).click();
-    await page.getByRole("button", { name: "选择文件", exact: true }).click();
+    await page.getByRole("button", { name: "资料文件", exact: true }).click();
+    await page.getByRole("button", { name: "添加文件", exact: true }).click();
     await expect(
       page.getByRole("button", { name: "确认导入", exact: true }),
     ).toBeVisible();
@@ -61,7 +61,7 @@ test("authorized snapshots preserve exact evidence and stop future use after rev
     // Commit the preview, not a silently reread file.
     await writeFile(file, "# 发布计划\n发布改为周五。\n");
     await page.getByRole("button", { name: "确认导入", exact: true }).click();
-    await expect(page.getByRole("region", { name: "来源原文" })).toContainText(
+    await expect(page.getByRole("region", { name: "文件内容" })).toContainText(
       "发布定于周四。",
     );
     let sources = await nativeInvoke<
@@ -71,16 +71,16 @@ test("authorized snapshots preserve exact evidence and stop future use after rev
     const source = { sourceId, version: 1, startLine: 2, endLine: 2 };
     await page.getByLabel("起始行", { exact: true }).fill("2");
     await page.getByLabel("结束行", { exact: true }).fill("2");
-    await page.getByRole("button", { name: "从所选行建立草案" }).click();
+    await page.getByRole("button", { name: "将所选文字存为知识草稿" }).click();
     const editor = page.getByRole("dialog", {
-      name: "新建知识草案",
+      name: "新建知识草稿",
       exact: true,
     });
     await expect(editor.getByLabel("正文", { exact: true })).toHaveValue(
       "发布定于周四。",
     );
     await editor.getByLabel("标题", { exact: true }).fill("项目发布计划");
-    await editor.getByRole("button", { name: "保存草案", exact: true }).click();
+    await editor.getByRole("button", { name: "保存草稿", exact: true }).click();
     await expect(editor).not.toBeVisible();
     const nodes = await nativeInvoke<{ id: string }[]>(page, "list_knowledge", {
       workspaceId,
@@ -104,31 +104,31 @@ test("authorized snapshots preserve exact evidence and stop future use after rev
         contextSelection: [],
       });
     expect((await preview()).knowledgeRefs).toEqual([]);
-    await page.getByRole("button", { name: "审核并确认" }).click();
+    await page.getByRole("button", { name: "检查并确认" }).click();
     await page.getByRole("button", { name: "确认此版本", exact: true }).click();
     // Reimport creates source v2; the original knowledge still points to source v1.
-    await page.getByRole("button", { name: "来源", exact: true }).click();
-    await page.getByRole("button", { name: "选择文件", exact: true }).click();
+    await page.getByRole("button", { name: "资料文件", exact: true }).click();
+    await page.getByRole("button", { name: "添加文件", exact: true }).click();
     await page.getByRole("button", { name: "确认导入", exact: true }).click();
-    await expect(page.getByLabel("来源版本", { exact: true })).toHaveValue("2");
-    await page.getByLabel("来源版本", { exact: true }).selectOption("1");
-    await expect(page.getByRole("region", { name: "来源原文" })).toContainText(
+    await expect(page.getByLabel("文件版本", { exact: true })).toHaveValue("2");
+    await page.getByLabel("文件版本", { exact: true }).selectOption("1");
+    await expect(page.getByRole("region", { name: "文件内容" })).toContainText(
       "发布定于周四。",
     );
     await page.screenshot({
       path: info.outputPath("source-version-evidence.png"),
     });
-    await page.getByRole("button", { name: "关闭文件来源" }).click();
-    await page.getByRole("button", { name: "修改草案", exact: true }).click();
+    await page.getByRole("button", { name: "关闭资料文件" }).click();
+    await page.getByRole("button", { name: "修改草稿", exact: true }).click();
     const edit = page.getByRole("dialog", {
-      name: "修改知识草案",
+      name: "修改知识草稿",
       exact: true,
     });
     await edit
       .getByLabel("正文", { exact: true })
       .fill("发布计划仍参考原文件快照：周四。");
     await edit.getByLabel("修改说明", { exact: true }).fill("整理知识表述");
-    await edit.getByRole("button", { name: "保存草案", exact: true }).click();
+    await edit.getByRole("button", { name: "保存草稿", exact: true }).click();
     detail = await nativeInvoke<KnowledgeDetail>(page, "get_knowledge", {
       workspaceId,
       nodeId,
@@ -221,18 +221,18 @@ test("authorized snapshots preserve exact evidence and stop future use after rev
         sourceId,
         version: 1,
       }),
-    ).rejects.toThrow("不属于");
+    ).rejects.toThrow("不在当前工作区");
     await page
       .getByRole("navigation")
       .getByRole("link", { name: "知识", exact: true })
       .click();
     await page.locator(".knowledge-row").click();
-    await page.getByRole("button", { name: "来源", exact: true }).click();
+    await page.getByRole("button", { name: "资料文件", exact: true }).click();
     await page.locator(".source-row").click();
-    await page.getByText("来源快照与权限", { exact: true }).click();
-    await page.getByRole("button", { name: "停用来源", exact: true }).click();
+    await page.getByText("保存记录与使用权限", { exact: true }).click();
+    await page.getByRole("button", { name: "停用文件", exact: true }).click();
     await page.getByRole("button", { name: "确认停用", exact: true }).click();
-    await expect(page.getByRole("region", { name: "来源原文" })).toContainText(
+    await expect(page.getByRole("region", { name: "文件内容" })).toContainText(
       "已停用",
     );
     expect((await preview()).knowledgeRefs).toEqual([]);
@@ -248,7 +248,7 @@ test("authorized snapshots preserve exact evidence and stop future use after rev
       (await nativeInvoke<RunDetail>(page, "get_run", { workspaceId, runId }))
         .snapshot,
     ).toEqual(run.snapshot);
-    await page.getByRole("button", { name: "关闭文件来源" }).click();
+    await page.getByRole("button", { name: "关闭资料文件" }).click();
     await app.closeWindow();
     await app.stop();
     app = await launchNative(info, { sourcePath: file, endpoint });
@@ -399,24 +399,24 @@ test("Windows native picker authorizes only the explicitly selected file", async
   const file = join(directory, "native-picked.md");
   await writeFile(
     file,
-    "# 原生选择验收\n这段内容来自实际Windows文件选择器。\n",
+    "# 文件内容示例\n这段内容来自实际Windows文件选择器。\n",
   );
   const app = await launchNative(info);
   const page = app.page;
   try {
-    await createWorkspace(page, "原生选择来源");
+    await createWorkspace(page, "文件导入检查");
     await page
       .getByRole("navigation")
       .getByRole("link", { name: "知识", exact: true })
       .click();
-    await page.getByRole("button", { name: "来源", exact: true }).click();
-    await page.getByRole("button", { name: "选择文件", exact: true }).click();
+    await page.getByRole("button", { name: "资料文件", exact: true }).click();
+    await page.getByRole("button", { name: "添加文件", exact: true }).click();
     const script = `$ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 $sourcePid = [int]$env:CORTEX_PICKER_PID
 $sourceFile = $env:CORTEX_PICKER_FILE
-$condition = New-Object System.Windows.Automation.AndCondition ((New-Object System.Windows.Automation.PropertyCondition ([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $sourcePid)), (New-Object System.Windows.Automation.PropertyCondition ([System.Windows.Automation.AutomationElement]::NameProperty, '选择文件来源')))
+$condition = New-Object System.Windows.Automation.AndCondition ((New-Object System.Windows.Automation.PropertyCondition ([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $sourcePid)), (New-Object System.Windows.Automation.PropertyCondition ([System.Windows.Automation.AutomationElement]::NameProperty, '选择资料文件')))
 $sourceDialog = $null
 for ($attempt=0; $attempt -lt 50; $attempt++) { $sourceDialog=[System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Descendants,$condition); if ($sourceDialog) { break }; Start-Sleep -Milliseconds 100 }
 if (-not $sourceDialog) { throw 'Native source picker was not found' }
@@ -446,7 +446,7 @@ if (-not $open) { throw 'Open button was not found' }
       "这段内容来自实际Windows文件选择器。",
     );
     await page.getByRole("button", { name: "确认导入", exact: true }).click();
-    await expect(page.getByRole("region", { name: "来源原文" })).toContainText(
+    await expect(page.getByRole("region", { name: "文件内容" })).toContainText(
       "这段内容来自实际Windows文件选择器。",
     );
     for (const [width, height] of [

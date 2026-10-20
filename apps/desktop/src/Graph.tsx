@@ -335,7 +335,7 @@ function KnowledgeGraph({
         >
           <option value="all">全部状态</option>
           <option value="confirmed">已确认</option>
-          <option value="draft">待确认 / 新草案</option>
+          <option value="draft">待确认 / 新草稿</option>
         </select>
         <details className="graph-more-filters">
           <summary>时间</summary>
@@ -354,8 +354,8 @@ function KnowledgeGraph({
         <div className="graph-view-actions">
           <button
             className="icon-button"
-            title="适应全部节点"
-            aria-label="适应全部节点"
+            title="显示全部节点"
+            aria-label="显示全部节点"
             disabled={failed || !visible.length || saving}
             onClick={() => api.current?.fit()}
           >
@@ -428,7 +428,7 @@ function KnowledgeGraph({
                       {kinds[node.kind]} ·{" "}
                       {node.latestVersion === node.effectiveVersion
                         ? "已确认"
-                        : "草案"}
+                        : "草稿"}
                     </small>
                   </span>
                 </button>
@@ -466,7 +466,7 @@ function KnowledgeGraph({
             <div className="graph-empty">
               <Network size={32} />
               <h2>从知识建立关系</h2>
-              <p>先保存知识草案，再连接相关条目。</p>
+              <p>先保存知识草稿，再连接相关条目。</p>
               <a className="button primary" href="#/knowledge">
                 前往知识
               </a>
@@ -493,7 +493,7 @@ function KnowledgeGraph({
                   ...node,
                   badge:
                     node.latestVersion !== node.effectiveVersion
-                      ? "草案"
+                      ? "草稿"
                       : undefined,
                 }))}
                 edges={visibleEdges.map((edge) => ({
@@ -523,10 +523,10 @@ function KnowledgeGraph({
               ))}
             </ul>
             <p>
-              拖动旋转，右键拖动平移，滚轮缩放。可从列表选择，再点击“聚焦节点”。方向按“起点
+              拖动旋转，右键拖动平移，滚轮缩放。可从列表选择，再点击“移到选中节点”。方向按“起点
               → 关系 → 终点”阅读。
             </p>
-            <p>空间位置用于布局，不代表因果或可信程度。</p>
+            <p>节点的位置只是排布方式，不能据此判断因果关系或内容是否可信。</p>
           </details>
           <div className="graph-view-status" role="status">
             {demo
@@ -539,7 +539,7 @@ function KnowledgeGraph({
           </div>
         </div>
         {selectedNode && (
-          <aside className="graph-inspector" aria-label="图谱检查器">
+          <aside className="graph-inspector" aria-label="图谱详情">
             <header className="graph-inspector-toolbar">
               <button
                 className="button text-button"
@@ -547,7 +547,7 @@ function KnowledgeGraph({
                 onClick={focusSelected}
               >
                 <Focus size={15} />
-                聚焦节点
+                移到选中节点
               </button>
               <button
                 className="icon-button"
@@ -920,7 +920,7 @@ export function RelationshipEditor({
                 disabled={saving}
                 onChange={(e) => setActive(e.target.checked)}
               />
-              关系有效（取消勾选将保存为停用修订）
+              使用这条关系（取消勾选会保存一个停用版本）
             </label>
           )}
           <div className="field">

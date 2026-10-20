@@ -61,7 +61,7 @@ export function ExecutionTrace({ studio }: { studio: Studio }) {
   return (
     <>
       <div className="trace-toolbar">
-        <label htmlFor="execution-run">运行</label>
+        <label htmlFor="execution-run">回答记录</label>
         <select
           id="execution-run"
           value={route.run ?? ""}
@@ -73,9 +73,9 @@ export function ExecutionTrace({ studio }: { studio: Studio }) {
             })
           }
         >
-          <option value="">选择一次真实运行</option>
+          <option value="">选择一次已记录的回答</option>
           {route.run && !runs.some((run) => run.id === route.run) && (
-            <option value={route.run}>当前定位的运行</option>
+            <option value={route.run}>当前查看的回答记录</option>
           )}
           {runs.map((run) => (
             <option key={run.id} value={run.id}>
@@ -91,7 +91,7 @@ export function ExecutionTrace({ studio }: { studio: Studio }) {
             setRefresh((x) => x + 1);
           }}
         >
-          刷新运行
+          刷新记录
         </button>
         {more && (
           <button
@@ -109,12 +109,14 @@ export function ExecutionTrace({ studio }: { studio: Studio }) {
       )}
       {!studio.desktop ? (
         <div className="graph-empty">
-          <h2>在桌面程序中查看运行记录</h2>
+          <h2>在桌面程序中查看回答记录</h2>
           <p>执行过程记录实际应用事件，不代表模型的内部思维。</p>
         </div>
       ) : !route.run ? (
         <div className="graph-empty">
-          <h2>{runs.length ? "选择要检查的运行" : "当前工作区尚无运行"}</h2>
+          <h2>
+            {runs.length ? "选择要查看的回答记录" : "当前工作区还没有回答记录"}
+          </h2>
           <a className="button secondary" href="#/chat">
             前往对话
           </a>
@@ -231,7 +233,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
             className="button text-button"
             onClick={() => setRefresh((x) => x + 1)}
           >
-            重新读取运行
+            重新读取记录
           </button>
           <button
             className="button text-button"
@@ -287,7 +289,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
               disabled={failed || !ready}
               onClick={() => api.current?.fit()}
             >
-              适应执行图
+              显示完整流程
             </button>
             <button
               className="button secondary"
@@ -296,7 +298,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                 selected && api.current?.focus(graph.positions[selected.id])
               }
             >
-              聚焦节点
+              移到选中节点
             </button>
             <button
               className="button secondary"
@@ -378,7 +380,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                         />
                       )}
                       <details>
-                        <summary>审计数据</summary>
+                        <summary>详细记录（原始数据）</summary>
                         <pre>{selected.content}</pre>
                       </details>
                     </>
@@ -412,7 +414,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                         })
                       }
                     >
-                      定位原消息
+                      查看对应消息
                     </button>
                   )}
                   {related.length > 0 && (
@@ -446,8 +448,8 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                               {edge.relation === "executed_before"
                                 ? "事件先后顺序，不表示因果关系。"
                                 : edge.relation === "included_in_context"
-                                  ? "这项资料纳入了本次请求上下文，不代表已验证。"
-                                  : "本次结束记录关联的已保存输出。"}
+                                  ? "这份资料实际发给了模型，但不代表内容已核实。"
+                                  : "这是本次结束时保存的回答。"}
                             </p>
                           </li>
                         ))}
@@ -456,7 +458,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                   )}
                   {selected.hash && (
                     <details>
-                      <summary>内容哈希</summary>
+                      <summary>内容校验码（SHA-256）</summary>
                       <code>{selected.hash}</code>
                     </details>
                   )}
@@ -465,20 +467,20 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                 <p>
                   {route.event
                     ? "该节点不在本次运行记录中。"
-                    : "选择节点，检查实际事件、依据或输出。"}
+                    : "选择一个节点，查看实际操作、参考资料或回答。"}
                 </p>
               )}
               <details className="trace-run-info">
-                <summary>本次运行与模型配置</summary>
+                <summary>本次回答的模型设置</summary>
                 <p>
-                  上下文 {data.detail.settings.numCtx} · 输出{" "}
-                  {data.detail.settings.numPredict} · 温度{" "}
+                  总容量 {data.detail.settings.numCtx} Token · 回答上限{" "}
+                  {data.detail.settings.numPredict} Token · 回答变化程度（温度）{" "}
                   {data.detail.settings.temperature}
                 </p>
                 <p>
                   {data.detail.snapshot
-                    ? "包含完整请求快照"
-                    : "旧运行未保存完整快照；仅展示已有事件与输出。"}
+                    ? "已保存当时发给模型的完整内容"
+                    : "这条旧记录没有保存发给模型的完整内容，只能查看当时已记录的操作和回答。"}
                 </p>
                 <code>{runId}</code>
               </details>

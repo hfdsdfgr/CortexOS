@@ -70,7 +70,7 @@ const status = (node: KnowledgeNode) =>
   node.latestVersion === node.effectiveVersion
     ? "已确认"
     : node.effectiveVersion
-      ? "有新草案"
+      ? "有新草稿"
       : "待确认";
 const date = (value: string) => new Date(value).toLocaleString("zh-CN");
 
@@ -160,7 +160,7 @@ export function KnowledgePage({
             disabled={!studio.desktop || !workspace}
             onClick={() => setSourcesOpen(true)}
           >
-            来源
+            资料文件
           </button>
           <button
             className="button primary"
@@ -204,7 +204,7 @@ export function KnowledgePage({
                 onChange={(e) => setFilter(e.target.value)}
               >
                 <option value="all">全部状态</option>
-                <option value="pending">待确认 / 新草案</option>
+                <option value="pending">待确认 / 新草稿</option>
                 <option value="confirmed">已确认</option>
               </select>
             </div>
@@ -250,7 +250,7 @@ export function KnowledgePage({
                     ? "在桌面程序中管理知识。"
                     : !workspace
                       ? "先创建或选择工作区。"
-                      : "手动记录，或从回答保存草案。"}
+                      : "手动记录，或从回答保存草稿。"}
                 </p>
                 {(query || filter !== "all") && (
                   <button
@@ -393,7 +393,7 @@ export function KnowledgeInspector({
           >
             {detail.versions.map((item) => (
               <option key={item.version} value={item.version}>
-                v{item.version} · {item.approvedAt ? "已确认过" : "草案"}
+                v{item.version} · {item.approvedAt ? "已确认过" : "草稿"}
               </option>
             ))}
           </select>
@@ -419,7 +419,7 @@ export function KnowledgeInspector({
               >
                 <strong>{item.changeReason}</strong>
                 <span>
-                  v{item.version} · {item.approvedAt ? "已确认过" : "草案"}
+                  v{item.version} · {item.approvedAt ? "已确认过" : "草稿"}
                 </span>
               </button>
               <span>保存于 {date(item.createdAt)}</span>
@@ -480,8 +480,8 @@ export function KnowledgeInspector({
                     `${kinds[currentVersion.kind]} · v${currentVersion.version} · `}
                   {status(detail.node)}
                   {detail.node.effectiveVersion
-                    ? ` · 生效版本 v${detail.node.effectiveVersion}`
-                    : " · 尚无生效版本"}
+                    ? ` · 回答使用 v${detail.node.effectiveVersion}`
+                    : " · 确认后才用于回答"}
                 </p>
               </div>
               <div className="knowledge-detail-actions">
@@ -501,7 +501,7 @@ export function KnowledgeInspector({
                   onClick={() => onEdit({ workspaceId: workspace!, detail })}
                 >
                   <Pencil size={15} />
-                  修改草案
+                  修改草稿
                 </button>
               </div>
             </header>
@@ -524,19 +524,19 @@ export function KnowledgeInspector({
             )}
             {detail.node.latestVersion !== detail.node.effectiveVersion && (
               <div className="knowledge-review">
-                <span>最新草案 v{detail.node.latestVersion}</span>
+                <span>最新草稿 v{detail.node.latestVersion}</span>
                 <button
                   className="button primary"
                   onClick={() => approval.current?.showModal()}
                 >
                   <Check size={16} />
-                  审核并确认
+                  检查并确认
                 </button>
               </div>
             )}
             {effective && effective.version !== currentVersion.version && (
               <details className="knowledge-disclosure">
-                <summary>对照当前生效版本 v{effective.version}</summary>
+                <summary>对照回答使用的版本 v{effective.version}</summary>
                 <h3>{effective.title}</h3>
                 <p>{kinds[effective.kind]}</p>
                 <div className="knowledge-prose">{effective.content}</div>
@@ -578,11 +578,11 @@ export function KnowledgeInspector({
                   className="knowledge-disclosure"
                 >
                   <summary>
-                    文件来源：{evidence.name}
+                    所用文件：{evidence.name}
                     {!evidence.enabled && "（已停用）"}
                   </summary>
                   <p>
-                    来源 v{evidence.version} · 第 {evidence.startLine}–
+                    文件版本 v{evidence.version} · 第 {evidence.startLine}–
                     {evidence.endLine} 行
                   </p>
                   <blockquote>{evidence.excerpt}</blockquote>
@@ -590,14 +590,14 @@ export function KnowledgeInspector({
                     className="button secondary"
                     onClick={() => setSourceFocus(evidence)}
                   >
-                    查看来源原文
+                    查看文件内容
                   </button>
                 </details>
               ))}
             <details className="knowledge-disclosure">
               <summary>
                 {detail.sourceEvidence?.length
-                  ? "来源记录说明"
+                  ? "这条知识是怎么来的"
                   : detail.sourceExcerpt
                     ? "回答来源"
                     : "来源：手动记录"}
@@ -626,7 +626,9 @@ export function KnowledgeInspector({
                   >
                     打开原会话
                   </button>
-                  <p>此摘录记录最初来源，修改后的内容需单独审核。</p>
+                  <p>
+                    这里保留最初引用的回答文字。修改后的知识仍需要你检查并确认。
+                  </p>
                   <code className="source-hash">
                     SHA-256 {detail.sourceHash}
                   </code>
@@ -634,7 +636,7 @@ export function KnowledgeInspector({
               ) : (
                 <p>
                   {detail.sourceEvidence?.length
-                    ? "从文件片段建立，后续修改沿用该起源；内容仍需单独审核。"
+                    ? "这条知识最初根据文件中的文字整理而来。修改后仍保留这份原始记录，内容是否准确需要你另行检查。"
                     : "由用户手动记录，没有引用模型回答。"}
                 </p>
               )}
@@ -650,7 +652,7 @@ export function KnowledgeInspector({
               <h2 id="approval-title">确认知识版本</h2>
               <p>
                 将“{detail.versions[0].title}”的 v{detail.node.latestVersion}{" "}
-                设为生效版本。确认表示你已审核，不代表系统验证了事实。
+                设为之后回答使用的版本。确认表示你已检查内容，系统没有替你核实事实。
               </p>
               <div className="approval-content">
                 {detail.versions[0].content}
@@ -726,9 +728,9 @@ export function KnowledgeEditor({
     original
       ? ""
       : request.source
-        ? "从回答保存草案"
+        ? "从回答保存草稿"
         : request.sourceDocument
-          ? "从文件片段记录"
+          ? "根据文件文字整理"
           : "手动记录",
   );
   const [excerpt, setExcerpt] = useState(request.excerpt ?? "");
@@ -752,9 +754,9 @@ export function KnowledgeEditor({
       (original
         ? ""
         : request.source
-          ? "从回答保存草案"
+          ? "从回答保存草稿"
           : request.sourceDocument
-            ? "从文件片段记录"
+            ? "根据文件文字整理"
             : "手动记录");
   const dirty = useRef(changed);
   dirty.current = changed;
@@ -844,7 +846,7 @@ export function KnowledgeEditor({
         >
           <header className="drawer-heading">
             <h2 id="knowledge-edit-title">
-              {original ? "修改知识草案" : "新建知识草案"}
+              {original ? "修改知识草稿" : "新建知识草稿"}
             </h2>
             <button
               type="button"
@@ -906,7 +908,7 @@ export function KnowledgeEditor({
           )}
           {request.source && (
             <details className="knowledge-disclosure">
-              <summary>来源摘录（可缩短为原文片段）</summary>
+              <summary>引用的原文（可缩短）</summary>
               <label className="sr-only" htmlFor="knowledge-excerpt">
                 来源摘录
               </label>
@@ -919,7 +921,7 @@ export function KnowledgeEditor({
                 onChange={(e) => setExcerpt(e.target.value)}
               />
               <p>
-                摘录须保留原文，知识正文可以改写。来源不会自动证明正文正确。
+                引用文字须保持原样，知识正文可以改写。有引用不代表内容一定正确。
               </p>
             </details>
           )}
@@ -980,8 +982,8 @@ export function KnowledgeEditor({
           <footer className="dialog-actions">
             <span className="editor-status">
               {request.detail?.node.effectiveVersion
-                ? `保存后仍以 v${request.detail.node.effectiveVersion} 生效`
-                : "保存为待确认草案"}
+                ? `保存草稿后，回答仍使用 v${request.detail.node.effectiveVersion}`
+                : "保存为待确认草稿"}
             </span>
             <button
               type="button"
@@ -992,7 +994,7 @@ export function KnowledgeEditor({
               取消
             </button>
             <button className="button primary" disabled={saving}>
-              {saving ? "正在保存…" : "保存草案"}
+              {saving ? "正在保存…" : "保存草稿"}
             </button>
           </footer>
         </form>
@@ -1006,7 +1008,7 @@ export function KnowledgeEditor({
         }}
       >
         <h2 id="leave-knowledge-title">保留未保存的修改？</h2>
-        <p>保存后将新增待确认草案。</p>
+        <p>保存后将新增待确认草稿。</p>
         <div className="dialog-actions">
           <button
             className="button text-button"
@@ -1033,7 +1035,7 @@ export function KnowledgeEditor({
               void save(true);
             }}
           >
-            保存草案
+            保存草稿
           </button>
         </div>
       </dialog>

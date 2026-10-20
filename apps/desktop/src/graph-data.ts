@@ -60,8 +60,16 @@ export function defaultPositions(
 const entries = [
   ["项目目标", "context", "在本机保存项目讨论、知识与审核记录。"],
   ["用户访谈", "evidence", "演示资料：用户希望快速找到一项决定的依据。"],
-  ["来源可追溯", "knowledge", "重要知识保留起源摘录，支持回到原会话。"],
-  ["先完成二维闭环", "decision", "先交付知识草案、确认与历史，再连接图谱。"],
+  [
+    "能查到原始出处",
+    "knowledge",
+    "重要知识保留最初引用的文字，可以返回原来的对话。",
+  ],
+  [
+    "先做好知识查看和编辑",
+    "decision",
+    "先交付知识草稿、确认与历史，再连接图谱。",
+  ],
   [
     "图谱有助于发现关联",
     "hypothesis",
@@ -105,7 +113,7 @@ export const demoGraph: GraphData = {
         toNodeId: `demo-${to}`,
         relation,
         active: true,
-        changeReason: "确定性演示关系",
+        changeReason: "示例关系",
         createdAt: timestamp,
       },
     ],

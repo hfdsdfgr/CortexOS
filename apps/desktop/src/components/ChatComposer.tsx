@@ -107,7 +107,7 @@ export function ChatComposer({
                 void studio.setAutoRetrieval(event.target.checked);
               }}
             />
-            {studio.savingRetrieval ? "正在保存…" : "自动检索知识"}
+            {studio.savingRetrieval ? "正在保存…" : "自动查找知识"}
           </label>
         )}
         <span className="local-label">
@@ -123,7 +123,7 @@ export function ChatComposer({
         <summary>对话说明与快捷键</summary>
         <p>
           Enter 发送，Shift+Enter
-          换行。上下文按预算选取最近完整对话，自动检索仅使用当前工作区的已确认知识，尚不检索文件。回答请结合依据判断。
+          换行。系统会在容量允许的范围内选取最近的完整对话，并查找当前工作区已确认的知识；不会直接搜索文件全文。请结合依据判断回答是否可靠。
         </p>
         {!studio.desktop && <p>浏览器预览不会读取或保存本地数据。</p>}
       </details>

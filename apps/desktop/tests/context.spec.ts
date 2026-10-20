@@ -134,7 +134,7 @@ test("effective knowledge reaches the exact saved model request and survives res
     await expect(page.getByText(/生效 v2/)).toBeVisible();
     await choice.uncheck();
     await choice.check();
-    await page.getByRole("button", { name: "预览上下文", exact: true }).click();
+    await page.getByRole("button", { name: "查看本次会用的资料", exact: true }).click();
     await expect(page.getByText(/预算 .*UTF-8/)).toBeVisible();
     await page.getByRole("button", { name: "发送消息", exact: true }).click();
     await expect.poll(() => requests.length).toBe(2);

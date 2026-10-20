@@ -39,7 +39,7 @@ impl ModelSettings {
             || !(0.0..=2.0).contains(&self.temperature)
             || !(30..=600).contains(&self.timeout_seconds)
         {
-            return Err("请检查生成参数：上下文 1024–16384，输出 32–2048，温度 0–2，超时 30–600 秒；上下文需留出生成空间。".into());
+            return Err("请检查回答设置：输入与回答总容量 1024–16384 Token，回答上限 32–2048 Token，回答变化程度（温度）0–2，超时 30–600 秒；总容量必须大于回答上限加 512 Token。".into());
         }
         Ok(())
     }

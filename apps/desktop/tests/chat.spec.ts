@@ -270,7 +270,7 @@ test("native chat preserves real SQLite data through cancellation, errors and re
       .getByRole("button", { name: "执行过程", exact: true })
       .last()
       .click();
-    await expect(page.getByRole("dialog", { name: "本次执行" })).toContainText(
+    await expect(page.getByRole("dialog", { name: "本次回答的处理记录" })).toContainText(
       "恢复中断记录",
     );
     await page.getByRole("button", { name: "关闭执行详情" }).click();

@@ -37,9 +37,9 @@ test("seven-node preview supports 3D selection, demand rendering and WebGL fallb
   await expect(
     page.getByRole("heading", { name: "项目目标", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "聚焦节点", exact: true }).click();
+  await page.getByRole("button", { name: "移到选中节点", exact: true }).click();
   await page.getByRole("button", { name: "关闭图谱详情" }).click();
-  await page.getByRole("button", { name: "适应全部节点" }).click();
+  await page.getByRole("button", { name: "显示全部节点" }).click();
   await page.waitForTimeout(250);
   const count = Number(await canvas.getAttribute("data-render-count"));
   await page.waitForTimeout(250);

@@ -11,9 +11,9 @@ const statusNames: Record<string, string> = {
 };
 const eventNames: Record<string, string> = {
   request_received: "收到问题",
-  context_prepared: "准备上下文",
-  retrieval_started: "开始检索知识",
-  retrieval_completed: "知识检索完成",
+  context_prepared: "准备回答资料",
+  retrieval_started: "开始查找知识",
+  retrieval_completed: "知识查找完成",
   model_called: "开始本地模型调用尝试（旧记录）",
   model_inspection_started: "开始检查本地模型",
   model_inspection_completed: "本地模型检查完成",
@@ -73,7 +73,7 @@ export function CognitiveInspector({
       onClose={onClose}
     >
       <div className="drawer-heading">
-        <h2 id="run-title">本次执行</h2>
+        <h2 id="run-title">本次回答的处理记录</h2>
         <button
           className="icon-button"
           aria-label="关闭执行详情"
@@ -111,13 +111,13 @@ export function CognitiveInspector({
               <dd>{new Date(detail.run.startedAt).toLocaleString("zh-CN")}</dd>
             </div>
             <div>
-              <dt>上下文 / 最大输出</dt>
+              <dt>总容量 / 回答长度上限（Token）</dt>
               <dd>
                 {detail.settings.numCtx} / {detail.settings.numPredict}
               </dd>
             </div>
             <div>
-              <dt>温度 / 超时</dt>
+              <dt>回答变化程度 / 超时</dt>
               <dd>
                 {detail.settings.temperature} / {detail.settings.timeoutSeconds}{" "}
                 秒
@@ -142,13 +142,13 @@ export function CognitiveInspector({
                       new Date(event.occurredAt).getTime() -
                         new Date(detail.run.startedAt).getTime(),
                     )}{" "}
-                    ms
+                    毫秒
                   </span>
                 </div>
               </li>
             ))}
           </ol>
-          <h3>使用的上下文</h3>
+          <h3>本次使用的资料</h3>
           <RetrievalSummary report={detail.contextManifest.retrieval} />
           {detail.contextManifest.knowledgeRefs?.map((item) => (
             <details key={item.nodeId} className="knowledge-disclosure">
@@ -158,21 +158,30 @@ export function CognitiveInspector({
               <p className="context-content">{item.content}</p>
               <p>
                 {item.reason === "automatic_effective_knowledge"
-                  ? "自动检索纳入的参考资料"
-                  : "用户选定的参考资料"}
-                ；纳入上下文不代表回答已验证。
+                  ? "自动找到并选用的参考资料"
+                  : "你选择的参考资料"}
+                ；用作参考不代表回答已核实。
               </p>
               <code>{item.nodeId}</code>
             </details>
           ))}
           {detail.snapshot ? (
             <details className="advanced-settings">
-              <summary>完整请求快照</summary>
-              <p>本地保存的实际请求；模型仅按标签记录，不保证逐字重现。</p>
+              <summary>发给模型的完整内容</summary>
+              <p>
+                这里保存了当时实际发送的内容。这条记录只保存模型名称，不能确定以后使用的模型文件是否相同；即使相同，重新提问也可能得到不同回答。
+              </p>
               {detail.snapshot.request.messages.map((item, index) => (
                 <details key={index}>
                   <summary>
-                    {index + 1}. {item.role}
+                    {index + 1}.{" "}
+                    {(
+                      {
+                        system: "系统说明",
+                        user: "你的消息",
+                        assistant: "模型回答",
+                      } as Record<string, string>
+                    )[item.role] ?? item.role}
                   </summary>
                   <p className="context-content">{item.content}</p>
                 </details>
@@ -182,30 +191,30 @@ export function CognitiveInspector({
               </p>
             </details>
           ) : (
-            <p>历史记录未保存完整快照，仅有上下文清单。</p>
+            <p>这条旧记录只保存了资料清单，没有保存发给模型的完整内容。</p>
           )}
           <p className="muted">
             {detail.contextManifest.messageRefs.length}{" "}
-            条会话消息；未使用文件检索。
+            条对话消息；没有直接搜索文件全文。
           </p>
           <p className="small-note">
-            预算占用 {detail.contextManifest.estimatedUnits} /{" "}
+            预计资料用量 {detail.contextManifest.estimatedUnits} /{" "}
             {detail.contextManifest.budgetUnits}。
             {detail.contextManifest.estimateNote}。
           </p>
           <details className="advanced-settings">
-            <summary>运行标识与消息定位</summary>
+            <summary>记录编号与对应消息</summary>
             <p className="identifier">{detail.run.id}</p>
             {detail.contextManifest.messageRefs.map((reference) => (
               <p className="identifier" key={reference.messageId}>
                 {reference.messageId}
                 <br />
-                SHA-256：{reference.contentHash}
+                内容校验码（SHA-256）：{reference.contentHash}
               </p>
             ))}
           </details>
           <p className="small-note">
-            这些记录来自应用实际执行的步骤，不代表模型的内部思维。
+            这里记录的是应用实际做过的操作，不能展示模型内部完整的思考过程。
           </p>
         </>
       )}

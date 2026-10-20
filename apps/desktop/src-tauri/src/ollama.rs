@@ -127,7 +127,7 @@ pub fn validate_endpoint(endpoint: &str) -> AppResult<String> {
         || url.fragment().is_some()
         || url.path() != "/"
     {
-        return Err("仅允许明确的本机 loopback 模型服务。".into());
+        return Err("模型服务只能连接到本机地址（127.0.0.1）。".into());
     }
     Ok(endpoint.trim_end_matches('/').into())
 }
@@ -237,7 +237,7 @@ impl Ollama {
                 .is_some_and(|value| !value.is_empty())
             || inspection["details"]["format"].as_str() != Some("gguf")
         {
-            return Err("当前仅允许本机 GGUF 模型，已阻止云端模型或无法确认来源的模型。".into());
+            return Err("请使用安装在本机的 GGUF 格式模型；云端模型和无法确认来源的模型暂不支持。".into());
         }
         Ok(
             json!({"format":"gguf","model":settings.model,"digest":inspection.get("digest"),"identityNote":"digest unknown when provider omits it"}),
