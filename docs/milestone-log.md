@@ -506,3 +506,42 @@ artifacts/p1-b1保留真正原生选择后显示的来源窗口截图，已查�
 当前 P1-B 约定的文件→确认知识→真实请求→引用→历史资料闭环已交付。文件仍不直接全文检索，不支持PDF/Office、目录监控或永久删除；P1-C图交互与性能、P2决策/比较/评估保持待实施。完成本切片后停止。
 
 仓库操作：已确认独立根目录后 `git switch -c codex/answer-citations`，显式 `git add -- ...` 本轮23个文件，`git diff --cached --check`通过。使用 `git commit -m "feat: resolve answer citations against saved run inputs"` 提交，正常 `git push -u origin codex/answer-citations` 复用仓库凭据；最终结果以本轮工具输出及汇报为准。补看最终1600px截图，三个目标尺寸均已查看。
+
+## 2026-10-20 参考图 1–8 应用与控件比例修正
+
+用户要求把新版参考图应用到真实界面，同时补回必要边框、减少小灰字/间隔点说明、检查全部主要按钮与文字比例。范围只含既有 UI，停止在本轮适配门槛；不推进 P1-C/P2。
+
+### 交付
+
+- 新增 src/workspace-design.css 统一现有语义 Tokens、留白、字号、控件边框和连续圆角，App.tsx 最后引入。保留原有专用布局作为基础，不新增库。导航64px、聊天列表224px、知识列表240px；主正文限宽，窄屏单列。
+- 按钮按文字定宽，常规高度36px、内边距7px 14px。确认/保存/资料/图谱控件复用同一规则，禁用主按钮回到中性色；输入框、搜索、顶栏、侧栏、画布分区和弹窗保留边界，列表与正文不增加卡片。
+- Settings 按模型连接/本地数据/关于分类显示，参数保留原 details，DOM 与 settingsDraft 保留。Graph 的关系列表按需展开，节点列表默认收起，所有尺寸保留入口与 WebGL 降级。
+- 知识状态拆为独立文字片段。ContextPicker、ExecutionTrace、Graph、Knowledge、SourceBrowser、AnswerContent、CognitiveInspector、RetrievalSummary 简化界面元信息分隔符；常驻界面仅保留窗口标题中的间隔点。预算与执行解释收起，错误、未保存、停用、版本变化及实际事件保留。
+- 不改变 Rust、数据库、权限、依赖、锁文件或引用/审核/草稿业务逻辑。保留用户原有 AGENTS.md、desktop.spec.ts 改动与 reference 图片。
+
+### 实际命令与结果
+
+- git rev-parse --show-toplevel：确认 D:/vibecoding/CortexOS；未暂存、提交或推送。
+- UI/UX 数据检索首次 python 指向旧解释器产生 SyntaxError；改用 py -3 执行 skills/ui-ux-pro-max/scripts/search.py，先查 productivity whitespace progressive disclosure（结果不匹配），再查 whitespace spacing hierarchy（使用文本限宽/间距指导）。未持久化模板。
+- npm.cmd run build（apps/desktop）两次通过，包含 tsc --noEmit；npm.cmd run tauri -- build --debug --no-bundle 两次通过。最终 CSS index-BS6JJ2mu.css、JS index-C4Gh3LJj.js；最后仅排版格式修改后的构建资源哈希与原生检查版本一致。已有约933kB图模块体积告警保留。
+- npm.cmd exec --offline --package=prettier@3.9.10 -- prettier --write 指定变更文件：ENOTCACHED，未联网安装或新增依赖，改为手动整理 TSX。
+- node artifacts/ui-reference-implementation/review.cjs：默认沙箱原生进程未打开可用 CDP 端口，终止该次检查后用 require_escalated 运行同一隔离脚本；首次因按钮定位重复停止，收窄到工作区 dialog 后得到22张截图。补充加载完成的3D/确认/导入检查时，测试来源文件不在专用数据目录，原有权限校验正确拒绝；将夹具移入对应 data-时间戳 后最终完成。
+- 最终视觉脚本输出 errors=[]、captures=23、overflow=[]、smoothCorners=true。使用独立 data-时间戳 与 webview-时间戳 目录，本地 HTTP 返回标注在“视觉验收（隔离数据）”工作区中的合成回答；没有访问日常用户工作区或真实 Ollama。
+- git diff --check 通过，只有现有 CRLF/LF 提示。未运行单元测试、Playwright 测试套件或 Rust 测试。
+
+### 原生 WebView2 实际检查
+
+- 对话与知识：1366×768、1600×900、1920×1080、800×600、375×812；设置：1366×768、1600×900、800×600、375×812。页面和主内容区均无横向溢出，必要操作可通过滚动访问。375px 是 CDP 设置的内容视口，不代表原生外窗低于800px最小宽度。
+- 实际操作：创建隔离工作区、发送/完成合成回答、打开处理记录、进入执行轨迹并等待 WebGL、选择真实事件、查看知识/历史、关闭历史、打开/取消草稿编辑、确认知识版本、预览并确认导入 UTF-8 文件、查看带行号副本、选择图谱节点、展开关系并打开/取消关系编辑、切换设置分类、展开参数。
+- 1600px实测：检查并确认124×36、保存草稿86×36、确认此版本100×36、保存关系86×36、保存设置86×36。36px不牺牲项目要求的32px最低点击区域。
+- 已查看对话、知识、设置、窄屏、知识编辑/确认、处理记录、执行图、知识图、文件内容和关系编辑截图；最终页面与指标保存在 artifacts/ui-reference-implementation，含 review.cjs 和 metrics.json。
+
+### 限制与停止点
+
+此次属于视觉适配，不替代既有持久化、取消竞争、引用、冲突、权限等完整回归；这些路径仅核对原逻辑未被改写。未重跑真实 Ollama、系统150%缩放、完整读屏、故障恢复或安装包测试。图谱仍使用现有真实几何和图数据，不复制参考图中的虚构节点/样式标签。完成本轮UI验收并停止。
+
+## 2026-10-20 留白密度回调
+
+用户反馈上一轮留白过大。本轮直接调整 workspace-design.css 原有规则：页面横向边距上限72→40px，对话最大宽760→960px，知识外层840→1040px；消息间距44→28px，正文行高1.95→1.75；收紧列表、表单、弹窗与设置分组间距，保留36px按钮、边框及响应式规则。同步更新设计文档。未修改组件功能逻辑。
+
+实际执行 npm.cmd run build（apps/desktop）：类型检查和 Vite 构建通过，原有933kB图模块告警保留。核对共享样式和窄屏覆盖规则；本轮未重跑截图、原生桌面构建或单元测试，上轮截图不代表此次密度调整后的画面。

@@ -66,7 +66,7 @@ export function AppShell({
               title={label}
             >
               <NavigationIcon page={id} />
-              <span className={expanded ? "rail-label" : "rail-tooltip"}>
+              <span className={expanded ? "rail-label" : "rail-caption"}>
                 {label}
               </span>
             </a>

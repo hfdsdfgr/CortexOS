@@ -14,6 +14,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [section, setSection] = useState("model");
   const installed = studio.health?.models.some(
     (model) => model.name === draft.model,
   );
@@ -33,7 +34,29 @@ export function SettingsPage({ studio }: { studio: Studio }) {
         </div>
       </header>
       <div className="page-content settings-content">
-        <section className="settings-section" aria-labelledby="model-settings">
+        <nav className="settings-navigation" aria-label="设置分类">
+          {[
+            ["model", "模型连接"],
+            ["data", "本地数据"],
+            ["about", "关于"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              className="button text-button"
+              aria-pressed={section === id}
+              aria-controls={`${id}-section`}
+              onClick={() => setSection(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <section
+          id="model-section"
+          hidden={section !== "model"}
+          className="settings-section"
+          aria-labelledby="model-settings"
+        >
           <div className="section-description">
             <h2 id="model-settings">
               <SlidersHorizontal size={18} aria-hidden="true" />
@@ -72,13 +95,9 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                         ? `Ollama ${studio.health.version} 已连接`
                         : "未连接本地 Ollama"}
                 </strong>
-                <p>
-                  {studio.health
-                    ? studio.health.models.length
-                      ? `找到 ${studio.health.models.length} 个本地模型。`
-                      : "服务可用，尚未安装模型。"
-                    : "打开桌面程序后，检测本机服务与已安装模型。"}
-                </p>
+                {studio.health && !studio.health.models.length && (
+                  <p>服务可用，尚未安装模型。</p>
+                )}
               </div>
             </div>
             <div className="field">
@@ -131,8 +150,8 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                 )}
                 {studio.health?.models.map((model) => (
                   <option key={model.name} value={model.name}>
-                    {model.name} · {model.quantization ?? "模型压缩方式未知"} ·{" "}
-                    {(model.size / 1e9).toFixed(1)} GB
+                    {model.name}（{model.quantization ?? "压缩方式未知"}，
+                    {(model.size / 1e9).toFixed(1)} GB）
                   </option>
                 ))}
               </select>
@@ -233,7 +252,12 @@ export function SettingsPage({ studio }: { studio: Studio }) {
             </div>
           </form>
         </section>
-        <section className="settings-section" aria-labelledby="data-settings">
+        <section
+          id="data-section"
+          hidden={section !== "data"}
+          className="settings-section"
+          aria-labelledby="data-settings"
+        >
           <div className="section-description">
             <h2 id="data-settings">
               <Database size={18} aria-hidden="true" />
@@ -274,7 +298,12 @@ export function SettingsPage({ studio }: { studio: Studio }) {
             </details>
           </div>
         </section>
-        <section className="settings-section" aria-labelledby="about-settings">
+        <section
+          id="about-section"
+          hidden={section !== "about"}
+          className="settings-section"
+          aria-labelledby="about-settings"
+        >
           <div className="section-description">
             <h2 id="about-settings">
               <Info size={18} aria-hidden="true" />
@@ -284,9 +313,8 @@ export function SettingsPage({ studio }: { studio: Studio }) {
           <div className="settings-fields">
             <div className="about-line">
               <strong>CortexOS</strong>
-              <span className="version-label">0.1.0 · 本地工作台测试版</span>
+              <span className="version-label">0.1.0 本地工作台测试版</span>
             </div>
-            <p className="muted">知识草稿、版本记录与 3D 知识图谱已开放。</p>
           </div>
         </section>
       </div>

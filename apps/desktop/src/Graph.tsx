@@ -99,7 +99,7 @@ export function GraphPage({
               <option value="workspace">当前工作区</option>
               <option value="demo">7 节点演示</option>
             </select>
-            {demo && <strong>演示数据 · 不写入工作区</strong>}
+            {demo && <strong>演示数据，不写入工作区</strong>}
           </div>
           <KnowledgeGraph
             key={`${studio.workspaceId}:${demo}`}
@@ -425,7 +425,7 @@ function KnowledgeGraph({
                   <span>
                     {node.title}
                     <small>
-                      {kinds[node.kind]} ·{" "}
+                      {kinds[node.kind]}，{" "}
                       {node.latestVersion === node.effectiveVersion
                         ? "已确认"
                         : "草稿"}
@@ -589,9 +589,9 @@ function KnowledgeGraph({
                 onChanged={() => setRefresh((n) => n + 1)}
               />
             )}
-            <section className="node-relations">
+            <details className="node-relations">
+              <summary>相关关系（{currentEdges.length}）</summary>
               <header>
-                <h3>相关关系</h3>
                 {!demo && (
                   <button
                     className="button text-button"
@@ -645,7 +645,7 @@ function KnowledgeGraph({
                   <ol className="edge-history">
                     {edge.versions.map((v) => (
                       <li key={v.version}>
-                        v{v.version} ·{" "}
+                        v{v.version}，{" "}
                         {
                           graph?.nodes.find((node) => node.id === v.fromNodeId)
                             ?.title
@@ -655,7 +655,7 @@ function KnowledgeGraph({
                           graph?.nodes.find((node) => node.id === v.toNodeId)
                             ?.title
                         }{" "}
-                        · {v.active ? "有效" : "停用"}
+                        ，{v.active ? "有效" : "停用"}
                         <p>{v.changeReason}</p>
                         <time>
                           {new Date(v.createdAt).toLocaleString("zh-CN")}
@@ -665,7 +665,7 @@ function KnowledgeGraph({
                   </ol>
                 </details>
               ))}
-            </section>
+            </details>
             <details className="node-position">
               <summary>节点位置</summary>
               <PositionForm
@@ -975,7 +975,7 @@ export function RelationshipEditor({
                     (node) => node.id === latest.versions[0].toNodeId,
                   )?.title
                 }{" "}
-                · {latest.versions[0].active ? "有效" : "停用"}
+                ，{latest.versions[0].active ? "有效" : "停用"}
               </p>
               <p>{latest.versions[0].changeReason}</p>
               <button

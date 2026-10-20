@@ -117,7 +117,7 @@ function CitationDetail({
           <>
             <h3>{reference.title}</h3>
             <div className="citation-meta">
-              {reference.citationId} · 知识 v{reference.version} · 第 {start}–
+              {reference.citationId}，知识 v{reference.version}，第 {start}–
               {end} 行
             </div>
             <div className="citation-lines" aria-label="本次发给模型的知识文字">
@@ -162,7 +162,7 @@ function CitationDetail({
                 {reference.sourceEvidence.map((item, index) => (
                   <div key={index}>
                     <p>
-                      {item.name} · 文件 v{item.version} · 第 {item.startLine}–
+                      {item.name}，文件 v{item.version}，第 {item.startLine}–
                       {item.endLine} 行
                     </p>
                     <blockquote>{item.excerpt}</blockquote>

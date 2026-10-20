@@ -15,6 +15,7 @@ import "./chat-design.css";
 import "./knowledge-design.css";
 import "./compact-shell.css";
 import "./source-browser.css";
+import "./workspace-design.css";
 import { useNavigation, navigate } from "./navigation";
 
 export default function App() {

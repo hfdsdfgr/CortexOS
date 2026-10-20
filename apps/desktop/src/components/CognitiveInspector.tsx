@@ -136,7 +136,7 @@ export function CognitiveInspector({
                 <div>
                   <strong>{eventNames[event.kind] ?? event.kind}</strong>
                   <span>
-                    {new Date(event.occurredAt).toLocaleTimeString("zh-CN")} ·
+                    {new Date(event.occurredAt).toLocaleTimeString("zh-CN")}，
                     距开始{" "}
                     {Math.max(
                       0,
@@ -154,7 +154,7 @@ export function CognitiveInspector({
           {detail.contextManifest.knowledgeRefs?.map((item) => (
             <details key={item.nodeId} className="knowledge-disclosure">
               <summary>
-                {item.title} · 本次使用 v{item.version}
+                {item.title}，本次使用 v{item.version}
               </summary>
               <p className="context-content">{item.content}</p>
               <p>
@@ -194,15 +194,18 @@ export function CognitiveInspector({
           ) : (
             <p>这条旧记录只保存了资料清单，没有保存发给模型的完整内容。</p>
           )}
-          <p className="muted">
-            {detail.contextManifest.messageRefs.length}{" "}
-            条对话消息；没有直接搜索文件全文。
-          </p>
-          <p className="small-note">
-            预计资料用量 {detail.contextManifest.estimatedUnits} /{" "}
-            {detail.contextManifest.budgetUnits}。
-            {detail.contextManifest.estimateNote}。
-          </p>
+          <details className="advanced-settings">
+            <summary>资料预算与记录说明</summary>
+            <p>
+              {detail.contextManifest.messageRefs.length} 条对话消息；没有直接搜索文件全文。
+            </p>
+            <p>
+              预计资料用量 {detail.contextManifest.estimatedUnits} /{" "}
+              {detail.contextManifest.budgetUnits}。
+              {detail.contextManifest.estimateNote}。
+            </p>
+            <p>这里记录应用实际执行的操作，不展示模型内部的思考过程。</p>
+          </details>
           <details className="advanced-settings">
             <summary>记录编号与对应消息</summary>
             <p className="identifier">{detail.run.id}</p>
@@ -214,9 +217,6 @@ export function CognitiveInspector({
               </p>
             ))}
           </details>
-          <p className="small-note">
-            这里记录的是应用实际做过的操作，不能展示模型内部完整的思考过程。
-          </p>
         </>
       )}
     </dialog>

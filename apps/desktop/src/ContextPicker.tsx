@@ -110,10 +110,10 @@ export function ContextPicker({ studio }: { studio: Studio }) {
               />
               <span>
                 {item.title} <strong>当前使用 v{item.effectiveVersion}</strong>
-                {item.latestVersion !== item.effectiveVersion && " · 有新草稿"}
+                {item.latestVersion !== item.effectiveVersion && "，有新草稿"}
                 {selected &&
                   selected.version !== item.effectiveVersion &&
-                  " · 所选版本已变化，请取消后重新选择"}
+                  "，所选版本已变化，请取消后重新选择"}
               </span>
             </label>
           );
@@ -161,7 +161,7 @@ export function ContextPicker({ studio }: { studio: Studio }) {
           {preview.knowledgeRefs?.map((item) => (
             <details key={item.nodeId}>
               <summary>
-                {item.title} · v{item.version}
+                {item.title}，v{item.version}
               </summary>
               <p className="context-content">{item.content}</p>
             </details>

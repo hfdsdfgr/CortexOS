@@ -25,7 +25,7 @@ export function RetrievalSummary({ report }: { report?: RetrievalReport }) {
             {report.candidates.map((item) => (
               <li key={item.nodeId}>
                 <strong>
-                  {item.title} · v{item.version}
+                  {item.title}，v{item.version}
                 </strong>
                 <span>{reasons[item.reason] ?? item.reason}</span>
               </li>

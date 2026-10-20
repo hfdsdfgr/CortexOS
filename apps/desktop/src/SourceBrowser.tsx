@@ -254,7 +254,7 @@ export function SourceBrowser({
                     {item.name}
                     <span>
                       v{item.latestVersion}
-                      {item.enabled ? "" : " · 已停用"}
+                      {item.enabled ? "" : "，已停用"}
                     </span>
                   </span>
                 </button>
@@ -271,7 +271,7 @@ export function SourceBrowser({
                   <header className="source-toolbar">
                     <h3>
                       {selected.document.name}
-                      {!selected.document.enabled && " · 已停用"}
+                      {!selected.document.enabled && "，已停用"}
                     </h3>
                     <label>
                       文件版本

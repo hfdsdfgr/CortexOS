@@ -393,7 +393,7 @@ export function KnowledgeInspector({
           >
             {detail.versions.map((item) => (
               <option key={item.version} value={item.version}>
-                v{item.version} · {item.approvedAt ? "已确认过" : "草稿"}
+                v{item.version}，{item.approvedAt ? "已确认过" : "草稿"}
               </option>
             ))}
           </select>
@@ -419,7 +419,7 @@ export function KnowledgeInspector({
               >
                 <strong>{item.changeReason}</strong>
                 <span>
-                  v{item.version} · {item.approvedAt ? "已确认过" : "草稿"}
+                  v{item.version}，{item.approvedAt ? "已确认过" : "草稿"}
                 </span>
               </button>
               <span>保存于 {date(item.createdAt)}</span>
@@ -476,12 +476,15 @@ export function KnowledgeInspector({
                 </span>
                 <h2>{currentVersion.title}</h2>
                 <p className="knowledge-state">
-                  {route.page === "knowledge" &&
-                    `${kinds[currentVersion.kind]} · v${currentVersion.version} · `}
-                  {status(detail.node)}
-                  {detail.node.effectiveVersion
-                    ? ` · 回答使用 v${detail.node.effectiveVersion}`
-                    : " · 确认后才用于回答"}
+                  {route.page === "knowledge" && (
+                    <span>{kinds[currentVersion.kind]} v{currentVersion.version}</span>
+                  )}
+                  <span>{status(detail.node)}</span>
+                  <span>
+                    {detail.node.effectiveVersion
+                      ? `回答使用 v${detail.node.effectiveVersion}`
+                      : "确认后用于回答"}
+                  </span>
                 </p>
               </div>
               <div className="knowledge-detail-actions">
@@ -582,7 +585,7 @@ export function KnowledgeInspector({
                     {!evidence.enabled && "（已停用）"}
                   </summary>
                   <p>
-                    文件版本 v{evidence.version} · 第 {evidence.startLine}–
+                    文件版本 v{evidence.version}，第 {evidence.startLine}–
                     {evidence.endLine} 行
                   </p>
                   <blockquote>{evidence.excerpt}</blockquote>
@@ -901,7 +904,7 @@ export function KnowledgeEditor({
           </div>
           {request.sourceDocument && (
             <p>
-              来源：{request.sourceName} · v{request.sourceDocument.version} ·
+              来源：{request.sourceName}，v{request.sourceDocument.version}，
               第 {request.sourceDocument.startLine}–
               {request.sourceDocument.endLine} 行
             </p>

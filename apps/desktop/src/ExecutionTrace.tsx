@@ -79,8 +79,8 @@ export function ExecutionTrace({ studio }: { studio: Studio }) {
           )}
           {runs.map((run) => (
             <option key={run.id} value={run.id}>
-              {new Date(run.startedAt).toLocaleString("zh-CN")} ·{" "}
-              {runLabels[run.status] ?? run.status} · {run.modelId}
+              {new Date(run.startedAt).toLocaleString("zh-CN")}，{" "}
+              {runLabels[run.status] ?? run.status}，{run.modelId}
             </option>
           ))}
         </select>
@@ -263,7 +263,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
         <>
           <div className="trace-heading">
             <strong>
-              {runLabels[data.detail.run.status] ?? data.detail.run.status} ·{" "}
+              {runLabels[data.detail.run.status] ?? data.detail.run.status}，{" "}
               {data.detail.run.modelId}
             </strong>
             <span>
@@ -365,8 +365,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                   <h2>{selected.title}</h2>
                   {selected.time && (
                     <p>
-                      {new Date(selected.time).toLocaleString("zh-CN")} ·
-                      记录时间
+                      {new Date(selected.time).toLocaleString("zh-CN")}
                     </p>
                   )}
                   {selected.seq !== undefined ? (
@@ -473,8 +472,8 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
               <details className="trace-run-info">
                 <summary>本次回答的模型设置</summary>
                 <p>
-                  总容量 {data.detail.settings.numCtx} Token · 回答上限{" "}
-                  {data.detail.settings.numPredict} Token · 回答变化程度（温度）{" "}
+                  总容量 {data.detail.settings.numCtx} Token，回答上限{" "}
+                  {data.detail.settings.numPredict} Token，回答变化程度（温度）{" "}
                   {data.detail.settings.temperature}
                 </p>
                 <p>
@@ -486,9 +485,10 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
               </details>
             </section>
           </div>
-          <p className="trace-caption">
-            时间轴按记录顺序排列；上层为本次输入资料，下层为输出。执行过程不代表模型内部思维。
-          </p>
+          <details className="trace-caption">
+            <summary>图例与记录说明</summary>
+            <p>时间轴按记录顺序排列；上层为本次输入资料，下层为输出。执行过程不代表模型内部思维。</p>
+          </details>
         </>
       )}
     </>
