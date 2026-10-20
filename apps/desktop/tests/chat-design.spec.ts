@@ -84,8 +84,8 @@ test("reference chat layouts retain compose, streaming, inspection and offline s
       });
       expect(metrics.overflow).toBe(false);
       expect(metrics.composerBottom).toBeLessThan(height);
-      expect(metrics.sidebarWidth / width).toBeGreaterThan(0.16);
-      expect(metrics.sidebarWidth / width).toBeLessThan(0.18);
+      expect(metrics.sidebarWidth).toBe(240);
+
       await testInfo.attach(`layout-${width}`, {
         body: JSON.stringify(metrics, null, 2),
         contentType: "application/json",

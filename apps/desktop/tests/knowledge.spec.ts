@@ -76,10 +76,11 @@ test("knowledge drafts preserve source, approval, conflicts and edits across res
     await page.getByRole("button",{name:"审核并确认"}).click();
     await page.getByRole("button",{name:"确认此版本",exact:true}).click();
     await expect(page.locator(".knowledge-state")).toContainText("生效版本 v4");
-    if (!(await page.locator(".version-history").evaluate(el => (el as HTMLDetailsElement).open))) await page.getByText("版本历史（4）",{exact:true}).click();
+    await page.getByRole("button",{name:"版本历史",exact:true}).click();
     await page.getByLabel("查看版本",{exact:true}).selectOption("1");
     await expect(page.locator(".knowledge-detail > .knowledge-prose")).toHaveText("先验证用户需求，再拆分任务。");
     await page.getByLabel("查看版本",{exact:true}).selectOption("4");
+    await page.getByRole("button",{name:"关闭版本历史"}).click();
     await page.getByText("回答来源",{exact:true}).click();
     await expect(page.locator("blockquote")).toHaveText("先验证用户需求，再");
     await page.getByRole("button",{name:"打开原会话",exact:true}).click();
@@ -110,26 +111,30 @@ test("knowledge drafts preserve source, approval, conflicts and edits across res
     detail=await nativeInvoke<KnowledgeDetail>(page,"get_knowledge",{workspaceId:workspace,nodeId:id});
     expect(detail.versions.length).toBe(4);expect(detail.sourceExcerpt).toBe("先验证用户需求，再");
     await page.screenshot({path:testInfo.outputPath("knowledge-confirmed.png")});
-    await expect(page.locator(".knowledge-history-pane .version-entry")).toHaveCount(4);
+    await page.getByRole("button",{name:"版本历史",exact:true}).click();
+    await expect(page.locator(".knowledge-history-drawer .version-entry")).toHaveCount(4);
     await page.locator(".version-entry").filter({hasText:"从回答保存草案"}).click();
     await expect(page.locator(".knowledge-detail > .knowledge-prose")).toHaveText("先验证用户需求，再拆分任务。");
     await page.getByLabel("查看版本",{exact:true}).selectOption("4");
-    for (const width of [1366, 1920]) {
-      await page.setViewportSize({width,height:width === 1366 ? 768 : 1080});
-      await expect(page.locator(".knowledge-history-pane")).toBeVisible();
-      await expect(page.locator('.reference-navigation a[aria-current="page"]')).toHaveText("知识");
+    for (const width of [1366, 1600, 1920]) {
+      await page.setViewportSize({width,height:width === 1366 ? 768 : width === 1600 ? 900 : 1080});
+      await expect(page.locator(".knowledge-history-drawer")).toBeVisible();
+      await expect(page.locator('.global-rail a[aria-current="page"]')).toHaveText("知识");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await page.locator(".knowledge-history-pane").evaluate(el => { el.scrollTop = 0; });
+      await page.locator(".knowledge-history-drawer").evaluate(el => { el.scrollTop = 0; });
       await page.screenshot({path:testInfo.outputPath(`knowledge-reference-${width}.png`)});
     }
 
+    await page.getByRole("button",{name:"关闭版本历史"}).click();
     await page.setViewportSize({width:375,height:812});
     await expect(page.locator(".knowledge-detail > .knowledge-prose")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({path:testInfo.outputPath("knowledge-narrow.png")});
+    await page.getByRole("button",{name:"版本历史",exact:true}).click();
     await page.getByLabel("查看版本",{exact:true}).selectOption("1");
     await expect(page.locator(".knowledge-detail > .knowledge-prose")).toHaveText("先验证用户需求，再拆分任务。");
     await page.getByLabel("查看版本",{exact:true}).selectOption("4");
+    await page.getByRole("button",{name:"关闭版本历史"}).click();
     await page.getByRole("button",{name:"修改草案"}).click();
     await expect(page.getByRole("dialog",{name:"修改知识草案"}).getByLabel("正文",{exact:true})).toBeVisible();
     await page.screenshot({path:testInfo.outputPath("knowledge-editor-narrow.png")});

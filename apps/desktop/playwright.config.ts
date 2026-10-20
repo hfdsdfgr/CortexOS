@@ -32,6 +32,7 @@ export default defineConfig({
         "retrieval.spec.ts",
         "trace.spec.ts",
         "knowledge.spec.ts",
+        "knowledge-layout.spec.ts",
         "graph.spec.ts",
       ],
     },

@@ -1,22 +1,16 @@
-import { useRef, useState, useEffect, type ReactNode } from "react";
-import {
-  BookOpen,
-  MessageSquare,
-  Network,
-  Settings,
-  PanelLeft,
-  X,
-} from "lucide-react";
+import { useRef, useState, type ReactNode } from "react";
+import { PanelLeft, X } from "lucide-react";
 import type { Studio } from "../studio";
 import type { PageName } from "../navigation";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { ModelStatus } from "./ModelStatus";
-import { Sidebar } from "./Sidebar";
+import { ConversationList } from "./ConversationList";
+import { NavigationIcon } from "./NavigationIcon";
 export const pages = [
-  { id: "chat", label: "对话", icon: MessageSquare },
-  { id: "knowledge", label: "知识", icon: BookOpen },
-  { id: "graph", label: "图谱", icon: Network },
-  { id: "settings", label: "设置", icon: Settings },
+  { id: "chat", label: "对话" },
+  { id: "knowledge", label: "知识" },
+  { id: "graph", label: "图谱" },
+  { id: "settings", label: "设置" },
 ] as const;
 export function AppShell({
   studio,
@@ -29,18 +23,12 @@ export function AppShell({
   openCreateWorkspace: () => void;
   children: ReactNode;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [conversationOpen, setConversationOpen] = useState(false);
   const drawer = useRef<HTMLDialogElement>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  useEffect(() => {
-    if (sidebarOpen) drawer.current?.showModal();
-  }, [sidebarOpen]);
   return (
     <div
-      className={
-        page === "chat" || page === "knowledge"
-          ? `app-shell reference-chat ${page === "knowledge" ? "reference-knowledge" : ""}`
-          : "app-shell"
-      }
+      className={`app-shell reference-chat compact-shell ${page === "knowledge" ? "reference-knowledge" : ""} ${page === "chat" ? "with-conversations" : ""} ${expanded ? "navigation-expanded" : ""}`}
     >
       <a
         className="skip-link"
@@ -52,110 +40,87 @@ export function AppShell({
       >
         跳到主要内容
       </a>
-      {page === "chat" || page === "knowledge" ? (
+      <aside className="global-rail">
+        <a className="rail-brand" href="#/chat" aria-label="CortexOS 首页">
+          <span className="brand-glyph">C</span>
+          {expanded && <strong>CortexOS</strong>}
+        </a>
+        <button
+          className="rail-toggle"
+          aria-label={expanded ? "收起全局导航" : "展开全局导航"}
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+          title={expanded ? "收起导航" : "展开导航"}
+        >
+          <PanelLeft size={20} />
+          {expanded && <span>收起导航</span>}
+        </button>
+        <nav aria-label="主导航">
+          {pages.map(({ id, label }) => (
+            <a
+              key={id}
+              href={`#/${id}`}
+              aria-label={label}
+              aria-current={page === id ? "page" : undefined}
+              className="rail-link"
+              title={label}
+            >
+              <NavigationIcon page={id} />
+              <span className={expanded ? "rail-label" : "rail-tooltip"}>
+                {label}
+              </span>
+            </a>
+          ))}
+        </nav>
+      </aside>
+      <header className="reference-topbar">
+        {page === "chat" && (
+          <button
+            className="icon-button mobile-conversation-button"
+            aria-label="打开会话列表"
+            onClick={() => {
+              setConversationOpen(true);
+              drawer.current?.showModal();
+            }}
+          >
+            <PanelLeft size={20} />
+          </button>
+        )}
+        <WorkspaceSwitcher
+          studio={studio}
+          page={page}
+          openCreateWorkspace={openCreateWorkspace}
+        />
+        <ModelStatus studio={studio} />
+      </header>
+      {page === "chat" && (
         <>
-          <aside className="reference-sidebar">
-            {!sidebarOpen && (
-              <Sidebar
-                page={page}
-                studio={studio}
-                openCreateWorkspace={openCreateWorkspace}
-              />
-            )}
+          <aside className="reference-sidebar conversation-pane">
+            {!conversationOpen && <ConversationList studio={studio} />}
           </aside>
-          <TopBar
-            sidebarLabel={page === "knowledge" ? "导航菜单" : "会话列表"}
-            studio={studio}
-            onOpenSidebar={() => setSidebarOpen(true)}
-          />
           <dialog
-            onClose={() => setSidebarOpen(false)}
             ref={drawer}
             className="side-drawer reference-sidebar mobile-sidebar"
-            aria-label={page === "knowledge" ? "导航菜单" : "会话列表"}
+            aria-label="会话列表"
+            onClose={() => setConversationOpen(false)}
           >
             <button
               className="icon-button drawer-close"
-              aria-label={
-                page === "knowledge" ? "关闭导航菜单" : "关闭会话列表"
-              }
+              aria-label="关闭会话列表"
               onClick={() => drawer.current?.close()}
             >
               <X size={20} />
             </button>
-            {sidebarOpen && (
-              <Sidebar
-                page={page}
+            {conversationOpen && (
+              <ConversationList
                 studio={studio}
-                openCreateWorkspace={openCreateWorkspace}
                 onSelect={() => drawer.current?.close()}
               />
             )}
           </dialog>
         </>
-      ) : (
-        <>
-          <header className="app-header">
-            <a className="brand" href="#/chat" aria-label="CortexOS 首页">
-              <img src="/cortex.svg" width="30" height="30" alt="" />
-              <span>CortexOS</span>
-            </a>
-            <WorkspaceSwitcher
-              studio={studio}
-              page={page}
-              openCreateWorkspace={openCreateWorkspace}
-            />
-            <div className="header-status">
-              <span className="preview-label">
-                {studio.desktop ? "认知工作台 Alpha" : "界面预览"}
-              </span>
-              <ModelStatus studio={studio} />
-            </div>
-          </header>
-          <nav className="main-navigation" aria-label="主导航">
-            {pages.map(({ id, label, icon: Icon }) => (
-              <a
-                key={id}
-                href={`#/${id}`}
-                className={`navigation-link ${id === "settings" ? "settings-link" : ""}`}
-                aria-current={page === id ? "page" : undefined}
-              >
-                <Icon size={22} strokeWidth={1.7} aria-hidden="true" />
-                <span>{label}</span>
-              </a>
-            ))}
-            <span className="navigation-version" aria-label="版本 0.1">
-              v0.1
-            </span>
-          </nav>
-        </>
       )}
       {children}
     </div>
-  );
-}
-export function TopBar({
-  studio,
-  onOpenSidebar,
-  sidebarLabel = "会话列表",
-}: {
-  studio: Studio;
-  onOpenSidebar: () => void;
-  sidebarLabel?: string;
-}) {
-  return (
-    <header className="reference-topbar">
-      <button
-        className="icon-button mobile-conversation-button"
-        aria-label={`打开${sidebarLabel}`}
-        onClick={onOpenSidebar}
-      >
-        <PanelLeft size={20} />
-      </button>
-      <span className="topbar-label">
-        {studio.desktop ? "本地认知工作台" : "界面预览"}
-      </span>
-      <ModelStatus studio={studio} />
-    </header>
   );
 }

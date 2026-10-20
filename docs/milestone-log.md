@@ -398,3 +398,30 @@ artifacts/p1-a保留实际检索输入条、执行图截图、真实Ollama截图
 artifacts/ui-knowledge保存原生截图（本机忽略文件），已检查1366px和375px截图。最初两尺寸截图保留了测试点击旧版本后的侧栏滚动位置，补充截图前回到侧栏顶部以显示完整标题。测试使用隔离数据库和WebView2，DPR1.25；未改用户真实数据。参考的紫色、窄图标栏、Mac标题栏不复制，服从用户明确要求的聊天UI底层。正文继续纯文本；现有生效版本对照保留，未增加富文本和行级差异算法。图模块约933kB和Three.Clock弃用告警仍存在，未进行图性能、系统150%缩放、完整读屏或安装包验证。本轮完成后停在布局验收点，不进入P1-B。
 
 最终专项命令 npx.cmd playwright test knowledge.spec.ts --project desktop：1/1通过，7.4秒（用例4.9秒）。包含375px版本切换，最终截图已覆盖至artifacts/ui-knowledge。
+
+
+# 2026-10-20 紧凑导航、知识阅读与历史抽屉
+
+用户明确要求解决双侧栏臃肿、历史位置不合理与正文空旷；随后要求主界面不要小灰字说明。先检查共享外壳、知识组件、样式和原有功能，给出文件方案，按导航→列表→正文→历史推进。用户更新AGENTS要求非必要不跑单元测试；本轮没有Rust/单元测试，已运行的是此次任务明确要求的类型检查、构建及真实界面集成检查。
+
+## 实际修改
+
+- components/AppShell.tsx统一56px可展开导航，工作区/模型状态在顶部；ConversationList保留聊天会话和新建入口。新增components/NavigationIcon.tsx原创几何SVG与compact-shell.css，支持Tooltip和键盘聚焦。
+- Knowledge.tsx移除历史portal，列表260px可收起；正文保留编辑、审核、对照、来源、图谱定位。历史用原生非模态dialog右侧抽屉呈现，Escape/关闭恢复触发焦点，切换实体关闭旧抽屉。
+- knowledge-design.css限定正文860px，桌面打开抽屉时预留380px；较窄窗口覆盖显示。类型/版本/状态合并一行14px清晰文字，取消正文小灰字说明；来源解释按需展开，状态色降噪。App.tsx引入样式。
+- 更新app.spec.ts、chat-design.spec.ts、knowledge.spec.ts；新增knowledge-layout.spec.ts及Playwright配置入口。设计规范与实施计划同步。未改数据库、Rust、模型调用、知识引擎、权限或依赖。
+
+## 分阶段实际检查
+
+- 第一阶段 `npm.cmd run typecheck`通过；`npx.cmd playwright test app.spec.ts --project edge` **7/7，9.6秒**。实际浏览器导航、键盘与375–1440px布局验证。
+- 第二阶段同两命令通过，浏览器 **7/7，8.9秒**。列表收起布局接入，历史移出列表。
+- 第三阶段 `npm.cmd run tauri -- build --debug --no-bundle`成功；`npx.cmd playwright test knowledge-layout.spec.ts --project desktop`首轮失败：程序聚焦导航时Tooltip未显示。将提示适用状态补充到focus，随后完整原生检查通过。
+- `npm.cmd exec --yes --package=prettier@3.9.10 -- prettier --write ...`整理本轮新增/修改组件、样式和布局测试，无依赖变更。
+- 第四阶段重建成功；`npx.cmd playwright test` **17/17，1.4分钟**：8项Edge、9项原生WebView2。包含三个目标尺寸、56px导航展开、260px列表收起、正文宽度、历史打开/Escape焦点，及原聊天、审核、版本对照、来源、草稿保护、并发冲突、重启、检索、图谱定位回归。模型相关测试使用本地HTTP测试服务；未重跑真实Ollama专项。
+- 人工查看截图发现抽屉遮正文，修正1200px以上预留抽屉空间并移除重复历史标题；追加用户“去小灰字”要求后再次构建成功。最终原生资源index-CtdGXdjX.js、index-BIHhB7U0.css、GraphViewport-By-6SJeV.js。后续只运行必要布局专项，不重复全量检查。
+
+## 证据与限制
+
+截图保存在忽略目录artifacts/ui-knowledge-compact，是真实隔离测试数据库中显示的知识内容，非静态页面背景。视口1366×768、1600×900、1920×1080，原生DPR1.25。此前375px浏览器及知识原生流程通过。图标为手写SVG，不使用emoji。导航展开仅保留当前进程状态，未新增偏好数据库；正文仍为纯文本，版本对照沿用生效版内容，不新增行级diff。未验证系统150%缩放、完整读屏、安装包或图性能；既有933kB图模块和Three.Clock告警仍保留。完成本UI切片后停止。
+
+最终布局专项 npx.cmd playwright test knowledge-layout.spec.ts --project desktop：1/1通过，5.3秒（用例2.9秒）。三个目标尺寸均验证正文右边界不超出抽屉左边界，最终截图已覆盖。全量17项在最后排版修正前通过，未将其冒称为最终二进制全量重跑。

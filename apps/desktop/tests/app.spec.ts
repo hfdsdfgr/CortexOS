@@ -110,10 +110,6 @@ for (const [width, height] of [
       await page.screenshot({
         path: testInfo.outputPath(`${route}-${width}.png`),
       });
-      if (route === "chat" && width <= 800)
-        await page.getByRole("button", { name: "打开会话列表" }).click();
-      if (route === "knowledge" && width <= 800)
-        await page.getByRole("button", { name: "打开导航菜单" }).click();
       await page
         .getByRole("navigation")
         .getByRole("link", { name: "对话", exact: true })

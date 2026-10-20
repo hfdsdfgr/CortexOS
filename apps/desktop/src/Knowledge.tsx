@@ -1,8 +1,16 @@
-import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Check, Pencil, Plus, Search, X } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  Pencil,
+  Plus,
+  Search,
+  X,
+  PanelLeft,
+  History,
+} from "lucide-react";
 import { navigate, useNavigation } from "./navigation";
 import { errorText, type Message, type Studio } from "./studio";
 
@@ -74,9 +82,7 @@ export function KnowledgePage({
   onEdit: (request: EditKnowledge) => void;
 }) {
   const workspace = studio.workspaceId;
-  const [historyTarget, setHistoryTarget] = useState<HTMLDivElement | null>(
-    null,
-  );
+  const [listOpen, setListOpen] = useState(true);
   const [items, setItems] = useState<KnowledgeNode[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -118,7 +124,17 @@ export function KnowledgePage({
       aria-labelledby="page-title"
     >
       <header className="page-heading">
-        <h1 id="page-title">知识</h1>
+        <div className="knowledge-page-location">
+          <button
+            className="icon-button"
+            aria-label={listOpen ? "收起知识列表" : "展开知识列表"}
+            aria-expanded={listOpen}
+            onClick={() => setListOpen(!listOpen)}
+          >
+            <PanelLeft size={18} />
+          </button>
+          <h1 id="page-title">知识</h1>
+        </div>
         <button
           className="button primary"
           disabled={!studio.desktop || !workspace}
@@ -139,10 +155,11 @@ export function KnowledgePage({
           </button>
         </div>
       )}
-      <div className={`knowledge-workbench ${selected ? "has-selection" : ""}`}>
+      <div
+        className={`knowledge-workbench ${selected ? "has-selection" : ""} ${listOpen ? "" : "list-collapsed"}`}
+      >
         <aside className="knowledge-sidebar">
           <section className="knowledge-list-pane" aria-label="知识列表">
-            <h2 className="knowledge-pane-title">知识列表</h2>
             <div className="knowledge-filters">
               <label className="search-field">
                 <Search size={16} />
@@ -221,16 +238,17 @@ export function KnowledgePage({
               </div>
             )}
           </section>
-          <div className="knowledge-history-pane" ref={setHistoryTarget} />
         </aside>
         <KnowledgeInspector
-          historyTarget={historyTarget}
           studio={studio}
           workspace={workspace}
           selected={selected}
           requestedVersion={requestedVersion}
           revision={revision}
-          onBack={() => onSelect(null)}
+          onBack={() => {
+            setListOpen(true);
+            onSelect(null);
+          }}
           onEdit={onEdit}
           onChanged={() => setRefresh((n) => n + 1)}
         />
@@ -248,9 +266,7 @@ export function KnowledgeInspector({
   onEdit,
   onChanged,
   requestedVersion,
-  historyTarget,
 }: {
-  historyTarget?: HTMLDivElement | null;
   studio: Studio;
   workspace: string | null;
   selected: string | null;
@@ -267,6 +283,15 @@ export function KnowledgeInspector({
   const [approving, setApproving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const historyDialog = useRef<HTMLDialogElement>(null);
+  const historyButton = useRef<HTMLButtonElement>(null);
+  const closeHistory = () => {
+    historyDialog.current?.close();
+    historyButton.current?.focus();
+  };
+  useEffect(() => {
+    historyDialog.current?.close();
+  }, [workspace, selected]);
   const approval = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     let current = true;
@@ -313,9 +338,9 @@ export function KnowledgeInspector({
     detail && currentVersion ? (
       <details
         className="knowledge-disclosure version-history"
-        open={historyTarget ? true : undefined}
+        open={route.page === "knowledge" ? true : undefined}
       >
-        <summary>版本历史（{detail.versions.length}）</summary>
+        <summary>{route.page === "knowledge" ? `${detail.versions.length} 个版本` : `版本历史（${detail.versions.length}）`}</summary>
         <div className="version-picker">
           <label htmlFor="knowledge-version">查看版本</label>
           <select
@@ -374,9 +399,6 @@ export function KnowledgeInspector({
     );
   return (
     <>
-      {historyTarget &&
-        (!detail || !currentVersion) &&
-        createPortal(history, historyTarget)}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -408,19 +430,33 @@ export function KnowledgeInspector({
                 </span>
                 <h2>{currentVersion.title}</h2>
                 <p className="knowledge-state">
+                  {route.page === "knowledge" && `${kinds[currentVersion.kind]} · v${currentVersion.version} · `}
                   {status(detail.node)}
                   {detail.node.effectiveVersion
                     ? ` · 生效版本 v${detail.node.effectiveVersion}`
                     : " · 尚无生效版本"}
                 </p>
               </div>
-              <button
-                className="button secondary"
-                onClick={() => onEdit({ workspaceId: workspace!, detail })}
-              >
-                <Pencil size={15} />
-                修改草案
-              </button>
+              <div className="knowledge-detail-actions">
+                {route.page === "knowledge" && (
+                  <button
+                    ref={historyButton}
+                    className="button secondary"
+                    onClick={() => historyDialog.current?.show()}
+                    aria-haspopup="dialog"
+                  >
+                    <History size={16} />
+                    版本历史
+                  </button>
+                )}
+                <button
+                  className="button secondary"
+                  onClick={() => onEdit({ workspaceId: workspace!, detail })}
+                >
+                  <Pencil size={15} />
+                  修改草案
+                </button>
+              </div>
             </header>
             <div className="knowledge-prose">{currentVersion.content}</div>
             {route.page === "knowledge" && (
@@ -459,7 +495,34 @@ export function KnowledgeInspector({
                 <div className="knowledge-prose">{effective.content}</div>
               </details>
             )}
-            {historyTarget ? createPortal(history, historyTarget) : history}
+            {route.page === "knowledge" ? (
+              <dialog
+                ref={historyDialog}
+                className="knowledge-history-drawer"
+                aria-labelledby="knowledge-history-title"
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    closeHistory();
+                  }
+                }}
+              >
+                <header className="history-drawer-heading">
+                  <h2 id="knowledge-history-title">版本历史</h2>
+                  <button
+                    className="icon-button"
+                    aria-label="关闭版本历史"
+                    onClick={closeHistory}
+                  >
+                    <X size={20} />
+                  </button>
+                </header>
+                <p className="history-document-title">{detail.node.title}</p>
+                {history}
+              </dialog>
+            ) : (
+              history
+            )}
             <details className="knowledge-disclosure">
               <summary>
                 {detail.sourceExcerpt ? "回答来源" : "来源：手动记录"}
