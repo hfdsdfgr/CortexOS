@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState } from "react";
@@ -73,6 +74,9 @@ export function KnowledgePage({
   onEdit: (request: EditKnowledge) => void;
 }) {
   const workspace = studio.workspaceId;
+  const [historyTarget, setHistoryTarget] = useState<HTMLDivElement | null>(
+    null,
+  );
   const [items, setItems] = useState<KnowledgeNode[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -136,86 +140,91 @@ export function KnowledgePage({
         </div>
       )}
       <div className={`knowledge-workbench ${selected ? "has-selection" : ""}`}>
-        <section className="knowledge-list-pane" aria-label="知识列表">
-          <div className="knowledge-filters">
-            <label className="search-field">
-              <Search size={16} />
-              <input
-                aria-label="搜索知识标题"
-                placeholder="搜索标题"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </label>
-            <select
-              aria-label="知识状态筛选"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="all">全部状态</option>
-              <option value="pending">待确认 / 新草案</option>
-              <option value="confirmed">已确认</option>
-            </select>
-          </div>
-          {loading ? (
-            <p className="inline-loading" role="status">
-              正在读取知识…
-            </p>
-          ) : shown.length ? (
-            <ul className="knowledge-list">
-              {shown.map((item) => (
-                <li key={item.id}>
-                  <button
-                    className="knowledge-row"
-                    aria-current={selected === item.id ? "true" : undefined}
-                    onClick={() => onSelect(item.id)}
-                  >
-                    <span className="knowledge-row-title">{item.title}</span>
-                    <span className="knowledge-row-meta">
-                      <span>{kinds[item.kind]}</span>
-                      <span
-                        className={
-                          item.latestVersion === item.effectiveVersion
-                            ? "connected"
-                            : "pending-status"
-                        }
-                      >
-                        {status(item)}
-                      </span>
-                      <span>v{item.latestVersion}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="knowledge-empty">
-              <BookOpen size={28} />
-              <h2>
-                {query || filter !== "all" ? "没有匹配的知识" : "还没有知识"}
-              </h2>
-              <p>
-                {!studio.desktop
-                  ? "在桌面程序中管理知识。"
-                  : !workspace
-                    ? "先创建或选择工作区。"
-                    : "手动记录，或从回答保存草案。"}
-              </p>
-              {(query || filter !== "all") && (
-                <button
-                  className="button text-button"
-                  onClick={() => {
-                    setQuery("");
-                    setFilter("all");
-                  }}
-                >
-                  清除筛选
-                </button>
-              )}
+        <aside className="knowledge-sidebar">
+          <section className="knowledge-list-pane" aria-label="知识列表">
+            <h2 className="knowledge-pane-title">知识列表</h2>
+            <div className="knowledge-filters">
+              <label className="search-field">
+                <Search size={16} />
+                <input
+                  aria-label="搜索知识标题"
+                  placeholder="搜索标题"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </label>
+              <select
+                aria-label="知识状态筛选"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="all">全部状态</option>
+                <option value="pending">待确认 / 新草案</option>
+                <option value="confirmed">已确认</option>
+              </select>
             </div>
-          )}
-        </section>
+            {loading ? (
+              <p className="inline-loading" role="status">
+                正在读取知识…
+              </p>
+            ) : shown.length ? (
+              <ul className="knowledge-list">
+                {shown.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      className="knowledge-row"
+                      aria-current={selected === item.id ? "true" : undefined}
+                      onClick={() => onSelect(item.id)}
+                    >
+                      <span className="knowledge-row-title">{item.title}</span>
+                      <span className="knowledge-row-meta">
+                        <span>{kinds[item.kind]}</span>
+                        <span
+                          className={
+                            item.latestVersion === item.effectiveVersion
+                              ? "connected"
+                              : "pending-status"
+                          }
+                        >
+                          {status(item)}
+                        </span>
+                        <span>v{item.latestVersion}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="knowledge-empty">
+                <BookOpen size={28} />
+                <h2>
+                  {query || filter !== "all" ? "没有匹配的知识" : "还没有知识"}
+                </h2>
+                <p>
+                  {!studio.desktop
+                    ? "在桌面程序中管理知识。"
+                    : !workspace
+                      ? "先创建或选择工作区。"
+                      : "手动记录，或从回答保存草案。"}
+                </p>
+                {(query || filter !== "all") && (
+                  <button
+                    className="button text-button"
+                    onClick={() => {
+                      setQuery("");
+                      setFilter("all");
+                    }}
+                  >
+                    清除筛选
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+          <div className="knowledge-history-pane" ref={setHistoryTarget} />
+        </aside>
         <KnowledgeInspector
+          historyTarget={historyTarget}
           studio={studio}
           workspace={workspace}
           selected={selected}
@@ -239,7 +248,9 @@ export function KnowledgeInspector({
   onEdit,
   onChanged,
   requestedVersion,
+  historyTarget,
 }: {
+  historyTarget?: HTMLDivElement | null;
   studio: Studio;
   workspace: string | null;
   selected: string | null;
@@ -285,7 +296,7 @@ export function KnowledgeInspector({
     if (detail) {
       setError(
         requestedVersion &&
-        !detail.versions.some((v) => v.version === requestedVersion)
+          !detail.versions.some((v) => v.version === requestedVersion)
           ? "指定知识版本不存在，请从版本历史中选择已有版本。"
           : null,
       );
@@ -298,8 +309,74 @@ export function KnowledgeInspector({
   const effective = detail?.versions.find(
     (item) => item.version === detail.node.effectiveVersion,
   );
+  const history =
+    detail && currentVersion ? (
+      <details
+        className="knowledge-disclosure version-history"
+        open={historyTarget ? true : undefined}
+      >
+        <summary>版本历史（{detail.versions.length}）</summary>
+        <div className="version-picker">
+          <label htmlFor="knowledge-version">查看版本</label>
+          <select
+            id="knowledge-version"
+            value={currentVersion.version}
+            onChange={(e) => {
+              setVersion(Number(e.target.value));
+              navigate(route.page, {
+                workspace,
+                node: selected,
+                version: Number(e.target.value),
+                mode: route.page === "graph" ? "knowledge" : undefined,
+                back: route.back,
+              });
+            }}
+          >
+            {detail.versions.map((item) => (
+              <option key={item.version} value={item.version}>
+                v{item.version} · {item.approvedAt ? "已确认过" : "草案"}
+              </option>
+            ))}
+          </select>
+        </div>
+        <ol className="knowledge-history">
+          {detail.versions.map((item) => (
+            <li key={item.version}>
+              <button
+                className="version-entry"
+                aria-current={
+                  currentVersion.version === item.version ? "true" : undefined
+                }
+                onClick={() => {
+                  setVersion(item.version);
+                  navigate(route.page, {
+                    workspace,
+                    node: selected,
+                    version: item.version,
+                    mode: route.page === "graph" ? "knowledge" : undefined,
+                    back: route.back,
+                  });
+                }}
+              >
+                <strong>{item.changeReason}</strong>
+                <span>
+                  v{item.version} · {item.approvedAt ? "已确认过" : "草案"}
+                </span>
+              </button>
+              <span>保存于 {date(item.createdAt)}</span>
+              {item.approvedAt && <span>确认于 {date(item.approvedAt)}</span>}
+            </li>
+          ))}
+        </ol>
+      </details>
+    ) : (
+      <p className="history-empty">选择知识后查看版本历史。</p>
+    );
   return (
     <>
+      {historyTarget &&
+        (!detail || !currentVersion) &&
+        createPortal(history, historyTarget)}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -382,45 +459,7 @@ export function KnowledgeInspector({
                 <div className="knowledge-prose">{effective.content}</div>
               </details>
             )}
-            <details className="knowledge-disclosure">
-              <summary>版本历史（{detail.versions.length}）</summary>
-              <div className="version-picker">
-                <label htmlFor="knowledge-version">查看版本</label>
-                <select
-                  id="knowledge-version"
-                  value={currentVersion.version}
-                  onChange={(e) => {
-                    setVersion(Number(e.target.value));
-                    navigate(route.page, {
-                      workspace,
-                      node: selected,
-                      version: Number(e.target.value),
-                      mode: route.page === "graph" ? "knowledge" : undefined,
-                      back: route.back,
-                    });
-                  }}
-                >
-                  {detail.versions.map((item) => (
-                    <option key={item.version} value={item.version}>
-                      v{item.version} · {item.approvedAt ? "已确认过" : "草案"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <ol className="knowledge-history">
-                {detail.versions.map((item) => (
-                  <li key={item.version}>
-                    <strong>
-                      v{item.version} · {item.changeReason}
-                    </strong>
-                    <span>保存于 {date(item.createdAt)}</span>
-                    {item.approvedAt && (
-                      <span>确认于 {date(item.approvedAt)}</span>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </details>
+            {historyTarget ? createPortal(history, historyTarget) : history}
             <details className="knowledge-disclosure">
               <summary>
                 {detail.sourceExcerpt ? "回答来源" : "来源：手动记录"}

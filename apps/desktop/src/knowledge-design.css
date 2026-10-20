@@ -1,0 +1,192 @@
+/* Knowledge uses the chat shell and tokens; the reference supplies only pane layout. */
+.reference-knowledge .sidebar-identity {
+  margin-top: auto;
+}
+.reference-knowledge .knowledge-page {
+  padding: 0;
+  overflow: hidden;
+}
+.reference-knowledge .page-heading {
+  padding: 16px 28px;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+.reference-knowledge .page-heading h1 {
+  font-size: 22px;
+}
+.reference-knowledge .knowledge-workbench {
+  grid-template-columns: clamp(250px, 23vw, 350px) minmax(0, 1fr);
+  overflow: hidden;
+}
+.knowledge-sidebar {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+}
+.reference-knowledge .knowledge-list-pane {
+  background: transparent;
+  padding: 18px 16px;
+  flex: 1 1 48%;
+  min-height: 180px;
+  overflow: auto;
+}
+.knowledge-pane-title {
+  font-size: 16px;
+  margin: 0 0 16px;
+}
+.reference-knowledge .knowledge-filters {
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.reference-knowledge .search-field {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.reference-knowledge .knowledge-row {
+  padding: 12px;
+  border-radius: 6px;
+}
+.reference-knowledge .knowledge-row-title {
+  font-size: 15px;
+  font-weight: 500;
+}
+.reference-knowledge .knowledge-row-meta {
+  gap: 8px;
+  margin-top: 5px;
+}
+.knowledge-history-pane {
+  flex: 1 1 52%;
+  min-height: 140px;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  padding: 18px 24px;
+}
+.knowledge-history-pane .version-history {
+  margin: 0;
+}
+.knowledge-history-pane .version-history > summary {
+  font-size: 16px;
+  font-weight: 600;
+}
+.knowledge-history-pane .version-picker {
+  flex-wrap: wrap;
+}
+.knowledge-history-pane .knowledge-history {
+  margin: 20px 0 0 7px;
+}
+.knowledge-history-pane .knowledge-history li {
+  position: relative;
+  padding: 0 0 24px 20px;
+  border-left: 2px solid var(--line);
+  gap: 4px;
+}
+.knowledge-history-pane .knowledge-history li::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  left: -5px;
+  top: 12px;
+}
+.knowledge-history-pane .knowledge-history li:last-child {
+  border-color: transparent;
+}
+.version-entry {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  padding: 6px 0;
+  min-height: 44px;
+  width: 100%;
+}
+.version-entry strong {
+  font-weight: 500;
+}
+.version-entry[aria-current] strong {
+  font-weight: 700;
+}
+.version-entry:hover {
+  color: var(--primary);
+}
+.history-empty {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.reference-knowledge .knowledge-detail {
+  background: var(--background);
+  padding: 24px clamp(24px, 4vw, 80px);
+}
+.reference-knowledge .knowledge-detail-heading {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.reference-knowledge .knowledge-detail-heading h2 {
+  font-size: clamp(24px, 2vw, 36px);
+  line-height: 1.4;
+}
+.reference-knowledge .knowledge-prose {
+  line-height: 1.95;
+  margin-bottom: 24px;
+}
+.reference-knowledge .knowledge-review {
+  background: transparent;
+  border-block: 1px solid var(--line);
+  padding: 16px 0;
+}
+.reference-knowledge .knowledge-empty {
+  padding: 32px 8px;
+}
+.reference-knowledge .detail-empty {
+  margin-top: 70px;
+}
+@media (max-width: 1100px) and (min-width: 801px) {
+  .reference-knowledge {
+    --chat-sidebar: 205px;
+  }
+  .reference-knowledge .knowledge-workbench {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .reference-knowledge .knowledge-detail-heading {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 800px) {
+  .reference-knowledge .knowledge-page {
+    overflow: auto;
+  }
+  .reference-knowledge .knowledge-workbench {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    flex: none;
+  }
+  .reference-knowledge .knowledge-sidebar {
+    border: 0;
+  }
+  .reference-knowledge .has-selection .knowledge-sidebar {
+    order: 2;
+  }
+  .reference-knowledge .knowledge-history-pane {
+    overflow: visible;
+  }
+  .reference-knowledge
+    .knowledge-workbench:not(.has-selection)
+    .knowledge-history-pane {
+    display: none;
+  }
+  .reference-knowledge .knowledge-detail {
+    overflow: visible;
+    padding: 20px;
+  }
+  .reference-knowledge .page-heading {
+    padding: 16px 20px;
+  }
+}

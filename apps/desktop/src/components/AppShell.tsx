@@ -35,7 +35,13 @@ export function AppShell({
     if (sidebarOpen) drawer.current?.showModal();
   }, [sidebarOpen]);
   return (
-    <div className={page === "chat" ? "app-shell reference-chat" : "app-shell"}>
+    <div
+      className={
+        page === "chat" || page === "knowledge"
+          ? `app-shell reference-chat ${page === "knowledge" ? "reference-knowledge" : ""}`
+          : "app-shell"
+      }
+    >
       <a
         className="skip-link"
         href="#main-content"
@@ -46,32 +52,40 @@ export function AppShell({
       >
         跳到主要内容
       </a>
-      {page === "chat" ? (
+      {page === "chat" || page === "knowledge" ? (
         <>
           <aside className="reference-sidebar">
             {!sidebarOpen && (
               <Sidebar
+                page={page}
                 studio={studio}
                 openCreateWorkspace={openCreateWorkspace}
               />
             )}
           </aside>
-          <TopBar studio={studio} onOpenSidebar={() => setSidebarOpen(true)} />
+          <TopBar
+            sidebarLabel={page === "knowledge" ? "导航菜单" : "会话列表"}
+            studio={studio}
+            onOpenSidebar={() => setSidebarOpen(true)}
+          />
           <dialog
             onClose={() => setSidebarOpen(false)}
             ref={drawer}
             className="side-drawer reference-sidebar mobile-sidebar"
-            aria-label="会话列表"
+            aria-label={page === "knowledge" ? "导航菜单" : "会话列表"}
           >
             <button
               className="icon-button drawer-close"
-              aria-label="关闭会话列表"
+              aria-label={
+                page === "knowledge" ? "关闭导航菜单" : "关闭会话列表"
+              }
               onClick={() => drawer.current?.close()}
             >
               <X size={20} />
             </button>
             {sidebarOpen && (
               <Sidebar
+                page={page}
                 studio={studio}
                 openCreateWorkspace={openCreateWorkspace}
                 onSelect={() => drawer.current?.close()}
@@ -123,15 +137,17 @@ export function AppShell({
 export function TopBar({
   studio,
   onOpenSidebar,
+  sidebarLabel = "会话列表",
 }: {
   studio: Studio;
   onOpenSidebar: () => void;
+  sidebarLabel?: string;
 }) {
   return (
     <header className="reference-topbar">
       <button
         className="icon-button mobile-conversation-button"
-        aria-label="打开会话列表"
+        aria-label={`打开${sidebarLabel}`}
         onClick={onOpenSidebar}
       >
         <PanelLeft size={20} />

@@ -1,13 +1,16 @@
 import { BookOpen, MessageSquare, Network, Settings } from "lucide-react";
+import type { PageName } from "../navigation";
 import type { Studio } from "../studio";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { ConversationList } from "./ConversationList";
 export function Sidebar({
   studio,
+  page = "chat",
   openCreateWorkspace,
   onSelect,
 }: {
   studio: Studio;
+  page?: PageName;
   openCreateWorkspace: () => void;
   onSelect?: () => void;
 }) {
@@ -22,11 +25,19 @@ export function Sidebar({
         <span className="brand-glyph">C</span>CortexOS
       </a>
       <nav className="reference-navigation" aria-label="主导航">
-        <a href="#/chat" aria-current="page" onClick={onSelect}>
+        <a
+          href="#/chat"
+          aria-current={page === "chat" ? "page" : undefined}
+          onClick={onSelect}
+        >
           <MessageSquare size={19} />
           对话
         </a>
-        <a href="#/knowledge" onClick={onSelect}>
+        <a
+          aria-current={page === "knowledge" ? "page" : undefined}
+          href="#/knowledge"
+          onClick={onSelect}
+        >
           <BookOpen size={19} />
           知识
         </a>
@@ -43,16 +54,18 @@ export function Sidebar({
         <h2>工作区</h2>
         <WorkspaceSwitcher
           studio={studio}
-          page="chat"
+          page={page}
           openCreateWorkspace={() => {
             onSelect?.();
             openCreateWorkspace();
           }}
         />
       </div>
-      <div className="reference-conversations">
-        <ConversationList studio={studio} onSelect={onSelect} />
-      </div>
+      {page === "chat" && (
+        <div className="reference-conversations">
+          <ConversationList studio={studio} onSelect={onSelect} />
+        </div>
+      )}
       <div className="sidebar-identity">
         <span className="identity-mark">C</span>
         <div>
