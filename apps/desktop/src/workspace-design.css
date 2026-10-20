@@ -242,6 +242,12 @@
 .reference-chat .graph-inspector .knowledge-review { gap: 12px; }
 .reference-chat .node-relations { margin-top: 20px; }
 .reference-chat .node-relations summary { font-size: 16px; padding-block: 12px; }
+.reference-chat .graph-range-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 0 var(--page-inset) 16px; font-size: 14px; }
+.reference-chat .graph-relation-targets { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 12px; }
+.reference-chat .graph-hidden-selection { margin-block: 16px; }
+.reference-chat .graph-inspector:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.reference-chat .graph-workbench .graph-node-index.fallback-list { z-index: 13; }
+.reference-chat .graph-workbench.list-is-open .graph-node-index { z-index: 15; }
 .reference-chat .trace-workbench { border-top: 1px solid var(--line); }
 .reference-chat .trace-index { border-right: 1px solid var(--line); padding: 24px 16px; }
 .reference-chat .trace-detail { border-left: 1px solid var(--line); padding: 24px; }

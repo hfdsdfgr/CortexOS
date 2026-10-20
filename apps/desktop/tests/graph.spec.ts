@@ -60,12 +60,14 @@ test("native graph persists relationships, independent views and knowledge edits
       .poll(async () => Number(await canvas.getAttribute("data-render-count")))
       .toBeGreaterThan(0);
     const loadMs = Date.now() - started;
+    await page.getByRole("button", { name: "节点列表", exact: true }).click();
     await page
-      .getByRole("button", { name: "项目目标 背景 · 草稿", exact: true })
+      .getByRole("button", { name: /^项目目标 背景，\s*草稿$/ })
       .click();
     await expect(
       page.getByRole("heading", { name: "项目目标", exact: true }),
     ).toBeVisible();
+    await page.locator(".node-relations > summary").click();
     await page.getByRole("button", { name: "添加关系", exact: true }).click();
     let editor = page.getByRole("dialog", { name: "添加关系", exact: true });
     await editor.getByLabel("终点", { exact: true }).selectOption(ids[2]);
@@ -180,9 +182,11 @@ test("native graph persists relationships, independent views and knowledge edits
     });
     expect(graph.view.camera).not.toEqual(savedView.camera);
     const finalView = graph.view;
+    await page.getByRole("button", { name: "节点列表", exact: true }).click();
     await page
-      .getByRole("button", { name: "项目目标 背景 · 已确认", exact: true })
+      .getByRole("button", { name: /^项目目标 背景，\s*已确认$/ })
       .click();
+    await page.locator(".node-relations > summary").click();
     await page.locator(".edge-details summary").click();
     await page.getByRole("button", { name: "修改关系", exact: true }).click();
     editor = page.getByRole("dialog", { name: "修改关系", exact: true });
@@ -207,11 +211,14 @@ test("native graph persists relationships, independent views and knowledge edits
     await expect(canvas).toBeVisible();
     await page.getByLabel("节点审核筛选").selectOption("confirmed");
     await expect(page.getByText("1 / 7 节点", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "节点列表", exact: true }).click();
     await page.getByRole("button", { name: "清除筛选" }).click();
+    await expect(page.locator(".graph-node-row").first()).toBeFocused();
+    await page.keyboard.press("Escape");
     await page.setViewportSize({ width: 375, height: 812 });
     await page.getByRole("button", { name: "节点列表", exact: true }).click();
     await page
-      .getByRole("button", { name: "项目目标 背景 · 已确认", exact: true })
+      .getByRole("button", { name: /^项目目标 背景，\s*已确认$/ })
       .click();
     await expect(page.locator(".graph-inspector")).toBeVisible();
     expect(
@@ -232,7 +239,7 @@ test("native graph persists relationships, independent views and knowledge edits
       page.getByRole("heading", { name: "3D 暂不可用" }),
     ).toBeVisible();
     await page
-      .getByRole("button", { name: "项目目标 背景 · 已确认", exact: true })
+      .getByRole("button", { name: /^项目目标 背景，\s*已确认$/ })
       .click();
     await expect(
       page.locator(".graph-inspector .knowledge-prose").first(),

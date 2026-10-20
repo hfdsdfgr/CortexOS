@@ -36,10 +36,14 @@ export default defineConfig({
         "sources.spec.ts",
         "citations.spec.ts",
         "graph.spec.ts",
+        "graph-neighborhood.spec.ts",
       ],
     },
     ...(process.env.CORTEXOS_REAL_CONTEXT === "1"
       ? [{ name: "real-context", testMatch: "context-real.spec.ts" }]
+      : []),
+    ...(process.env.CORTEXOS_GRAPH_BASELINE === "1"
+      ? [{ name: "graph-baseline", testMatch: "graph-baseline.spec.ts" }]
       : []),
     ...(process.env.CORTEXOS_REAL_OLLAMA === "1"
       ? [{ name: "ollama", testMatch: "ollama.spec.ts" }]

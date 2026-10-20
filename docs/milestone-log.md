@@ -545,3 +545,33 @@ artifacts/p1-b1保留真正原生选择后显示的来源窗口截图，已查�
 用户反馈上一轮留白过大。本轮直接调整 workspace-design.css 原有规则：页面横向边距上限72→40px，对话最大宽760→960px，知识外层840→1040px；消息间距44→28px，正文行高1.95→1.75；收紧列表、表单、弹窗与设置分组间距，保留36px按钮、边框及响应式规则。同步更新设计文档。未修改组件功能逻辑。
 
 实际执行 npm.cmd run build（apps/desktop）：类型检查和 Vite 构建通过，原有933kB图模块告警保留。核对共享样式和窄屏覆盖规则；本轮未重跑截图、原生桌面构建或单元测试，上轮截图不代表此次密度调整后的画面。
+
+# 2026-10-20 P1-C1 图谱直接关联、键盘操作与绘制基线
+
+用户说明刚微调UI，要求按当前规范继续。核对总纲、开发规范、实施/纠偏计划、reference-ui-implementation.md及现有图谱/数据库/组件。先将用户这批UI代码和对应说明作为独立基线提交860045b（15文件），不覆盖其规范：64px导航、紫色主操作、默认收起节点列表、按需展开说明、36px内容定宽控件。AGENTS.md、desktop.spec.ts行尾状态和新增参考图保留，不纳入提交。继续在codex/graph-neighborhood分支实现ADR0011约定的P1-C1；本轮不宣称整个P1-C完成。
+
+## 实际修改文件及行为
+
+- Graph.tsx：当前有效一跳关联范围（含中心最多50个，每次增加50个）、返回全部节点、节点与关系列表50项显示分页；保留搜索/类型/状态/日期，显式临时显示隐藏节点；关系两端按钮及用户记录/未登记独立证明的准确说明，保留修订历史和全部编辑能力。sessionBrowse按工作区/演示分别保留搜索/筛选/中心/展开量，不改保存视图语义。节点选择后焦点进入详情，清除/分页/收起后焦点有明确去向。
+- graph-data.ts：relatedNodeIds只用最新有效关系，双向收集一跳且去重，排除停用和间接两跳节点。GraphViewport.tsx：从canvas继承Tokens，使最新UI背景覆盖生效；记录真实上一帧绘制提交计数，不增加模型事件、特效或持续绘制。
+- workspace-design.css仅增加6条局部规则：关联范围操作、关系端点、隐藏节点提示、详情键盘焦点，以及窄屏降级列表/详情层级。保留用户原文件格式与既有布局。
+- 新增tests/graph-neighborhood.spec.ts、graph-fixture.ts、graph-baseline.spec.ts；修改Playwright配置，基线仅在CORTEXOS_GRAPH_BASELINE=1时启用独立项目。graph.spec.ts同步新版标点和列表/关系折叠入口，保留原关系冲突、知识编辑确认、保存视角、停用、重启与相机精度断言。
+- 新增ADR0011、graph-baseline.md；更新README、architecture、development-standards、graph-experience-v2、implementation-plan、refactoring-plan、test-plan及本日志。Rust、迁移、权限、模型调用、依赖和锁文件均无改动。
+
+## 实际命令与验证
+
+- 多次 `npm.cmd run typecheck`（apps/desktop）通过；每次桌面构建也包括类型检查与前端构建。
+- 使用已应用的ponytail与ui-ux-pro-max约束复用现有实现。默认 `python D:/CodexData/skills/ui-ux-pro-max/scripts/search.py "focus restoration hidden navigation" --domain ux` 无法解析技能脚本，改用 `py -3 ...` 成功。键盘导航结果适用焦点可见和操作顺序，不将一般布局结果当作专项验证证据。
+- `npm.cmd exec --yes --package=prettier@3.9.10 -- prettier --write ...`整理本轮Graph、GraphViewport、graph-data、测试及配置；格式化曾展开用户CSS的整文件格式，随后恢复原格式，只保留新增规则。两次apply_patch因格式上下文不匹配失败且未写部分文件，按实际行修正后成功。
+- `npm.cmd run tauri -- build --debug --no-bundle`共4次成功，用于初版、降级层级、清除焦点、统一分页焦点。最终资源index-C7OFpWxZ.js、index-DYDSe7mD.css、GraphViewport-BhRr93gR.js；二进制src-tauri/target/debug/cortexos-desktop.exe。既有约933kB图模块告警保留。
+- `npx.cmd playwright test graph-neighborhood.spec.ts --project desktop --output ../../artifacts/p1-c1` 首轮 **1/1，7.0秒**。随后增加375px降级及原graph.spec.ts必要回归，命令 `npx.cmd playwright test graph-neighborhood.spec.ts graph.spec.ts --project desktop --output ../../artifacts/p1-c1` 首次新场景通过、旧场景失败（21.2秒）：清除按钮移除后焦点落到根页面，Escape未到达列表，下一次列表按钮操作反向关闭。定位后修正真实焦点行为；第二轮 **2/2，13.6秒**。统一分页焦点后最终二进制同两场景 **2/2，13.3秒**（4.9/6.1秒）。没有删原有业务断言来换取通过。
+- 临时进程环境 `CORTEXOS_GRAPH_BASELINE=1`，执行 `npx.cmd playwright test graph-baseline.spec.ts --project graph-baseline --output ../../artifacts/p1-c1-baseline`，finally移除该进程环境变量：**1/1，54.8秒**（场景52.5秒）。真实原生绘制、隔离合成数据库，无模型生成。100/1000、500/1000、1000/5000节点/连线：读取往返中位数133.9/181.2/707.7ms，绘制提交1101/1501/6001，350ms空闲均0新增绘制。详见graph-baseline.md，不能把脚本绘制率当屏幕FPS或把JS堆当显存。
+- `git diff --check`通过；`git rev-parse --show-toplevel`确认D:/vibecoding/CortexOS。没有运行单元或全量测试，没有安装软件/新增依赖。
+
+最终原生交互覆盖：58节点和有效/停用/两跳关系；50项范围/列表/关系分页及焦点；隐藏/临时显示、关系两端、跨页范围保留、工作区隔离、WebGL降级、浏览前后完整GraphData相等；相关旧场景覆盖知识v2确认、关系4版/停用、冲突保留与读取比较、独立视角保存/相机精度及关闭重启。1366×768、1600×900、1920×1080无页面横向溢出，375px内容视口降级仍能操作。已查看三个尺寸及375px真实截图，位于artifacts/p1-c1；375px是CDP内容视口，不代表原生外窗小于800px最低宽度。
+
+## 停止点与后续
+
+完成P1-C1后停止。全图仍由原API一次读取，显示分页不等于数据库分页；多中心范围合并/收起、数据库/历史读取规模和批量绘制在P1-C2继续。基线在最终焦点/降级小修前采集，最终绘制实现与基线相同，未重复基线测量。此轮未测真实模型共存、完整CPU/GPU占用/进程内存/显存、系统150%缩放、完整读屏、长期性能或安装包。不会据一次原生合成首画面小于2秒就宣称达标。后续按基线优先测量节点/箭头独立mesh的绘制开销，再优化并同场景对照。
+
+仓库按显式文件范围提交本轮变更，并使用配置凭据正常推送codex/graph-neighborhood；最终提交与推送结果见本轮工具输出和汇报。未读取Gittoken.txt，用户参考图和其他改动保持原样。

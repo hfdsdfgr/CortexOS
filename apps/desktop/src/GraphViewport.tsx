@@ -74,7 +74,7 @@ function Scene(props: Props) {
   >([]);
   const { nodes, edges, positions, selected, onChange } = props;
   const colors = useMemo(() => {
-    const styles = getComputedStyle(document.documentElement);
+    const styles = getComputedStyle(gl.domElement);
     return Object.fromEntries(
       [
         "event",
@@ -89,7 +89,7 @@ function Scene(props: Props) {
         "conflict",
       ].map((kind) => [kind, styles.getPropertyValue(`--node-${kind}`).trim()]),
     );
-  }, []);
+  }, [gl]);
   useEffect(() => {
     const canvas = gl.domElement;
     canvas.setAttribute("aria-label", props.label ?? "3D 知识画布");
@@ -107,6 +107,8 @@ function Scene(props: Props) {
     canvas.dataset.renderCount = String(
       Number(canvas.dataset.renderCount ?? 0) + 1,
     );
+    // Renderer counters describe the preceding completed render, not GPU time.
+    canvas.dataset.drawCalls = String(gl.info.render.calls);
     for (const label of labelElements.current) {
       const projected = label.point.clone().project(camera);
       label.element.style.visibility =
@@ -177,7 +179,7 @@ function Scene(props: Props) {
         return {
           id: edge.id,
           color: new THREE.Color(
-            getComputedStyle(document.documentElement)
+            getComputedStyle(gl.domElement)
               .getPropertyValue(
                 edge.relation === "executed_before"
                   ? "--trace-order"
@@ -198,7 +200,7 @@ function Scene(props: Props) {
           ),
         };
       }),
-    [edges, positions],
+    [edges, positions, gl],
   );
   const points = useMemo(
     () =>
@@ -259,7 +261,7 @@ function Scene(props: Props) {
       <color
         attach="background"
         args={[
-          getComputedStyle(document.documentElement)
+          getComputedStyle(gl.domElement)
             .getPropertyValue("--surface-graph")
             .trim(),
         ]}

@@ -28,6 +28,7 @@ import {
   demoContents,
   demoGraph,
   relations,
+  relatedNodeIds,
   shapes,
   type GraphData,
   type GraphEdge,
@@ -36,6 +37,15 @@ import {
 import type { ViewportApi } from "./GraphViewport";
 
 const Viewport = lazy(() => import("./GraphViewport"));
+interface BrowseState {
+  query: string;
+  typeFilter: string;
+  statusFilter: string;
+  since: string;
+  range: { root: string; limit: number } | null;
+}
+// Like execution sessionViews: browsing preferences last for this app session only.
+const sessionBrowse = new Map<string, BrowseState>();
 export interface EditEdge {
   workspaceId: string;
   graph: GraphData;
@@ -131,6 +141,8 @@ function KnowledgeGraph({
 }) {
   const route = useNavigation();
   const workspace = studio.workspaceId;
+  const browseKey = `${demo ? "demo" : "workspace"}:${workspace ?? "preview"}`;
+  const previousBrowse = sessionBrowse.get(browseKey);
   const [graph, setGraph] = useState<GraphData | null>(demo ? demoGraph : null);
   const [positions, setPositions] = useState<Record<string, Point>>(
     demo ? defaultPositions(demoGraph.nodes) : {},
@@ -139,11 +151,38 @@ function KnowledgeGraph({
   useEffect(() => {
     if (!demo) setSelected(route.node);
   }, [route.node, demo]);
-  const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [since, setSince] = useState("");
+  const [query, setQuery] = useState(previousBrowse?.query ?? "");
+  const [typeFilter, setTypeFilter] = useState(
+    previousBrowse?.typeFilter ?? "all",
+  );
+  const [statusFilter, setStatusFilter] = useState(
+    previousBrowse?.statusFilter ?? "all",
+  );
+  const [since, setSince] = useState(previousBrowse?.since ?? "");
   const [listOpen, setListOpen] = useState(false);
+  const [range, setRange] = useState<BrowseState["range"]>(
+    previousBrowse?.range ?? null,
+  );
+  const [revealed, setRevealed] = useState<string | null>(null);
+  const [listLimit, setListLimit] = useState(50);
+  const [relationLimit, setRelationLimit] = useState(50);
+  const inspector = useRef<HTMLElement>(null);
+  const listToggle = useRef<HTMLButtonElement>(null);
+  const focusAfterUpdate = (selector: string) => {
+    requestAnimationFrame(() => {
+      const target = document.querySelector<HTMLElement>(selector);
+      (target ?? listToggle.current)?.focus();
+    });
+  };
+  useEffect(() => {
+    sessionBrowse.set(browseKey, {
+      query,
+      typeFilter,
+      statusFilter,
+      since,
+      range,
+    });
+  }, [browseKey, query, typeFilter, statusFilter, since, range]);
   const [failed, setFailed] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -194,17 +233,21 @@ function KnowledgeGraph({
       current = false;
     };
   }, [workspace, studio.desktop, demo, revision, refresh]);
+  const related = graph && range ? relatedNodeIds(graph, range.root) : [];
+  const rangeIds = range ? new Set(related.slice(0, range.limit)) : null;
   const visible =
     graph?.nodes.filter(
       (node) =>
-        node.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()) &&
-        (typeFilter === "all" || node.kind === typeFilter) &&
-        (statusFilter === "all" ||
-          (statusFilter === "confirmed"
-            ? node.latestVersion === node.effectiveVersion
-            : node.latestVersion !== node.effectiveVersion)) &&
-        (!since ||
-          new Date(node.updatedAt).toLocaleDateString("en-CA") >= since),
+        node.id === revealed ||
+        ((!rangeIds || rangeIds.has(node.id)) &&
+          node.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()) &&
+          (typeFilter === "all" || node.kind === typeFilter) &&
+          (statusFilter === "all" ||
+            (statusFilter === "confirmed"
+              ? node.latestVersion === node.effectiveVersion
+              : node.latestVersion !== node.effectiveVersion)) &&
+          (!since ||
+            new Date(node.updatedAt).toLocaleDateString("en-CA") >= since)),
     ) ?? [];
   const visibleIds = new Set(visible.map((node) => node.id));
   const visibleEdges =
@@ -215,6 +258,14 @@ function KnowledgeGraph({
         visibleIds.has(edge.versions[0].toNodeId),
     ) ?? [];
   const selectedNode = graph?.nodes.find((node) => node.id === selected);
+  useEffect(() => {
+    if (selectedNode) inspector.current?.focus({ preventScroll: true });
+    setRelationLimit(50);
+  }, [selectedNode?.id]);
+  useEffect(() => {
+    setRevealed(null);
+    setListLimit(50);
+  }, [query, typeFilter, statusFilter, since, range]);
   const currentEdges =
     graph?.edges.filter(
       (edge) =>
@@ -222,6 +273,7 @@ function KnowledgeGraph({
         edge.versions[0].toNodeId === selected,
     ) ?? [];
   const select = (id: string) => {
+    setRevealed(null);
     setSelected(id);
     if (!demo)
       navigate("graph", {
@@ -231,6 +283,9 @@ function KnowledgeGraph({
         back: route.back,
       });
     setListOpen(false);
+    requestAnimationFrame(() =>
+      inspector.current?.focus({ preventScroll: true }),
+    );
   };
   const focusSelected = () => {
     if (selected && positions[selected])
@@ -303,8 +358,10 @@ function KnowledgeGraph({
     <>
       <div className="graph-tools">
         <button
+          ref={listToggle}
           className="button secondary graph-list-toggle"
-          aria-pressed={listOpen}
+          aria-expanded={listOpen || failed}
+          aria-controls="knowledge-node-index"
           onClick={() => setListOpen(!listOpen)}
         >
           <List size={16} />
@@ -401,17 +458,57 @@ function KnowledgeGraph({
           </button>
         </div>
       )}
+      {range && (
+        <div className="graph-range-bar" aria-label="关联节点范围">
+          <strong>
+            {graph?.nodes.find((node) => node.id === range.root)?.title}{" "}
+            的直接关联
+          </strong>
+          <span role="status">
+            已展开 {Math.min(range.limit, related.length)} / {related.length}{" "}
+            个节点
+          </span>
+          {range.limit < related.length && (
+            <button
+              className="button secondary"
+              onClick={() => {
+                setRange({ ...range, limit: range.limit + 50 });
+                if (range.limit + 50 >= related.length)
+                  focusAfterUpdate(".graph-range-reset");
+              }}
+            >
+              再展开 50 个
+            </button>
+          )}
+          <button
+            className="button text-button graph-range-reset"
+            onClick={() => {
+              setRange(null);
+              focusAfterUpdate(".graph-list-toggle");
+            }}
+          >
+            返回全部节点
+          </button>
+        </div>
+      )}
       <div
         className={`graph-workbench ${selectedNode ? "has-inspector" : ""} ${listOpen ? "list-is-open" : ""} ${saving ? "is-saving" : ""}`}
       >
         <aside
+          id="knowledge-node-index"
           className={`graph-node-index ${failed ? "fallback-list" : ""}`}
           aria-label="图谱节点列表"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && (listOpen || !failed)) {
+              setListOpen(false);
+              listToggle.current?.focus();
+            }
+          }}
         >
           <h2>节点</h2>
           {loading && <p role="status">正在读取图谱…</p>}
           <ul>
-            {visible.map((node) => (
+            {visible.slice(0, listLimit).map((node) => (
               <li key={node.id}>
                 <button
                   className="graph-node-row"
@@ -435,6 +532,19 @@ function KnowledgeGraph({
               </li>
             ))}
           </ul>
+          {listLimit < visible.length && (
+            <button
+              className="button secondary"
+              onClick={() => {
+                setListLimit((limit) => limit + 50);
+                focusAfterUpdate(
+                  `#knowledge-node-index li:nth-child(${listLimit + 1}) .graph-node-row`,
+                );
+              }}
+            >
+              再显示 50 个节点
+            </button>
+          )}
           {!visible.length && (
             <p className="small-note">
               {graph?.nodes.length ? "没有匹配节点。" : "暂无知识节点。"}
@@ -451,6 +561,7 @@ function KnowledgeGraph({
                 setTypeFilter("all");
                 setStatusFilter("all");
                 setSince("");
+                focusAfterUpdate("#knowledge-node-index .graph-node-row");
               }}
             >
               清除筛选
@@ -527,6 +638,10 @@ function KnowledgeGraph({
               → 关系 → 终点”阅读。
             </p>
             <p>节点的位置只是排布方式，不能据此判断因果关系或内容是否可信。</p>
+            <p>
+              直接关联只包含当前有效的连线，每次最多增加显示 50
+              个节点。搜索与筛选仍然生效；显示范围不会修改知识或关系。
+            </p>
           </details>
           <div className="graph-view-status" role="status">
             {demo
@@ -539,7 +654,12 @@ function KnowledgeGraph({
           </div>
         </div>
         {selectedNode && (
-          <aside className="graph-inspector" aria-label="图谱详情">
+          <aside
+            ref={inspector}
+            tabIndex={-1}
+            className="graph-inspector"
+            aria-label="图谱详情"
+          >
             <header className="graph-inspector-toolbar">
               <button
                 className="button text-button"
@@ -554,6 +674,7 @@ function KnowledgeGraph({
                 aria-label="关闭图谱详情"
                 onClick={() => {
                   setSelected(null);
+                  listToggle.current?.focus();
                   if (!demo)
                     navigate("graph", { workspace, mode: "knowledge" });
                 }}
@@ -562,8 +683,25 @@ function KnowledgeGraph({
               </button>
             </header>
             {!visibleIds.has(selectedNode.id) && (
-              <p className="small-note">此节点被当前筛选隐藏，详情仍保留。</p>
+              <div className="graph-hidden-selection" role="status">
+                <p>此节点不在当前显示范围，详情仍保留。</p>
+                <button
+                  className="button secondary"
+                  onClick={() => setRevealed(selectedNode.id)}
+                >
+                  显示这个节点
+                </button>
+              </div>
             )}
+            {revealed === selectedNode.id && (
+              <p role="status">已临时显示这个节点，其他筛选保持不变。</p>
+            )}
+            <button
+              className="button secondary"
+              onClick={() => setRange({ root: selectedNode.id, limit: 50 })}
+            >
+              只看直接关联
+            </button>
             {demo ? (
               <div className="demo-inspector">
                 <span className="knowledge-kind">
@@ -611,8 +749,12 @@ function KnowledgeGraph({
               {!currentEdges.length && (
                 <p className="small-note">尚未建立关系。</p>
               )}
-              {currentEdges.map((edge) => (
-                <details key={edge.id} className="edge-details">
+              {currentEdges.slice(0, relationLimit).map((edge) => (
+                <details
+                  key={edge.id}
+                  className="edge-details"
+                  data-edge-id={edge.id}
+                >
                   <summary>
                     {
                       graph?.nodes.find(
@@ -627,6 +769,21 @@ function KnowledgeGraph({
                     }
                     {!edge.versions[0].active && "（已停用）"}
                   </summary>
+                  <p>这是用户记录的关系，尚未登记证明这条关系的资料。</p>
+                  <div className="graph-relation-targets">
+                    <button
+                      className="button secondary"
+                      onClick={() => select(edge.versions[0].fromNodeId)}
+                    >
+                      查看起点
+                    </button>
+                    <button
+                      className="button secondary"
+                      onClick={() => select(edge.versions[0].toNodeId)}
+                    >
+                      查看终点
+                    </button>
+                  </div>
                   {!demo && (
                     <button
                       className="button text-button"
@@ -665,6 +822,19 @@ function KnowledgeGraph({
                   </ol>
                 </details>
               ))}
+              {relationLimit < currentEdges.length && (
+                <button
+                  className="button secondary"
+                  onClick={() => {
+                    setRelationLimit((limit) => limit + 50);
+                    focusAfterUpdate(
+                      `.edge-details:nth-of-type(${relationLimit + 1}) > summary`,
+                    );
+                  }}
+                >
+                  再显示 50 条关系
+                </button>
+              )}
             </details>
             <details className="node-position">
               <summary>节点位置</summary>

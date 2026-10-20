@@ -39,6 +39,22 @@ export const shapes: Record<string, string> = {
   evidence: "柱体",
   conflict: "八面体",
 };
+// Only current, active relations belong to the one-hop display range.
+export function relatedNodeIds(graph: GraphData, root: string): string[] {
+  const ids = new Set([root]);
+  for (const edge of graph.edges) {
+    const current = edge.versions[0];
+    if (!current?.active) continue;
+    if (current.fromNodeId === root) ids.add(current.toNodeId);
+    if (current.toNodeId === root) ids.add(current.fromNodeId);
+  }
+  return [
+    root,
+    ...graph.nodes
+      .filter((node) => node.id !== root && ids.has(node.id))
+      .map((node) => node.id),
+  ];
+}
 export function defaultPositions(
   nodes: KnowledgeNode[],
 ): Record<string, Point> {
