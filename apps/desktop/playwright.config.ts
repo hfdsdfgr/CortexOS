@@ -40,6 +40,7 @@ export default defineConfig({
         "graph-instances.spec.ts",
         "graph-query.spec.ts",
         "graph-exploration.spec.ts",
+        "graph-reading.spec.ts",
       ],
     },
     ...(process.env.CORTEXOS_REAL_CONTEXT === "1"

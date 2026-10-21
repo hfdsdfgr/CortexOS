@@ -1,13 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { GraphCamera } from "./GraphCamera";
-import {
-  Component,
-  useEffect,
-  useMemo,
-  useRef,
-  type ReactNode,
-  type Ref,
-} from "react";
+import { GraphLabels } from "./GraphLabels";
+import { Component, useEffect, useMemo, type ReactNode, type Ref } from "react";
 import * as THREE from "three";
 
 import type { Point } from "./graph-data";
@@ -35,6 +29,7 @@ export interface DisplayEdge {
 }
 interface Props {
   label?: string;
+  showEdgeLabels?: boolean;
   onReady?: () => void;
   nodes: DisplayNode[];
   edges: DisplayEdge[];
@@ -50,10 +45,7 @@ interface Props {
   onFocused?: () => void;
 }
 function Scene(props: Props) {
-  const { camera, gl, invalidate } = useThree();
-  const labelElements = useRef<
-    { element: HTMLSpanElement; point: THREE.Vector3 }[]
-  >([]);
+  const { gl } = useThree();
   const { nodes, edges, positions, selected, onChange } = props;
   const colors = useMemo(() => {
     const styles = getComputedStyle(gl.domElement);
@@ -80,6 +72,8 @@ function Scene(props: Props) {
         "--trace-context",
         "--trace-output",
         "--graph-edge",
+        "--primary",
+        "--surface-graph",
       ].map((name) => [
         name,
         new THREE.Color(styles.getPropertyValue(name).trim()),
@@ -115,12 +109,6 @@ function Scene(props: Props) {
     );
     // Renderer counters describe the preceding completed render, not GPU time.
     canvas.dataset.drawCalls = String(gl.info.render.calls);
-    for (const label of labelElements.current) {
-      const projected = label.point.clone().project(camera);
-      label.element.style.visibility =
-        projected.z < -1 || projected.z > 1 ? "hidden" : "visible";
-      label.element.style.transform = `translate(-50%, -50%) translate3d(${((projected.x + 1) * canvas.clientWidth) / 2}px,${((-projected.y + 1) * canvas.clientHeight) / 2}px,0)`;
-    }
   });
   const links = useMemo(
     () =>
@@ -130,18 +118,26 @@ function Scene(props: Props) {
         const to = new THREE.Vector3(...positions[version.toNodeId]);
         const direction = to.clone().sub(from).normalize();
         const tip = to.clone().addScaledVector(direction, -0.7);
+        const related =
+          !selected ||
+          edge.fromNodeId === selected ||
+          edge.toNodeId === selected;
         return {
           id: edge.id,
-          color:
-            edgeColors[
-              edge.relation === "executed_before"
-                ? "--trace-order"
-                : edge.relation === "included_in_context"
-                  ? "--trace-context"
-                  : edge.relation === "saved_output"
-                    ? "--trace-output"
-                    : "--graph-edge"
-            ],
+          color: edgeColors[
+            edge.relation === "executed_before"
+              ? "--trace-order"
+              : edge.relation === "included_in_context"
+                ? "--trace-context"
+                : edge.relation === "saved_output"
+                  ? "--trace-output"
+                  : "--graph-edge"
+          ]
+            .clone()
+            .lerp(
+              edgeColors[related && selected ? "--primary" : "--surface-graph"],
+              selected ? (related ? 0.35 : 0.8) : 0,
+            ),
           from,
           to,
           tip,
@@ -151,7 +147,7 @@ function Scene(props: Props) {
           ),
         };
       }),
-    [edges, positions, edgeColors],
+    [edges, positions, edgeColors, selected],
   );
   const points = useMemo(
     () =>
@@ -170,43 +166,6 @@ function Scene(props: Props) {
       ),
     [links],
   );
-  const labels = useMemo(() => {
-    const ids = new Set<string>(
-      selected ? [selected] : nodes.slice(0, 5).map((node) => node.id),
-    );
-    for (const edge of edges) {
-      const v = edge;
-      if (v.fromNodeId === selected) ids.add(v.toNodeId);
-      if (v.toNodeId === selected) ids.add(v.fromNodeId);
-      if (ids.size >= 7) break;
-    }
-    return ids;
-  }, [selected, nodes, edges]);
-  useEffect(() => {
-    const layer = document.createElement("div");
-    layer.className = "graph-label-layer";
-    layer.setAttribute("aria-hidden", "true");
-    for (const node of nodes.filter((item) => labels.has(item.id))) {
-      const element = document.createElement("span");
-      element.className = `graph-node-label ${node.id === selected ? "is-selected" : ""}`;
-      element.textContent = node.title;
-      if (node.badge) {
-        const mark = document.createElement("em");
-        mark.textContent = node.badge;
-        element.append(mark);
-      }
-      layer.append(element);
-      const point = new THREE.Vector3(...positions[node.id]);
-      point.y += 0.78;
-      labelElements.current.push({ element, point });
-    }
-    gl.domElement.parentElement?.append(layer);
-    invalidate();
-    return () => {
-      labelElements.current = [];
-      layer.remove();
-    };
-  }, [nodes, positions, selected, labels, gl, invalidate]);
   return (
     <>
       <color
@@ -227,6 +186,13 @@ function Scene(props: Props) {
         onChange={onChange}
         onExitFocus={props.onExitFocus}
         onFocused={props.onFocused}
+      />
+      <GraphLabels
+        nodes={nodes}
+        edges={edges}
+        positions={positions}
+        selected={selected}
+        showEdgeLabels={props.showEdgeLabels}
       />
       <lineSegments>
         <bufferGeometry>

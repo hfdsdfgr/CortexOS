@@ -54,6 +54,7 @@ interface BrowseState {
   statusFilter: string;
   since: string;
   expansions: GraphExpansion[] | null;
+  showEdgeLabels: boolean;
 }
 // Like execution sessionViews: browsing preferences last for this app session only.
 const sessionBrowse = new Map<string, BrowseState>();
@@ -202,6 +203,9 @@ function KnowledgeGraph({
     previousBrowse?.statusFilter ?? "all",
   );
   const [since, setSince] = useState(previousBrowse?.since ?? "");
+  const [showEdgeLabels, setShowEdgeLabels] = useState(
+    previousBrowse?.showEdgeLabels ?? false,
+  );
   const [listOpen, setListOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [inspectorReady, setInspectorReady] = useState(!!route.node);
@@ -236,8 +240,17 @@ function KnowledgeGraph({
       statusFilter,
       since,
       expansions,
+      showEdgeLabels,
     });
-  }, [browseKey, query, typeFilter, statusFilter, since, expansions]);
+  }, [
+    browseKey,
+    query,
+    typeFilter,
+    statusFilter,
+    since,
+    expansions,
+    showEdgeLabels,
+  ]);
   const [failed, setFailed] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -833,6 +846,7 @@ function KnowledgeGraph({
                 camera={initialView.current?.camera ?? [0, 9, 22]}
                 target={initialView.current?.target ?? [0, 0, 0]}
                 apiRef={api}
+                showEdgeLabels={showEdgeLabels}
                 onSelect={select}
                 onExitFocus={closeInspector}
                 onFocused={() => setInspectorReady(true)}
@@ -843,6 +857,14 @@ function KnowledgeGraph({
           )}
           <details className="graph-legend">
             <summary>图例与操作</summary>
+            <label className="graph-edge-label-toggle">
+              <input
+                type="checkbox"
+                checked={showEdgeLabels}
+                onChange={(e) => setShowEdgeLabels(e.target.checked)}
+              />
+              显示选中节点的连线名称
+            </label>
             <ul>
               {Object.entries(kinds).map(([key, name]) => (
                 <li key={key}>

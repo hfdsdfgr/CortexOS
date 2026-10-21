@@ -856,3 +856,35 @@ npm、npx与cargo命令目录为apps/desktop；原生检查均使用隔离数据
 当前上限20个展开中心、合计10,000读取额度、最终10,000显示节点及原1,000改动坐标保存限制，是输入/交互约束，不是已测性能保证。仍重取前缀页，计数/排序可能扫描工作区，密集连线未单独分页。没有新千节点/20中心/真实Ollama性能、完整读屏、系统150%、高显存复现、长时或安装升级验收；此前高负载模型根因未确定限制继续有效。相机保留当前视角，不因展开强制适应；视口裁切及标签遮挡交下一阅读切片。
 
 本轮停止在第3项验收点。后续剩第4图谱阅读整理、第5Windows桌面交付、第6Decision Lab/评估；LoRA继续后置，不宣称整个P1-C或项目完成。
+## 2026-10-22 图谱阅读整理
+
+用户“继续”确认六步计划第4项。复读总纲、开发规范、实施计划及V3，先记录ADR0016，沿用现有数据、相机和渲染实现。没有修改数据库、知识引擎、模型调用、权限或依赖，锁文件未改。
+
+### 修改及代码检查
+
+新增GraphLabels.tsx，在知识图和执行图复用24个DOM标签槽，最多7个节点标签；选中优先，其次直接邻接节点，未选中优先屏幕中心。按投影边界、标签和实际面板矩形避让，短引线保持锚点；长标题省略，草稿状态独立保留。尺寸批量写入/测量，观察器只对实际元素变化更新订阅。代码检查发现重订阅ResizeObserver可能自触发，已在原生验证前修正。
+
+GraphViewport.tsx移除旧标签层，复用现有颜色Token突出选中节点的实际相接连线，保留其他形状、材质和方向。Graph.tsx增加默认关闭的“显示选中节点的连线名称”，每次最多3个，按工作区/演示分别保留会话偏好；原完整关系与历史入口保留。graph-design.css沿用V3。新增graph-reading.spec.ts并注册；graph-baseline.spec.ts仅增加实际标签数量观测。文档更新ADR0016、graph-reading、architecture、test-plan、implementation-plan、refactoring-plan、V3和本日志。用户desktop.spec.ts换行差异及reference目录新增文件保留、不纳入提交。
+
+使用ponytail技能保持现有依赖与渲染路径；ui-ux-pro-max本地检索chart label overlap（chart域）及data visualization labels clutter（ux域）返回无关的图表/表单标签指导，没有经过验证的图谱标签专项匹配；具体设计依项目规范与实际测量，不声称用户研究。
+
+### 实际命令和结果
+
+npm/npx命令目录为apps/desktop；原生构建及检查使用require_escalated、隔离数据库和专用WebView目录。遵守用户指示，没有运行单元或全套测试，没有安装系统软件或新依赖。
+
+- npm.cmd run typecheck首次因移除旧标签后遗留清理代码出现TS1128/TS1005。第一次修正脚本在apps/desktop目录使用仓库根相对路径导致FileNotFoundError，没有写入其他位置；随后在正确目录移除残留并修正颜色缓存和观察器，类型检查通过。
+- npx.cmd --yes prettier@3.9.10 --write整理GraphLabels、GraphViewport、Graph和graph-reading检查文件。npm.cmd run tauri -- build --debug --no-bundle通过类型检查、Vite及Rust编译，首次Rust13.03s；保留现有GraphViewport块大于500kB提示。
+- npx.cmd playwright test graph-reading.spec.ts --project desktop --output ../../artifacts/graph-reading-first：1条通过，总9.2s，用例6.9s。查看实际截图发现长标题把草稿标记裁切，修正为独立flex标题和状态，并增加标记位于标签框内的检查，没有删除原断言。
+- 再执行prettier整理GraphLabels和graph-reading；npm.cmd run tauri -- build --debug --no-bundle通过，最终Rust18.93s。没有后端代码修改。
+- 设置CORTEXOS_GRAPH_BASELINE=1、CORTEXOS_STREAM_PROFILE=1、CORTEXOS_EXPECT_STABLE_GRAPH=1、CORTEXOS_GRAPH_FIXTURE_DIR为artifacts/p1-c2a-fixture、CORTEXOS_GRAPH_VARIANT=graph-reading；执行npx.cmd playwright test graph-reading.spec.ts graph-instances.spec.ts graph-exploration.spec.ts trace.spec.ts graph-preview.spec.ts graph-baseline.spec.ts stream-profile.spec.ts --project desktop --project edge --project graph-baseline --project stream-profile --output ../../artifacts/graph-reading-acceptance：7条通过，总59.4s。浏览器演示2.9s、原生多中心7.0s、实体点击3.6s、标签阅读6.0s、执行图9.1s、三规模观测13.7s、固定流12.1s。浏览器保留Three.Clock弃用提示，无新增页面运行错误。
+- 最终npm.cmd run typecheck再次通过。py -3 -X utf8只读汇总JSON并断言三个规模完整GraphData哈希与graph-query-measurements一致，通过。git diff --check最初提示本日志尾部多余空行，移除后通过，仅既有CRLF提示。提交前确认git rev-parse --show-toplevel为D:/vibecoding/CortexOS，credential.helper=manager，Gittoken.txt仍忽略，未读取令牌正文。
+
+### 实际截图、观测和边界
+
+已逐一查看graph-reading-acceptance的长标题、密集选中、1366×768、1600×900、1920×1080实际原生内容视口截图，以及千节点和执行图截图。标签矩形不互相重叠、不与实际面板重叠且在画布内，数组末尾选中标签优先，草稿标记完整，连线开关及实际关系历史可用；相机外/后方节点不显示标签。浏览前后完整数据相等。三尺寸无横向溢出；CDP内容视口不等同于系统缩放验收。
+
+同一隔离夹具100/1000、500/1000、1000/5000节点/关系，标签槽均24，截图时显示7/7/4个；首页首帧868.6/158.9/224.5ms，继续加载全图4.1（无需后续页）/319.4/1653.9ms，空闲350ms均新增绘制0、上一帧提交4。千节点固定HTTP流200段观察6.290s，标签增删0/0、静置绘制0、主线程任务118.2ms、JS堆样本约35.7MiB，文本及图数据断言通过。不是严格同负载前后对照、真实Ollama吞吐、屏幕FPS或峰值内存保证。
+
+避让只解决文本/面板矩形，不解决3D几何遮挡或节点布局。选中节点在镜头外、面板覆盖或无空位时，标签可隐藏，全文仍在列表/详情。24槽限制DOM数量，候选投影和排序仍随已加载节点/相关边增长；没有10,000节点、20中心性能承诺。系统150%、完整读屏、真实模型高负载/长时、安装升级未验；此前高显存长回答根因仍未确定。
+
+本轮停止在第4项验收点。后续剩第5Windows桌面交付、第6Decision Lab/评估，LoRA后置；不宣称整个P1-C或项目已完成。

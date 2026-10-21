@@ -176,6 +176,8 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
       observations.push({
         nodes,
         edges,
+        labelSlots: await page.locator(".graph-label-layer .graph-node-label").count(),
+        visibleLabels: await page.locator(".graph-label-layer .graph-node-label:visible").count(),
         fixture: "synthetic-scoped-database",
         graphHash,
         variant: process.env.CORTEXOS_GRAPH_VARIANT ?? "unspecified",

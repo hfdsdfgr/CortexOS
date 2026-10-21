@@ -159,3 +159,10 @@ graph/neighborhood/instances/trace/preview沿用必要回归。独立graph-basel
 graph-exploration.spec.ts在真实WebView2与隔离70节点库验证：A59/B17/并集65的去重与50项前缀、共享来源、环/停用/未展开两跳排除、SQL参数及工作区隔离、逐个/全部收起、选中详情/位置草稿保留、显式临时显示、真实旧IPC响应延迟后不覆盖新范围、跨页和工作区恢复、WebGL降级、演示隔离及三尺寸截图。
 
 复用graph-neighborhood、graph-query、graph的必要原生兼容专项，保留原业务断言；graph-preview扩展纯浏览器演示的双中心5→4→0→7路径。发现的清除筛选异步焦点竞争从产品逻辑修复，原toBeFocused断言保留。实际执行及未验证范围见milestone-log与graph-multi-center，不运行单元或全套测试。
+
+
+## 图谱阅读必要检查
+
+graph-reading.spec.ts在真实WebView2使用80节点隔离夹具，检查密集与长中英文标题、末尾节点选中优先、草稿标记不被标题挤掉、屏幕/面板/标签矩形避让、相机后方/画布外裁剪、连线名称开关和真实关系历史、三尺寸、空闲350ms绘制不增长及完整GraphData不变。复用实例点击/位置/相机、多中心、执行图和浏览器演示专项。
+
+三规模graph-baseline记录24个标签槽与实际可见数量，延用首页/全量分开计时和绘制提交观测；千节点stream-profile继续要求固定流零标签层重建/零静置绘制。实际命令、当前性能单位和未验证范围见graph-reading与milestone-log，不运行单元或全套测试。

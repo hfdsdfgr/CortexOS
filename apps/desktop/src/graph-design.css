@@ -25,6 +25,15 @@
 .design-v3 .graph-inspector .demo-inspector h2 { font-size: 22px; }
 .design-v3 .graph-node-label { background: #f4f6f8d9; padding: 4px 8px; border-radius: 8px; color: var(--text); }
 .design-v3 .graph-node-label.is-selected { background: var(--selected); color: var(--primary); }
+.design-v3 .graph-label-layer .graph-node-label { max-width: 180px; }
+.design-v3 .graph-label-layer .graph-node-label { display: flex; align-items: center; gap: 6px; }
+.graph-label-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.design-v3 .graph-label-layer .graph-node-label em { flex: 0 0 auto; margin-left: 0; }
+.design-v3 .graph-label-layer .graph-node-label.is-selected { max-width: 220px; }
+.design-v3 .graph-label-layer .graph-node-label.is-relation { max-width: 140px; color: var(--primary); }
+.graph-label-leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
+.graph-label-leaders line { stroke: var(--control-border); stroke-width: 1; }
+.graph-edge-label-toggle { display: flex; align-items: center; gap: 8px; margin-block: 12px; }
 .design-v3 .graph-legend { border: 1px solid var(--line); box-shadow: none; font-size: 13px; }
 .design-v3 .graph-view-status { color: var(--muted); }
 .design-v3 .graph-node-index { border: 1px solid var(--line); border-radius: var(--v3-radius-panel); }
