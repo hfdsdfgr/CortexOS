@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { createServer } from "node:http";
 import { createWorkspace, launchNative, nativeInvoke } from "./native";
-import { seedGraph } from "./graph-fixture";
+import { loadAllGraphNodes, seedGraph } from "./graph-fixture";
 import type { Bootstrap, Message, RunDetail, ModelHealth } from "../src/studio";
 import type { GraphData } from "../src/graph-data";
 
@@ -283,8 +283,9 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
     await navigate("图谱");
     const canvas = page.locator('canvas[data-webgl-ready="true"]');
     await expect(canvas).toBeVisible();
+    await loadAllGraphNodes(page);
     await page
-      .getByRole("button", { name: "显示全部节点", exact: true })
+      .getByRole("button", { name: "适应当前视图", exact: true })
       .click();
     const before = await sample("graph-while-generating");
     const statusBefore = (await last()).status;
@@ -313,13 +314,13 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
         .getByLabel("节点类型筛选", { exact: true })
         .selectOption("context");
       await expect(page.locator(".graph-visible-count")).toHaveText(
-        "1 / 1000 节点",
+        "已加载 1 / 1000 节点",
       );
       await page
         .getByLabel("节点类型筛选", { exact: true })
         .selectOption("all");
       await expect(page.locator(".graph-visible-count")).toHaveText(
-        "1000 / 1000 节点",
+        "已加载 1000 / 1000 节点",
       );
       filterRoundTripMs = performance.now() - filterStart;
     } else await page.waitForTimeout(2000);

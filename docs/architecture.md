@@ -119,3 +119,10 @@ Rust knowledge_graph改为一次限定工作区的LEFT JOIN加载关系及全部
 ## 回答流与图谱的更新边界
 
 App组合GraphStudio的四个稳定依赖，GraphPage按默认浅比较复用；消息片段和草稿不进入图谱props。图谱自身的导航订阅/状态、知识revision和工作区仍正常更新，执行图保留实际运行轮询。KnowledgeInspector通过受限方法接口打开当前原会话。流式顺序、取消和后端保存语义不变。性能模式使用有界Performance measure与测试端观测，详见ADR0013。
+
+
+## 图谱按需读取（ADR0014）
+
+正式知识图经graph-query.ts调用graph_query.rs：节点摘要SQL页最多200；当前有效关系只取已加载端点；选择与关联中心按ID补读；展开关系区才读取当前关系页50，展开具体关系才读取历史页50。原load_knowledge_graph保留兼容/审计与基准，正式Graph与RelationshipEditor不再调用它。执行图事实来源、导航实体ID、知识审核与模型调用保持原契约。
+
+快照标记拒绝跨页混合数据，界面丢弃旧范围响应；布局序号来自整个工作区的稳定created_at/id顺序。坐标复用原UPSERT，前端只发送改动坐标。prefix分页可能重复读取旧页，计数/排序仍扫描工作区，密集有效关系尚无边分页；上限和实测边界见graph-on-demand-reads.md，不将SQL LIMIT称为恒定成本查询。

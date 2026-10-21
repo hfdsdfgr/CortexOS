@@ -4,7 +4,7 @@ import { writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import { createHash } from "node:crypto";
 import { createWorkspace, launchNative, nativeInvoke } from "./native";
-import { seedGraph } from "./graph-fixture";
+import { loadAllGraphNodes, seedGraph } from "./graph-fixture";
 import type { Bootstrap, Message } from "../src/studio";
 import type { GraphData } from "../src/graph-data";
 
@@ -67,8 +67,9 @@ test("measure unchanged graph work during a controlled stream, then verify real 
       .click();
     const canvas = page.locator('canvas[data-webgl-ready="true"]');
     await expect(canvas).toBeVisible();
+    await loadAllGraphNodes(page);
     await page
-      .getByRole("button", { name: "显示全部节点", exact: true })
+      .getByRole("button", { name: "适应当前视图", exact: true })
       .click();
     await delay(550);
     await page.evaluate(() => {
@@ -150,11 +151,11 @@ test("measure unchanged graph work during a controlled stream, then verify real 
       .getByLabel("节点类型筛选", { exact: true })
       .selectOption("context");
     await expect(page.locator(".graph-visible-count")).toHaveText(
-      "1 / 1000 节点",
+      "已加载 1 / 1000 节点",
     );
     await page.getByLabel("节点类型筛选", { exact: true }).selectOption("all");
     await expect(page.locator(".graph-visible-count")).toHaveText(
-      "1000 / 1000 节点",
+      "已加载 1000 / 1000 节点",
     );
     response!.end(
       JSON.stringify({

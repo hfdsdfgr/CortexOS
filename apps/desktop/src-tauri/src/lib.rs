@@ -3,6 +3,7 @@ mod commands;
 mod db;
 mod execution;
 mod graph;
+mod graph_query;
 mod knowledge;
 mod models;
 mod ollama;
@@ -70,6 +71,11 @@ pub fn run() {
             commands::save_knowledge,
             commands::approve_knowledge,
             commands::load_knowledge_graph,
+            commands::query_graph_nodes,
+            commands::load_graph_node,
+            commands::load_graph_links,
+            commands::query_graph_relations,
+            commands::load_graph_edge_history,
             commands::save_knowledge_edge,
             commands::save_graph_view,
             commands::start_chat

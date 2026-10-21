@@ -79,11 +79,11 @@ test("native graph expands only active one-hop neighbors and keeps keyboard acce
       .getByRole("button", { name: "只看直接关联", exact: true })
       .click();
     const range = page.getByLabel("关联节点范围", { exact: true });
-    await expect(range).toContainText("已展开 50 / 56 个节点");
+    await expect(range).toContainText("已加载 50 / 56 个匹配节点");
     await range
       .getByRole("button", { name: "再展开 50 个", exact: true })
       .click();
-    await expect(range).toContainText("已展开 56 / 56 个节点");
+    await expect(range).toContainText("已加载 56 / 56 个匹配节点");
     await expect(
       range.getByRole("button", { name: "返回全部节点", exact: true }),
     ).toBeFocused();
@@ -161,7 +161,7 @@ test("native graph expands only active one-hop neighbors and keeps keyboard acce
     await expect(page.getByLabel("搜索图谱节点", { exact: true })).toHaveValue(
       "关联",
     );
-    await expect(range).toContainText("已展开 56 / 56 个节点");
+    await expect(range).toContainText("已加载 55 / 55 个匹配节点");
     await createWorkspace(page, "关联范围 B");
     await expect(page.getByLabel("搜索图谱节点", { exact: true })).toHaveValue(
       "",
@@ -173,7 +173,7 @@ test("native graph expands only active one-hop neighbors and keeps keyboard acce
     await expect(page.getByLabel("搜索图谱节点", { exact: true })).toHaveValue(
       "关联",
     );
-    await expect(range).toContainText("已展开 56 / 56 个节点");
+    await expect(range).toContainText("已加载 55 / 55 个匹配节点");
     await canvas.evaluate((element) =>
       element.dispatchEvent(
         new Event("webglcontextlost", { cancelable: true }),

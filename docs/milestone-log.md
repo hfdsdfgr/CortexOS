@@ -772,3 +772,46 @@ V3更新前同条件比较：1000节点/5000关系上一帧绘制提交6001→4�
 已查看本轮实际原生1600×900真实模型静置图、375px知识详情/筛选、执行记录截图；布局/样式保持原V3。375px为CDP内容视口，执行图PNG为默认窗口的物理截图，不冒称实测系统150%缩放。图谱与知识编辑/审核、关系历史、WebGL降级、原消息与知识版本定位的原专项通过。来源文件权限/完整业务、三尺寸视觉全量、完整读屏、安装升级和持续高GPU负载未重跑。
 
 停止在本切片门槛。下一步按计划先明确图谱按需读取的摘要、有效关系、邻域、历史分页/总数、请求并发和旧界面兼容契约，再增量实现；此轮无数据库或API重构。高负载模型问题保留独立复现入口。
+
+
+## 2026-10-21 图谱按需读取
+
+用户“做”确认后续计划第2项。复读总纲、开发规范、实施计划、AGENTS及永久V3；沿用已有数据与页面，先记录ADR0014读取契约，再交付分页和历史按需读取，停在该项验收点。使用ponytail技能复用现有连接/命令/详情/UPSERT，不增加状态框架或页缓存。
+
+### 实际修改
+
+- Rust新增graph_query.rs：节点摘要/过滤/直接关联SQL页最多200；单节点摘要；加载端点间有效关系；当前关系页50；历史version游标页50。工作区/参数校验、真实总数、跨页快照与稳定全工作区布局序号。commands.rs/lib.rs/build.rs和main capability注册五项只读业务命令。
+- Cargo.toml只为现有rusqlite启用functions，使用确定性Unicode小写子串匹配；无新crate/版本、迁移、表或索引。Cargo.lock与package-lock.json内容未变。
+- graph-query.ts、Graph.tsx与新GraphRelations.tsx：正式知识图替换全量读取，初始200/直接关联50，显示真实已加载/总数，关系和历史按需展开，丢弃迟到响应，失败保留草稿并提供重读。端点选择仅打开编辑器时读取全工作区摘要；冲突仅读取具体关系最新版本。位置只提交改动ID，保留跨页草稿及未加载坐标。
+- graph-data.ts兼容可选布局序号/已存坐标；演示/执行图保留原事实来源。按钮文案改为“适应当前视图”“重置已加载节点布局与视角”，没有修改V3样式文件。
+- 检查文件：playwright.config.ts、新graph-query.spec.ts、graph-fixture.ts及原graph/graph-neighborhood/graph-preview/graph-baseline/graph-model/stream-profile专项。后两类千节点脚本增加明确加载全图步骤，避免首页200节点冒充千节点性能。
+- 文档：ADR0014、graph-on-demand-reads、architecture、security、test-plan、implementation-plan、refactoring-plan及本日志。用户参考图片、desktop.spec.ts原换行差异保留且不纳入提交。
+
+更正检查中最初关于“保存会删除未提交坐标”的判断：原graph.rs已经使用UPSERT，不存在该删除逻辑，本轮没有修改保存服务。实际需要的是前端只提交改动坐标与跨页草稿保留。
+
+### 实际命令与修复记录
+
+npm、npx与cargo命令目录为apps/desktop；原生检查均使用隔离数据库/专用WebView目录与require_escalated。没有运行单元或全套测试。
+
+- Rust首次检查遇到可选坐标闭包E0282，补显式Result类型后通过。早期桌面构建在新检查脚本遇到未使用GraphNode导入及rootNodeId被推断为null，修正后通过。最后执行cargo check --manifest-path src-tauri/Cargo.toml --locked通过（0.58s）。
+- npm.cmd run typecheck在接口接入、检查扩展及最终排版后通过；npm.cmd run tauri -- build --debug --no-bundle多次构建修复后的实际WebView2版本通过。保留Vite现有GraphViewport块大于500kB提示，不当作构建失败或已处理体积问题。
+- npx.cmd --yes prettier@3.9.10 --write仅整理本轮Graph、GraphRelations、graph-query及相关检查脚本。py -3 -X utf8仅用于目标文件编辑和只读JSON汇总，无库安装。
+- npx.cmd playwright test graph-query.spec.ts --project desktop --output ../../artifacts/graph-query：首次数据准备因关系未变化正确被拒绝，改为实际交替关系类型建立101修订；随后发现画布未就绪时列表选择可能不开详情，修正为直接开详情，未删掉检查。
+- graph-query.spec.ts graph-neighborhood.spec.ts graph-instances.spec.ts graph.spec.ts --project desktop，输出graph-query-regression：前三条通过，原graph专项发现关系保存后新组件因revision key重挂载丢失展开状态；改为只按节点ID挂载，revision继续触发读取。
+- graph.spec.ts单独输出graph-query-editor：通过关系保存与并发比较路径后停在旧计数文案断言。适配“已加载”后与扩展query脚本一起输出graph-query-final：发现清除筛选时向仍禁用按钮过早聚焦，改为读取结束后恢复；第一次迟到响应注入未观测到延迟，改为fetch层暂缓实际IPC响应，未虚构返回数据。
+- npx.cmd playwright test graph-query.spec.ts graph.spec.ts graph-neighborhood.spec.ts --project desktop --output ../../artifacts/graph-query-acceptance：3条通过，总24.1s。覆盖跨页及101历史、迟到真实响应、端点选择、草稿、审核、并发、重启、邻域筛选/分页及键盘路径。查询脚本后续调整截图滚动位置，在graph-query-visual-final再次通过（6.5s）。
+- 设置CORTEXOS_GRAPH_BASELINE=1、CORTEXOS_STREAM_PROFILE=1、CORTEXOS_EXPECT_STABLE_GRAPH=1、CORTEXOS_GRAPH_FIXTURE_DIR为artifacts/p1-c2a-fixture、CORTEXOS_GRAPH_VARIANT=on-demand-reads；执行npx.cmd playwright test graph-instances.spec.ts trace.spec.ts graph-preview.spec.ts graph-baseline.spec.ts stream-profile.spec.ts --project desktop --project edge --project graph-baseline --project stream-profile --output ../../artifacts/graph-query-measurements：原生实例点击、执行图、三规模读取基线及固定流4条通过；浏览器演示因前轮V3文案/折叠筛选断言已过时失败。
+- 浏览器演示分别在graph-query-browser、graph-query-visual-final定位旧“清除筛选”隐藏入口及已改名的演示条目，按实际V3交互更新检查，不更改演示产品功能。最终npx.cmd playwright test graph-preview.spec.ts --project edge --output ../../artifacts/graph-query-browser-final：1条通过，总5.0s。浏览器控制台保留Three.Clock弃用提示，没有新增运行错误。
+- py -3 -X utf8比较三个规模的全量GraphData哈希，与p1-c2a-v3-final逐一一致；新links逐项等于全量中两端已加载的当前有效关系。git diff --check通过，仅既有CRLF提示。提交前git rev-parse --show-toplevel确认D:/vibecoding/CortexOS，Gittoken.txt仍忽略，credential.helper=manager；未读取令牌正文。
+
+### 结果、截图和门槛
+
+同库每组3次全量/首页+links往返中位：100节点/1000边101.2→109.7ms；500/1000为175.2→93.2ms；1000/5000为546.8→143.3ms。千节点首页为200节点/985条连线，JSON从1,782,087到359,719字节（减少79.81%）。小图略慢；往返包含SQL/IPC/序列化/CDP，不声称纯SQL或全部规模提速。前缀策略下从首页继续加载全部千节点另耗1652.5ms，不能把236.0ms首页首帧当成全图加载时间。
+
+千节点/五千关系明确全部加载后固定流200段：6.302s观察窗内标签增删0/0、静置绘制0，累计主线程任务123.3ms。完整输出和图谱哈希断言通过，不是本轮真实模型吞吐或屏幕FPS。三个规模空闲350ms均无新增绘制，上一帧提交均4。详细方法和原始记录位置见graph-on-demand-reads。
+
+已生成并查看实际原生筛选详情、历史展开及直接关联截图；1366×768、1600×900、1920×1080内容视口无横向溢出，375px降级及执行图沿原专项检查。WebView2截图与浏览器演示分别记录，未以CDP视口冒称系统150%缩放。
+
+本轮保留限制：前缀页会重复读取；计数/排序/快照仍可能扫描工作区；密集有效关系尚无边分页；端点选择打开时仍读全工作区摘要；10,000节点请求上限与1,000改动坐标保存上限不是流畅规模保证。未重跑真实Ollama长回答/高显存复现、系统150%、完整读屏、安装升级与长时稳定性，原高负载模型问题仍未确定根因。
+
+停止在第2项“按需读取”验收点。第3多中心探索、第4阅读整理、第5桌面交付、第6Decision Lab/评估继续后续分段实施，不宣称整个P1-C或项目已完成。

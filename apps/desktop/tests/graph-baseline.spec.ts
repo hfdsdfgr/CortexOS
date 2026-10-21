@@ -3,8 +3,9 @@ import { writeFile } from "node:fs/promises";
 import { performance } from "node:perf_hooks";
 import { createHash } from "node:crypto";
 import { createWorkspace, launchNative, nativeInvoke } from "./native";
-import { seedGraph } from "./graph-fixture";
-import type { GraphData } from "../src/graph-data";
+import { loadAllGraphNodes, seedGraph } from "./graph-fixture";
+import type { GraphData, GraphEdge } from "../src/graph-data";
+import type { GraphNodePage } from "../src/graph-query";
 import type { Bootstrap } from "../src/studio";
 
 test("measure isolated native synthetic graphs without asserting unmeasured performance targets", async ({}, info) => {
@@ -46,6 +47,10 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
       const workspaceId = await page.getByLabel("当前工作区").inputValue();
       if (!existing) await seedGraph(page, workspaceId, nodes, edges);
       const reads = [];
+      const pagedReads = [];
+      let fullBytes = 0;
+      let pageAndLinksBytes = 0;
+      let initialLinks = 0;
       let graphHash = "";
       for (let index = 0; index < 3; index++) {
         const start = performance.now();
@@ -57,11 +62,53 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
         reads.push(performance.now() - start);
         expect(graph.nodes).toHaveLength(nodes);
         expect(graph.edges).toHaveLength(edges);
+        fullBytes = Buffer.byteLength(JSON.stringify(graph));
         const digest = createHash("sha256")
           .update(JSON.stringify(graph))
           .digest("hex");
         if (graphHash) expect(digest).toBe(graphHash);
         graphHash = digest;
+        const pagedStart = performance.now();
+        const first = await nativeInvoke<GraphNodePage>(
+          page,
+          "query_graph_nodes",
+          {
+            input: {
+              workspaceId,
+              query: "",
+              kind: "all",
+              status: "all",
+              sinceUtc: null,
+              rootNodeId: null,
+              offset: 0,
+              limit: 200,
+              expectedSnapshot: null,
+            },
+          },
+        );
+        const links = await nativeInvoke<GraphEdge[]>(
+          page,
+          "load_graph_links",
+          {
+            workspaceId,
+            nodeIds: first.nodes.map((n) => n.id),
+            expectedSnapshot: first.snapshot,
+          },
+        );
+        pagedReads.push(performance.now() - pagedStart);
+        const ids = new Set(first.nodes.map((n) => n.id));
+        expect(links).toEqual(
+          graph.edges
+            .filter(
+              (e) =>
+                e.versions[0].active &&
+                ids.has(e.versions[0].fromNodeId) &&
+                ids.has(e.versions[0].toNodeId),
+            )
+            .map((e) => ({ ...e, versions: [e.versions[0]] })),
+        );
+        pageAndLinksBytes = Buffer.byteLength(JSON.stringify({ first, links }));
+        initialLinks = links.length;
       }
       const started = performance.now();
       await page
@@ -76,8 +123,15 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
         )
         .toBeGreaterThan(0);
       const openMs = performance.now() - started;
+      const initialLoadedNodes = Math.min(200, nodes);
+      await expect(page.locator(".graph-visible-count")).toHaveText(
+        `已加载 ${initialLoadedNodes} / ${nodes} 节点`,
+      );
+      const loadAllStarted = performance.now();
+      await loadAllGraphNodes(page);
+      const loadAllMs = performance.now() - loadAllStarted;
       await page
-        .getByRole("button", { name: "显示全部节点", exact: true })
+        .getByRole("button", { name: "适应当前视图", exact: true })
         .click();
       // V3 fit animates for 420 ms; sample idle only after it has settled.
       await page.waitForTimeout(500);
@@ -130,6 +184,13 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
         renderer,
         warmReadMs: reads,
         medianWarmReadMs: reads.slice().sort((a, b) => a - b)[1],
+        pagedReadMs: pagedReads,
+        medianPagedReadMs: pagedReads.slice().sort((a, b) => a - b)[1],
+        fullBytes,
+        pageAndLinksBytes,
+        initialLoadedNodes,
+        initialLinks,
+        loadAllMs,
         openMs,
         idleFramesOver350ms: idleFrames,
         scriptedDrag: {

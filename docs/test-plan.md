@@ -143,3 +143,12 @@ CORTEXOS_REAL_GRAPH=1启用real-graph项目。graph-model.spec.ts使用已有Oll
 CORTEXOS_STREAM_PROFILE=1启用独立stream-profile项目：在原生WebView2和同一隔离库中，通过固定HTTP流发送200段文本（请求间隔20ms），观察未操作图谱的标签层重建、绘制回调、主线程任务和JS堆；CORTEXOS_EXPECT_STABLE_GRAPH=1对优化版要求标签零重建且绘制不超过2次。随后实际筛选必须更新图谱，最终完整文本逐字落盘且GraphData哈希不变。模拟响应不作为模型吞吐或屏幕FPS证据。
 
 真实graph-model检查新增CORTEXOS_GRAPH_ACTIVITY=idle/interactive，预热后使用独立新会话，使两种活动的请求内容可按哈希核对。测试专用回环转发记录真实上游headers/首文字/流结束；检索耗时沿用事件elapsedMicros，模型生成速率从实际evalCount/evalDuration计算。性能标记启用准备IPC计时；与首个保存文字的轮询观测分开。记录服务由谁启动，结束仅清理检查拥有的进程。必要聊天专项保留取消/断流/重启断言，图谱与执行图专项验证稳定props未阻止业务刷新。实际执行与未通过项见日志。
+
+
+## 图谱按需读取专项
+
+按用户要求不运行单元或全套测试。graph-query.spec.ts使用原生WebView2、隔离数据库及真实IPC检查261节点跨页/Unicode搜索、稳定布局序号、工作区隔离、参数上限、快照变化拒绝、101个关系历史修订按50/50/1完整读取且重复展开不重复、跨范围手动坐标及未加载坐标保留、跨页关系端点选择。测试端延迟一条实际IPC响应再切换搜索，检查旧结果不能覆盖新范围。三桌面视口截图与溢出检查独立记录，不冒称系统缩放验收。
+
+graph/neighborhood/instances/trace/preview沿用必要回归。独立graph-baseline对同一个隔离库分别记录旧全量命令与新首页+有效links的往返、JSON字节和实体等值；图谱打开时间对应初始最多200节点，loadAllMs另记明确加载全图的耗时，不与旧全图首帧混为一谈。固定流与真实模型专项先显式加载全部节点，继续验证已有刷新隔离，而非用200节点冒充千节点共存。
+
+实际运行的场景、失败修复和未执行范围以milestone-log及graph-on-demand-reads为准。

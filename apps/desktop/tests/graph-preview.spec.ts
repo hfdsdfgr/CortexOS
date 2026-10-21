@@ -10,7 +10,7 @@ test("seven-node preview supports 3D selection, demand rendering and WebGL fallb
   const started = Date.now();
   await page.goto("/#/graph");
   await expect(
-    page.getByText("演示数据 · 不写入工作区", { exact: true }),
+    page.getByText("演示数据，不写入工作区", { exact: true }),
   ).toBeVisible();
   const canvas = page.locator('canvas[data-webgl-ready="true"]');
   await expect(canvas).toBeVisible();
@@ -39,13 +39,20 @@ test("seven-node preview supports 3D selection, demand rendering and WebGL fallb
   ).toBeVisible();
   await page.getByRole("button", { name: "移到选中节点", exact: true }).click();
   await page.getByRole("button", { name: "关闭图谱详情" }).click();
-  await page.getByRole("button", { name: "显示全部节点" }).click();
+  await page.getByRole("button", { name: "适应当前视图" }).click();
   await page.waitForTimeout(250);
   const count = Number(await canvas.getAttribute("data-render-count"));
   await page.waitForTimeout(250);
   expect(Number(await canvas.getAttribute("data-render-count"))).toBe(count);
   await page.screenshot({ path: testInfo.outputPath("graph-demo.png") });
-  await writeFile(testInfo.outputPath("graph-observation.json"), JSON.stringify({kind:"browser-demo",nodes:7,loadMs,idleFramesOver250ms:0},null,2));
+  await writeFile(
+    testInfo.outputPath("graph-observation.json"),
+    JSON.stringify(
+      { kind: "browser-demo", nodes: 7, loadMs, idleFramesOver250ms: 0 },
+      null,
+      2,
+    ),
+  );
   await testInfo.attach("small-graph-observation", {
     body: JSON.stringify({
       kind: "browser-demo",
@@ -55,11 +62,12 @@ test("seven-node preview supports 3D selection, demand rendering and WebGL fallb
     }),
     contentType: "application/json",
   });
+  await page.getByRole("button", { name: "筛选", exact: true }).click();
   await page.getByLabel("节点类型筛选").selectOption("hypothesis");
   await expect(
     page.getByRole("status").filter({ hasText: "1 / 7 节点" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "清除筛选" }).click();
+  await page.getByRole("button", { name: "重置筛选", exact: true }).click();
   await canvas.evaluate((element) =>
     element.dispatchEvent(new Event("webglcontextlost", { cancelable: true })),
   );
@@ -67,10 +75,10 @@ test("seven-node preview supports 3D selection, demand rendering and WebGL fallb
     page.getByRole("heading", { name: "3D 暂不可用" }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "来源可追溯 知识 · 已确认", exact: true })
+    .getByRole("button", { name: /^能查到原始出处 知识，\s*已确认$/ })
     .click();
   await expect(
-    page.getByRole("heading", { name: "来源可追溯", exact: true }),
+    page.getByRole("heading", { name: "能查到原始出处", exact: true }),
   ).toBeVisible();
   expect(errors).toEqual([]);
 });

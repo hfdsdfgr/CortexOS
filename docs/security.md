@@ -79,3 +79,10 @@ SQLite 数据目录不是加密保险库，当前未实现加密功能，不声�
 ## 2026-10-21 集成窗口控件
 
 主窗口关闭系统标题栏后，集成顶栏需要 `core:window:allow-minimize`、`core:window:allow-toggle-maximize`、`core:window:allow-is-maximized`、`core:window:allow-start-dragging`。能力限定在既有main窗口，close与事件订阅沿用原授权；不启用整个core默认权限包，不增加文件、shell、网络或子窗口授权。关闭操作调用普通window.close，保留原未保存编辑监听与生成取消路径。浏览器预览不挂载原生控件。
+
+
+## 按需图谱读取权限（2026-10-21）
+
+main窗口增加query_graph_nodes、load_graph_node、load_graph_links、query_graph_relations、load_graph_edge_history五项只读业务命令；build.rs生成权限清单，lib.rs注册。全部由Rust数据库连接访问，逐项校验工作区及端点归属；分页、类型、状态、日期与节点集合参数验证后通过参数绑定查询。无新文件读取、数据库直连、shell、网络或其他窗口能力。
+
+节点页最多200，关系/历史页最多50，links端点集合最多10,000且拒绝重复ID；越界和跨工作区请求返回错误。已有视角保存并发版本及1,000改动坐标校验继续生效。快照校验避免将不同数据修订拼成同一范围，不能防止数据库外部直接改写；应用仍只支持其管理的单进程写入路径。

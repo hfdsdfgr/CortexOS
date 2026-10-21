@@ -1,4 +1,20 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
+
+export async function loadAllGraphNodes(page: Page) {
+  const more = page.getByRole("button", {
+    name: "继续加载 200 个节点",
+    exact: true,
+  });
+  const count = page.locator(".graph-visible-count");
+  const loaded = async () =>
+    Number((await count.textContent())?.match(/已加载 (\d+)/)?.[1] ?? 0);
+  while (await more.isVisible()) {
+    const before = await loaded();
+    await expect(more).toBeEnabled();
+    await more.click();
+    await expect.poll(loaded).toBeGreaterThan(before);
+  }
+}
 
 // Synthetic data goes through the same scoped commands as the application.
 export async function seedGraph(

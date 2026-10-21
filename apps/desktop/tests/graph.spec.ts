@@ -163,7 +163,7 @@ test("native graph persists relationships, independent views and knowledge edits
       page.locator(".graph-inspector .knowledge-state"),
     ).toContainText("回答使用 v2");
     await page
-      .getByRole("button", { name: "显示全部节点", exact: true })
+      .getByRole("button", { name: "适应当前视图", exact: true })
       .click();
     await page.screenshot({
       path: testInfo.outputPath("native-knowledge-graph.png"),
@@ -211,7 +211,7 @@ test("native graph persists relationships, independent views and knowledge edits
     await expect(canvas).toBeVisible();
     await page.getByRole("button", { name: "筛选", exact: true }).click();
     await page.getByLabel("节点审核筛选").selectOption("confirmed");
-    await expect(page.getByText("1 / 7 节点", { exact: true })).toBeVisible();
+    await expect(page.getByText("已加载 1 / 7 节点", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "节点列表", exact: true }).click();
     await page.getByRole("button", { name: "清除筛选" }).click();
     await expect(page.locator(".graph-node-row").first()).toBeFocused();

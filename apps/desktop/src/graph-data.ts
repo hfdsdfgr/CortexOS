@@ -1,6 +1,10 @@
 import type { KnowledgeNode } from "./Knowledge";
 
 export type Point = [number, number, number];
+export interface GraphNode extends KnowledgeNode {
+  layoutIndex?: number;
+  savedPosition?: Point | null;
+}
 export interface EdgeVersion {
   version: number;
   fromNodeId: string;
@@ -15,7 +19,7 @@ export interface GraphEdge {
   versions: EdgeVersion[];
 }
 export interface GraphData {
-  nodes: KnowledgeNode[];
+  nodes: GraphNode[];
   edges: GraphEdge[];
   view: {
     revision: number;
@@ -55,18 +59,17 @@ export function relatedNodeIds(graph: GraphData, root: string): string[] {
       .map((node) => node.id),
   ];
 }
-export function defaultPositions(
-  nodes: KnowledgeNode[],
-): Record<string, Point> {
+export function defaultPositions(nodes: GraphNode[]): Record<string, Point> {
   return Object.fromEntries(
     nodes.map((node, index) => {
-      const angle = index * 2.399963229728653;
-      const radius = index === 0 ? 0 : 3 + Math.sqrt(index) * 1.2;
+      const ordinal = node.layoutIndex ?? index;
+      const angle = ordinal * 2.399963229728653;
+      const radius = ordinal === 0 ? 0 : 3 + Math.sqrt(ordinal) * 1.2;
       return [
         node.id,
         [
           Math.cos(angle) * radius,
-          ((index % 3) - 1) * 1.7,
+          ((ordinal % 3) - 1) * 1.7,
           Math.sin(angle) * radius,
         ] as Point,
       ];

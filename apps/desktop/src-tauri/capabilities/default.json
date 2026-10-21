@@ -41,6 +41,11 @@
     "core:window:allow-is-maximized",
     "core:window:allow-start-dragging",
     "allow-load-knowledge-graph",
+    "allow-query-graph-nodes",
+    "allow-load-graph-node",
+    "allow-load-graph-links",
+    "allow-query-graph-relations",
+    "allow-load-graph-edge-history",
     "allow-save-knowledge-edge",
     "allow-save-graph-view"
   ]

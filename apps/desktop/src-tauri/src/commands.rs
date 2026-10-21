@@ -465,6 +465,70 @@ pub async fn save_knowledge_edge(
     })
     .await
 }
+
+#[tauri::command]
+pub async fn query_graph_nodes(
+    state: State<'_, AppState>,
+    input: crate::graph_query::NodeQuery,
+) -> AppResult<crate::graph_query::NodePage> {
+    blocking(state.database.clone()?, move |db| db.graph_node_page(input)).await
+}
+#[tauri::command]
+pub async fn load_graph_node(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    node_id: String,
+) -> AppResult<crate::graph_query::GraphNode> {
+    blocking(state.database.clone()?, move |db| {
+        db.graph_node(&workspace_id, &node_id)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn load_graph_links(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    node_ids: Vec<String>,
+    expected_snapshot: String,
+) -> AppResult<Vec<crate::graph::GraphEdge>> {
+    blocking(state.database.clone()?, move |db| {
+        db.graph_links(&workspace_id, node_ids, &expected_snapshot)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn query_graph_relations(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    node_id: String,
+    offset: i64,
+    limit: i64,
+    expected_snapshot: Option<String>,
+) -> AppResult<crate::graph_query::RelationPage> {
+    blocking(state.database.clone()?, move |db| {
+        db.graph_relations(
+            &workspace_id,
+            &node_id,
+            offset,
+            limit,
+            expected_snapshot.as_deref(),
+        )
+    })
+    .await
+}
+#[tauri::command]
+pub async fn load_graph_edge_history(
+    state: State<'_, AppState>,
+    workspace_id: String,
+    edge_id: String,
+    before_version: Option<i64>,
+    limit: i64,
+) -> AppResult<crate::graph_query::HistoryPage> {
+    blocking(state.database.clone()?, move |db| {
+        db.graph_history(&workspace_id, &edge_id, before_version, limit)
+    })
+    .await
+}
 #[tauri::command]
 pub async fn save_graph_view(
     state: State<'_, AppState>,
