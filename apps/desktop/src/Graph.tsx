@@ -28,7 +28,6 @@ import {
   demoContents,
   demoGraph,
   relations,
-  relatedNodeIds,
   shapes,
   type GraphData,
   type GraphEdge,
@@ -36,7 +35,15 @@ import {
 } from "./graph-data";
 import type { ViewportApi } from "./GraphViewport";
 import { GraphRelations } from "./GraphRelations";
-import { readGraphScope, type HistoryPage } from "./graph-query";
+import {
+  readGraphScope,
+  MAX_GRAPH_CENTERS,
+  MAX_GRAPH_NODES,
+  type GraphExpansion,
+  type GraphCenter,
+  type HistoryPage,
+} from "./graph-query";
+import { GraphExplorations } from "./GraphExplorations";
 import type { GraphNode } from "./graph-data";
 import type { KnowledgeNode } from "./Knowledge";
 
@@ -46,7 +53,7 @@ interface BrowseState {
   typeFilter: string;
   statusFilter: string;
   since: string;
-  range: { root: string; limit: number } | null;
+  expansions: GraphExpansion[] | null;
 }
 // Like execution sessionViews: browsing preferences last for this app session only.
 const sessionBrowse = new Map<string, BrowseState>();
@@ -152,12 +159,16 @@ function KnowledgeGraph({
     demo ? defaultPositions(demoGraph.nodes) : {},
   );
   const [selected, setSelected] = useState<string | null>(route.node);
-  const [catalog, setCatalog] = useState<Record<string, GraphNode>>({});
+  const [catalog, setCatalog] = useState<Record<string, GraphNode>>(
+    demo ? Object.fromEntries(demoGraph.nodes.map((n) => [n.id, n])) : {},
+  );
   const [nodeLimit, setNodeLimit] = useState(200);
   const [counts, setCounts] = useState({
-    totalNodes: 0,
-    matchingNodes: 0,
-    rangeNodes: 0,
+    totalNodes: demo ? demoGraph.nodes.length : 0,
+    matchingNodes: demo ? demoGraph.nodes.length : 0,
+    rangeNodes: demo ? demoGraph.nodes.length : 0,
+    centers: [] as GraphCenter[],
+    origins: {} as Record<string, string[]>,
   });
   const dirtyPositions = useRef(new Set<string>());
   const acceptNodes = useCallback((nodes: GraphNode[]) => {
@@ -194,24 +205,29 @@ function KnowledgeGraph({
   const [listOpen, setListOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [inspectorReady, setInspectorReady] = useState(!!route.node);
-  const [range, setRange] = useState<BrowseState["range"]>(
-    previousBrowse?.range ?? null,
+  const [expansions, setExpansions] = useState<BrowseState["expansions"]>(
+    previousBrowse?.expansions ?? null,
   );
+  const expansionRoots = expansions?.map((s) => s.root).join(",") ?? "";
+  const expansionQuota = expansions?.reduce((n, s) => n + s.limit, 0) ?? 0;
   const [revealed, setRevealed] = useState<string | null>(null);
   const [listLimit, setListLimit] = useState(50);
   const inspector = useRef<HTMLElement>(null);
   const pendingFocus = useRef<string | null>(null);
+  const readingScope = useRef(false);
   const scopeGeneration = useRef(0);
   const listToggle = useRef<HTMLButtonElement>(null);
+  const restorePendingFocus = useCallback(() => {
+    if (!listToggle.current || readingScope.current || !pendingFocus.current)
+      return;
+    const target = document.querySelector<HTMLElement>(pendingFocus.current);
+    if (target?.matches(":disabled")) return;
+    (target ?? listToggle.current).focus();
+    pendingFocus.current = null;
+  }, []);
   const focusAfterUpdate = (selector: string) => {
     pendingFocus.current = selector;
-    requestAnimationFrame(() => {
-      const target = document.querySelector<HTMLElement>(selector);
-      if (target && !target.matches(":disabled")) {
-        target.focus();
-        pendingFocus.current = null;
-      } else listToggle.current?.focus();
-    });
+    requestAnimationFrame(restorePendingFocus);
   };
   useEffect(() => {
     sessionBrowse.set(browseKey, {
@@ -219,14 +235,17 @@ function KnowledgeGraph({
       typeFilter,
       statusFilter,
       since,
-      range,
+      expansions,
     });
-  }, [browseKey, query, typeFilter, statusFilter, since, range]);
+  }, [browseKey, query, typeFilter, statusFilter, since, expansions]);
   const [failed, setFailed] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!loading) requestAnimationFrame(restorePendingFocus);
+  }, [loading, graph, restorePendingFocus]);
   const [saving, setSaving] = useState(false);
   const [unsaved, setUnsaved] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -242,19 +261,21 @@ function KnowledgeGraph({
   }, []);
   const loadScope = () =>
     readGraphScope({
-      workspaceId: workspace!,
+      workspaceId: workspace ?? "demo",
       query,
       kind: typeFilter,
       status: statusFilter,
       since,
-      rootNodeId: range?.root ?? null,
-      targetCount: Math.min(revealed ? 9999 : 10000, range?.limit ?? nodeLimit),
+      expansions,
+      targetCount: Math.min(revealed ? 9999 : MAX_GRAPH_NODES, nodeLimit),
       extraId: revealed,
+      demo,
     });
   useEffect(() => {
-    if (demo || !workspace || !studio.desktop) return;
+    if (!demo && (!workspace || !studio.desktop)) return;
     scopeGeneration.current++;
     let current = true;
+    readingScope.current = true;
     setLoading(true);
     setError(null);
     void loadScope()
@@ -263,14 +284,6 @@ function KnowledgeGraph({
         setGraph(data);
         setCounts(nextCounts);
         acceptNodes(data.nodes);
-        if (pendingFocus.current)
-          requestAnimationFrame(() => {
-            const target = document.querySelector<HTMLElement>(
-              pendingFocus.current!,
-            );
-            (target ?? listToggle.current)?.focus();
-            pendingFocus.current = null;
-          });
         if (!initialView.current) {
           initialView.current = data.view;
           viewVersion.current = data.view.revision;
@@ -278,10 +291,16 @@ function KnowledgeGraph({
         }
       })
       .catch((e) => {
-        if (current) setError(errorText(e));
+        if (current)
+          setError(
+            `${errorText(e)}${graph ? " 当前仍显示上一次成功读取的范围。" : ""}`,
+          );
       })
       .finally(() => {
-        if (current) setLoading(false);
+        if (current) {
+          readingScope.current = false;
+          setLoading(false);
+        }
       });
     return () => {
       current = false;
@@ -297,31 +316,12 @@ function KnowledgeGraph({
     typeFilter,
     statusFilter,
     since,
-    range?.root,
-    range?.limit,
+    expansions,
     nodeLimit,
     revealed,
     acceptNodes,
   ]);
-  const related = graph && range ? relatedNodeIds(graph, range.root) : [];
-  const rangeIds = range ? new Set(related.slice(0, range.limit)) : null;
-  const visible = !demo
-    ? (graph?.nodes ?? [])
-    : (graph?.nodes.filter(
-        (node) =>
-          node.id === revealed ||
-          ((!rangeIds || rangeIds.has(node.id)) &&
-            node.title
-              .toLocaleLowerCase()
-              .includes(query.toLocaleLowerCase()) &&
-            (typeFilter === "all" || node.kind === typeFilter) &&
-            (statusFilter === "all" ||
-              (statusFilter === "confirmed"
-                ? node.latestVersion === node.effectiveVersion
-                : node.latestVersion !== node.effectiveVersion)) &&
-            (!since ||
-              new Date(node.updatedAt).toLocaleDateString("en-CA") >= since)),
-      ) ?? []);
+  const visible = graph?.nodes ?? [];
   const visibleIds = new Set(visible.map((node) => node.id));
   const visibleEdges =
     graph?.edges.filter(
@@ -334,10 +334,14 @@ function KnowledgeGraph({
     catalog[selected ?? ""] ??
     graph?.nodes.find((node) => node.id === selected);
   useEffect(() => {
-    if (demo || !workspace || (!selected && !range?.root)) return;
+    if (demo || !workspace || (!selected && !expansions?.length)) return;
     let current = true;
     const ids = [
-      ...new Set([selected, range?.root].filter((id): id is string => !!id)),
+      ...new Set(
+        [selected, ...(expansions ?? []).map((s) => s.root)].filter(
+          (id): id is string => !!id,
+        ),
+      ),
     ];
     void Promise.all(
       ids.map((nodeId) =>
@@ -356,14 +360,24 @@ function KnowledgeGraph({
     return () => {
       current = false;
     };
-  }, [workspace, selected, range?.root, demo, revision, refresh, acceptNodes]);
+  }, [
+    workspace,
+    selected,
+    expansionRoots,
+    demo,
+    revision,
+    refresh,
+    acceptNodes,
+  ]);
   useEffect(() => {
     if (selectedNode) inspector.current?.focus({ preventScroll: true });
   }, [selectedNode?.id, inspectorReady]);
   useEffect(() => {
     setRevealed(null);
+  }, [query, typeFilter, statusFilter, since]);
+  useEffect(() => {
     setListLimit(50);
-  }, [query, typeFilter, statusFilter, since, range?.root]);
+  }, [query, typeFilter, statusFilter, since, expansionRoots]);
   const select = (id: string) => {
     setRevealed(null);
     setSelected(id);
@@ -498,10 +512,10 @@ function KnowledgeGraph({
         </button>
         <span className="graph-visible-count" role="status">
           {loading ? "正在读取… " : ""}已加载 {visible.length} /{" "}
-          {demo ? (graph?.nodes.length ?? 0) : counts.totalNodes} 节点
+          {counts.totalNodes} 节点
         </span>
         {!demo &&
-          !range &&
+          expansions === null &&
           (graph?.nodes.length ?? 0) < counts.matchingNodes && (
             <button
               className="button secondary"
@@ -626,58 +640,44 @@ function KnowledgeGraph({
           </button>
         </div>
       )}
-      {range && (
-        <div className="graph-range-bar" aria-label="关联节点范围">
-          <strong>
-            {catalog[range.root]?.title ??
-              graph?.nodes.find((node) => node.id === range.root)?.title}{" "}
-            的直接关联
-          </strong>
-          <span role="status">
-            已加载{" "}
-            {demo
-              ? Math.min(range.limit, related.length)
-              : Math.min(
-                  revealed ? 9999 : 10000,
-                  range.limit,
-                  counts.matchingNodes,
-                )}{" "}
-            / {demo ? related.length : counts.matchingNodes} 个匹配节点
-          </span>
-          {range.limit < (demo ? related.length : counts.matchingNodes) && (
-            <button
-              className="button secondary"
-              disabled={loading || range.limit >= (revealed ? 9999 : 10000)}
-              title={
-                range.limit >= (revealed ? 9999 : 10000)
-                  ? "已达到当前视图的节点上限，请缩小筛选范围。"
-                  : undefined
-              }
-              onClick={() => {
-                setRange({
-                  ...range,
-                  limit: Math.min(10000, range.limit + 50),
-                });
-                if (
-                  range.limit + 50 >=
-                  (demo ? related.length : counts.matchingNodes)
-                )
-                  focusAfterUpdate(".graph-range-reset");
-              }}
-            >
-              再展开 50 个
-            </button>
-          )}
-          <button
-            className="button text-button graph-range-reset"
-            onClick={() => {
-              setRange(null);
-              focusAfterUpdate(".graph-list-toggle");
-            }}
-          >
-            返回全部节点
-          </button>
-        </div>
+      {expansions !== null && (
+        <GraphExplorations
+          expansions={expansions}
+          centers={counts.centers}
+          nodes={catalog}
+          loading={loading}
+          canLoadMore={expansionQuota + 50 <= MAX_GRAPH_NODES}
+          onSelect={select}
+          onMore={(root) => {
+            setExpansions((current) =>
+              !current ||
+              current.reduce((n, s) => n + s.limit, 0) + 50 > MAX_GRAPH_NODES
+                ? current
+                : current.map((s) =>
+                    s.root === root ? { ...s, limit: s.limit + 50 } : s,
+                  ),
+            );
+            const center = counts.centers.find((s) => s.root === root);
+            if (center && center.loadedNodes + 50 >= center.matchingNodes)
+              focusAfterUpdate(".graph-range-reset");
+          }}
+          onCollapse={(root) => {
+            const remaining = expansions.filter((s) => s.root !== root);
+            const index = expansions.findIndex((s) => s.root === root);
+            setExpansions(remaining);
+            const next = remaining[Math.min(index, remaining.length - 1)];
+            focusAfterUpdate(
+              next
+                ? `[data-expansion-root="${next.root}"] .graph-expansion-collapse`
+                : ".graph-range-reset",
+            );
+          }}
+          onReset={() => {
+            setRevealed(null);
+            setExpansions(null);
+            focusAfterUpdate(".graph-list-toggle");
+          }}
+        />
       )}
       <div
         className={`graph-workbench ${selectedNode && inspectorReady ? "has-inspector" : ""} ${listOpen ? "list-is-open" : ""} ${saving ? "is-saving" : ""}`}
@@ -722,7 +722,12 @@ function KnowledgeGraph({
               </li>
             ))}
           </ul>
-          {listLimit < (demo ? visible.length : counts.matchingNodes) && (
+          {listLimit <
+            (expansions !== null
+              ? expansions.length === 1
+                ? counts.matchingNodes
+                : visible.length
+              : counts.matchingNodes) && (
             <button
               className="button secondary"
               disabled={
@@ -736,11 +741,13 @@ function KnowledgeGraph({
               onClick={() => {
                 setListLimit((limit) => Math.min(10000, limit + 50));
                 if (!demo && listLimit + 50 > visible.length) {
-                  if (range)
-                    setRange({
-                      ...range,
-                      limit: Math.max(range.limit, listLimit + 50),
-                    });
+                  if (expansions?.length === 1)
+                    setExpansions([
+                      {
+                        ...expansions[0],
+                        limit: Math.max(expansions[0].limit, listLimit + 50),
+                      },
+                    ]);
                   else setNodeLimit((n) => Math.max(n, listLimit + 50));
                 }
                 focusAfterUpdate(
@@ -753,9 +760,11 @@ function KnowledgeGraph({
           )}
           {!visible.length && (
             <p className="small-note">
-              {(demo ? graph?.nodes.length : counts.totalNodes)
-                ? "没有匹配节点。"
-                : "暂无知识节点。"}
+              {expansions?.length === 0
+                ? "已收起全部展开。"
+                : counts.totalNodes
+                  ? "没有匹配节点。"
+                  : "暂无知识节点。"}
             </p>
           )}
           {(query ||
@@ -781,7 +790,7 @@ function KnowledgeGraph({
             <p className="inline-loading" role="status">
               正在准备画布…
             </p>
-          ) : !(demo ? graph?.nodes.length : counts.totalNodes) ? (
+          ) : !counts.totalNodes ? (
             <div className="graph-empty">
               <Network size={32} />
               <h2>从知识建立关系</h2>
@@ -905,12 +914,50 @@ function KnowledgeGraph({
             {revealed === selectedNode.id && (
               <p role="status">已临时显示这个节点，其他筛选保持不变。</p>
             )}
-            <button
-              className="button secondary"
-              onClick={() => setRange({ root: selectedNode.id, limit: 50 })}
-            >
-              只看直接关联
-            </button>
+            <div className="graph-explore-actions">
+              <button
+                className="button secondary"
+                onClick={() => {
+                  setRevealed(null);
+                  setExpansions([{ root: selectedNode.id, limit: 50 }]);
+                }}
+              >
+                只看直接关联
+              </button>
+              {expansions !== null && (
+                <button
+                  className="button secondary"
+                  disabled={
+                    !expansions.some((s) => s.root === selectedNode.id) &&
+                    (expansions.length >= MAX_GRAPH_CENTERS ||
+                      expansionQuota + 50 > MAX_GRAPH_NODES)
+                  }
+                  title={
+                    expansions.length >= MAX_GRAPH_CENTERS
+                      ? "最多同时展开20个节点，请先收起一些展开。"
+                      : expansionQuota + 50 > MAX_GRAPH_NODES
+                        ? "已达到当前读取范围上限，请先收起一些展开。"
+                        : undefined
+                  }
+                  onClick={() => {
+                    if (expansions.some((s) => s.root === selectedNode.id)) {
+                      setExpansions(
+                        expansions.filter((s) => s.root !== selectedNode.id),
+                      );
+                      focusAfterUpdate(".graph-inspector");
+                    } else
+                      setExpansions([
+                        ...expansions,
+                        { root: selectedNode.id, limit: 50 },
+                      ]);
+                  }}
+                >
+                  {expansions.some((s) => s.root === selectedNode.id)
+                    ? "收起此处展开"
+                    : "展开直接关联"}
+                </button>
+              )}
+            </div>
             {demo ? (
               <div className="demo-inspector">
                 <span className="knowledge-kind">
@@ -934,6 +981,17 @@ function KnowledgeGraph({
                 onEdit={(request) => onEdit({ ...request, returnTo: "graph" })}
                 onChanged={() => setRefresh((n) => n + 1)}
               />
+            )}
+            {expansions !== null && visibleIds.has(selectedNode.id) && (
+              <details className="node-display-sources">
+                <summary>显示范围</summary>
+                <ul>
+                  {(counts.origins[selectedNode.id] ?? []).map((root) => (
+                    <li key={root}>{catalog[root]?.title ?? "正在读取节点"}</li>
+                  ))}
+                </ul>
+                {revealed === selectedNode.id && <p>临时显示</p>}
+              </details>
             )}
             {graph && (
               <GraphRelations

@@ -62,7 +62,7 @@ fn own_node(c: &Connection, workspace: &str, id: &str) -> AppResult<()> {
 }
 const ORDERED: &str = "WITH ordered AS (SELECT *,row_number() OVER (ORDER BY created_at,id)-1 AS layout_index FROM knowledge_nodes WHERE workspace_id=?1) ";
 const NODE_FROM: &str = " FROM ordered n JOIN knowledge_versions v ON v.node_id=n.id AND v.version=n.latest_version LEFT JOIN knowledge_positions p ON p.workspace_id=n.workspace_id AND p.node_id=n.id ";
-const RANGE: &str = " (?6 IS NULL OR n.id=?6 OR n.id IN (SELECT CASE WHEN ev.from_node_id=?6 THEN ev.to_node_id ELSE ev.from_node_id END FROM knowledge_edges e JOIN knowledge_edge_versions ev ON ev.edge_id=e.id AND ev.version=e.latest_version AND ev.workspace_id=e.workspace_id WHERE e.workspace_id=?1 AND ev.active=1 AND (ev.from_node_id=?6 OR ev.to_node_id=?6))) ";
+const RANGE: &str = " (?6 IS NULL OR n.id IN (SELECT value FROM json_each(?6)) OR n.id IN (SELECT CASE WHEN ev.from_node_id IN (SELECT value FROM json_each(?6)) THEN ev.to_node_id ELSE ev.from_node_id END FROM knowledge_edges e JOIN knowledge_edge_versions ev ON ev.edge_id=e.id AND ev.version=e.latest_version AND ev.workspace_id=e.workspace_id WHERE e.workspace_id=?1 AND ev.active=1 AND (ev.from_node_id IN (SELECT value FROM json_each(?6)) OR ev.to_node_id IN (SELECT value FROM json_each(?6))))) ";
 const FILTER: &str = " AND cortex_contains(v.title,?2) AND (?3='all' OR v.kind=?3) AND (?4='all' OR (?4='confirmed' AND n.latest_version=n.effective_version) OR (?4='draft' AND (n.effective_version IS NULL OR n.latest_version<>n.effective_version))) AND (?5 IS NULL OR n.updated_at>=?5) ";
 
 #[derive(Debug, Serialize)]
@@ -129,6 +129,7 @@ pub struct NodeQuery {
     pub status: String,
     pub since_utc: Option<String>,
     pub root_node_id: Option<String>,
+    pub root_node_ids: Option<Vec<String>>,
     pub offset: i64,
     pub limit: i64,
     pub expected_snapshot: Option<String>,
@@ -183,6 +184,24 @@ fn endpoints(versions: impl Iterator<Item = EdgeVersion>) -> Vec<String> {
 }
 impl Database {
     pub fn graph_node_page(&self, q: NodeQuery) -> AppResult<NodePage> {
+        if q.root_node_id.is_some() && q.root_node_ids.is_some() {
+            return Err("请使用单个中心或中心列表，不要同时指定。".into());
+        }
+        let roots = q
+            .root_node_ids
+            .clone()
+            .or_else(|| q.root_node_id.clone().map(|id| vec![id]));
+        if roots.as_ref().is_some_and(|ids| {
+            ids.len() > 20
+                || ids.iter().collect::<std::collections::HashSet<_>>().len() != ids.len()
+        }) {
+            return Err("展开中心最多20个，且不能重复。".into());
+        }
+        let encoded_roots = roots
+            .as_ref()
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(|_| missing())?;
         if !(1..=200).contains(&q.limit)
             || q.offset < 0
             || q.query.chars().count() > 200
@@ -227,8 +246,10 @@ impl Database {
         .map_err(error)?;
         let (snapshot, total_nodes) =
             snapshot(&c, &q.workspace_id, q.expected_snapshot.as_deref())?;
-        if let Some(root) = q.root_node_id.as_deref() {
-            own_node(&c, &q.workspace_id, root)?;
+        if let Some(roots) = roots.as_ref() {
+            for root in roots {
+                own_node(&c, &q.workspace_id, root)?;
+            }
         }
         let args = params![
             q.workspace_id,
@@ -236,7 +257,7 @@ impl Database {
             q.kind,
             q.status,
             since,
-            q.root_node_id
+            encoded_roots
         ];
         let matching_nodes = c
             .query_row(
@@ -252,7 +273,7 @@ impl Database {
                 |r| r.get(0),
             )
             .map_err(error)?;
-        let mut statement=c.prepare(&format!("{ORDERED} SELECT {COLUMNS},n.layout_index,p.x,p.y,p.z {NODE_FROM} WHERE {RANGE} {FILTER} ORDER BY CASE WHEN n.id=?6 THEN 0 ELSE 1 END,n.layout_index LIMIT ?7 OFFSET ?8")).map_err(error)?;
+        let mut statement=c.prepare(&format!("{ORDERED} SELECT {COLUMNS},n.layout_index,p.x,p.y,p.z {NODE_FROM} WHERE {RANGE} {FILTER} ORDER BY CASE WHEN n.id IN (SELECT value FROM json_each(?6)) THEN 0 ELSE 1 END,n.layout_index LIMIT ?7 OFFSET ?8")).map_err(error)?;
         let nodes = statement
             .query_map(
                 params![
@@ -261,7 +282,7 @@ impl Database {
                     q.kind,
                     q.status,
                     since,
-                    q.root_node_id,
+                    encoded_roots,
                     q.limit,
                     q.offset
                 ],

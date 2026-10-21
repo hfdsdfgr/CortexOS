@@ -80,5 +80,42 @@ test("seven-node preview supports 3D selection, demand rendering and WebGL fallb
   await expect(
     page.getByRole("heading", { name: "能查到原始出处", exact: true }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "只看直接关联", exact: true }).click();
+  await expect(page.locator(".graph-visible-count")).toHaveText(
+    "已加载 3 / 7 节点",
+  );
+  await page
+    .getByRole("button", { name: /^先做好知识查看和编辑 决定，/ })
+    .click();
+  await page.getByRole("button", { name: "展开直接关联", exact: true }).click();
+  const ranges = page.getByLabel("关联节点范围", { exact: true });
+  await expect(ranges.locator("[data-expansion-root]")).toHaveCount(2);
+  await expect(page.locator(".graph-visible-count")).toHaveText(
+    "已加载 5 / 7 节点",
+  );
+  await ranges
+    .getByRole("button", { name: "收起 能查到原始出处 的展开", exact: true })
+    .click();
+  await expect(page.locator(".graph-visible-count")).toHaveText(
+    "已加载 4 / 7 节点",
+  );
+  await ranges
+    .getByRole("button", {
+      name: "收起 先做好知识查看和编辑 的展开",
+      exact: true,
+    })
+    .click();
+  await expect(page.locator(".graph-visible-count")).toHaveText(
+    "已加载 0 / 7 节点",
+  );
+  await expect(
+    page.getByRole("heading", { name: "从知识建立关系", exact: true }),
+  ).not.toBeVisible();
+  await ranges
+    .getByRole("button", { name: "返回全部节点", exact: true })
+    .click();
+  await expect(page.locator(".graph-visible-count")).toHaveText(
+    "已加载 7 / 7 节点",
+  );
   expect(errors).toEqual([]);
 });

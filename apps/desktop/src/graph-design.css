@@ -30,6 +30,14 @@
 .design-v3 .graph-node-index { border: 1px solid var(--line); border-radius: var(--v3-radius-panel); }
 .design-v3 .graph-workbench.list-is-open .graph-node-index { inset: 12px auto 64px 20px; box-shadow: var(--v3-shadow-panel); }
 .design-v3 .graph-range-bar { background: transparent; margin: 0 28px 8px; padding: 8px 0; border: 0; }
+.design-v3 .graph-range-bar { display: block; }
+.design-v3 .graph-range-bar > header,
+.design-v3 .graph-range-bar li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.design-v3 .graph-range-bar > ul { margin: 0; padding: 0; list-style: none; max-height: 160px; overflow: auto; }
+.design-v3 .graph-range-bar li + li { margin-top: 4px; }
+.design-v3 .graph-expansion-name { max-width: 360px; overflow-wrap: anywhere; text-align: left; }
+.design-v3 .node-display-sources { margin-block: 12px; }
+.design-v3 .graph-explore-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 @media (max-width: 800px) {
   .design-v3 .graph-page > .page-heading { padding: 16px 16px 10px; gap: 16px; }
   .design-v3 :is(.graph-source, .graph-tools, .graph-filter-panel) { padding-inline: 16px; }

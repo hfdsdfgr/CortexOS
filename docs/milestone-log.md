@@ -815,3 +815,44 @@ npm、npx与cargo命令目录为apps/desktop；原生检查均使用隔离数据
 本轮保留限制：前缀页会重复读取；计数/排序/快照仍可能扫描工作区；密集有效关系尚无边分页；端点选择打开时仍读全工作区摘要；10,000节点请求上限与1,000改动坐标保存上限不是流畅规模保证。未重跑真实Ollama长回答/高显存复现、系统150%、完整读屏、安装升级与长时稳定性，原高负载模型问题仍未确定根因。
 
 停止在第2项“按需读取”验收点。第3多中心探索、第4阅读整理、第5桌面交付、第6Decision Lab/评估继续后续分段实施，不宣称整个P1-C或项目已完成。
+
+
+## 2026-10-21 多中心关联探索
+
+用户“继续”确认六步计划第3项。复读总纲、开发规范、实施计划、AGENTS及永久V3，先记录ADR0015的范围来源和收起语义，沿用已交付的按需读取。执行中用户重新提供AGENTS，继续遵守“不跑非必要单元测试、当前切片验收后停止”；没有扩大到标签/安装包/P2。
+
+### 实际修改与判断
+
+- graph_query.rs在原query_graph_nodes增加可选rootNodeIds，兼容单中心、互斥、最多20、不重复、逐项工作区校验；参数绑定JSON集合取得真实去重总数。空集合与省略明确不同，没有新命令、权限、表或迁移。
+- graph-query.ts保存有序展开列表及nodeID到全部展开来源的映射；各中心初始50并独立继续读取，节点去重后读取有效连线，全批共用快照。演示显式走内存匹配页与相同合并流程，不调用原生数据库。
+- Graph.tsx把range改为expansions，保留原“只看直接关联”，追加/收起逐个来源，全部收起进入空探索，显式返回全图。共享节点/位置、当前选中详情及临时显示保留；跨页、工作区、演示分别保留会话内状态。相机与坐标沿用原保存服务，不写知识或执行事实。
+- 新GraphExplorations.tsx及graph-design.css复用V3控件实现最高160px可滚动范围列表；两个探索操作间留8px，显示范围折叠区放在知识正文之后，标题/状态/审核仍优先。没有新灰字说明区、卡片体系或视觉特效。
+- 修复两处时序焦点：Graph在读取中保留请求，等提交/启用后聚焦；GraphRelations在新关系条目实际提交后，通过组件内引用定位第一个新条目。原键盘断言保持。读取失败明确当前仍是上次成功范围，并保留位置草稿。
+- 检查文件为playwright.config.ts、新graph-exploration.spec.ts及graph-preview.spec.ts；文档为ADR0015、graph-multi-center、architecture、security、test-plan、implementation-plan、refactoring-plan及本日志。用户desktop.spec.ts换行差异、参考图和后来新增的reference/cortexos-home.html保留，不读取或纳入本轮提交。
+
+使用ponytail技能保持现有命令/状态/坐标保存实现；ui-ux-pro-max对focus restoration removed control及focus return after close两次检索仅返回通用键盘/按钮/焦点外观指导，没有已验证的收起后焦点恢复专项匹配。具体返回路径依项目交互推导并在原生检查，不声称用户研究或新设计系统。
+
+### 实际命令与结果
+
+以下npm/npx/cargo/rustfmt命令目录为apps/desktop；原生检查使用require_escalated、隔离数据库与专用WebView目录。没有运行单元或全套测试，也没有安装系统软件、模型或新依赖。
+
+- npm.cmd run typecheck首次发现一处旧range变量残留（TS2552），修正后通过；后续类型检查随每次桌面构建通过。
+- npx.cmd --yes prettier@3.9.10 --write整理Graph、graph-query、GraphExplorations、新检查及graph-preview；后续另整理GraphRelations。rustfmt --edition 2024 src-tauri/src/graph_query.rs仅格式化该文件。
+- npm.cmd run tauri -- build --debug --no-bundle先后构建读取/界面、临时显示保留、Graph焦点及关系分页焦点版本，均通过。最后一版Rust编译24.25s，实际程序在src-tauri/target/debug/cortexos-desktop.exe。Vite仍提示既有GraphViewport块大于500kB，没有把提示当失败或宣称已消除。
+- npx.cmd playwright test graph-exploration.spec.ts graph-neighborhood.spec.ts --project desktop --output ../../artifacts/multi-center-first：2条通过，总15.1s。覆盖新多中心与旧单中心的主要路径。
+- 增加临时显示跨收起与纯浏览器演示多中心后，npx.cmd playwright test graph-exploration.spec.ts graph-query.spec.ts graph.spec.ts graph-preview.spec.ts --project desktop --project edge --output ../../artifacts/multi-center-acceptance：3条通过、原graph专项清除筛选焦点失败，总45.0s。按读取/DOM提交时序修复产品代码，没有删除断言或增加固定等待。
+- npx.cmd playwright test graph.spec.ts graph-exploration.spec.ts --project desktop --output ../../artifacts/multi-center-focus：2条通过，总26.6s；用例10.9/11.8s。保留全部业务断言及最终三尺寸实际截图。
+- cargo check --manifest-path src-tauri/Cargo.toml --locked通过，3.85s；锁文件与npm锁文件内容未改动。
+- 共用焦点修复后补验npx.cmd playwright test graph-neighborhood.spec.ts graph-preview.spec.ts --project desktop --project edge --output ../../artifacts/multi-center-keyboard-final：浏览器1条通过（3.8s），原生关系分页聚焦失败。定位为GraphRelations的RAF可能早于新条目提交；改为组件提交后effect聚焦。原检查未变。
+- 最后npx.cmd playwright test graph-neighborhood.spec.ts --project desktop --output ../../artifacts/multi-center-relations-final：1条通过，总13.7s，用例9.9s；涵盖关系50→56、节点分页、单中心筛选、跨页/工作区、窄屏及WebGL降级。浏览器保留Three.Clock弃用提示，没有新增页面运行错误。
+- py -3 -X utf8仅编辑目标代码/文档，无库安装；第一次view_image使用错误的推测产物目录，随后rg定位实际路径并查看真实图片，未伪造截图。git diff --check通过，仅既有CRLF提示。提交前确认独立仓库根目录，Gittoken.txt保持忽略，credential.helper为manager，未读取令牌正文。
+
+### 验收证据和边界
+
+70节点夹具：A一跳59，B一跳17，并集65；初始各50/17合并56，继续A为65，收起A余17，最后一个收起为0，未把重叠相加。包含实际A→B→共享节点→A的环、停用边和未展开两跳。显式临时显示的独占节点在收起所有来源后仍留1个；选择详情不丢、共享坐标草稿保持12并显式保存。浏览前后知识与关系逐项相等；跨工作区、重复、21个根和单/多根同时传入拒绝；真实旧集合IPC延迟后收起A，结果仍保持新范围。旧Unicode/261节点/101修订历史和跨页端点编辑通过，知识编辑审核、关系冲突比较、视角重启继续可用。
+
+已查看multi-center-focus中1366×768、1600×900、1920×1080实际原生截图，均检查无横向溢出；标题、正文优先，范围为紧凑列表，解释只在折叠详情。原单中心专项另覆盖375px降级视口。纯浏览器双中心路径5→4→0→7另验，不以此冒称WebView2。CDP内容视口不等同于系统150%缩放。
+
+当前上限20个展开中心、合计10,000读取额度、最终10,000显示节点及原1,000改动坐标保存限制，是输入/交互约束，不是已测性能保证。仍重取前缀页，计数/排序可能扫描工作区，密集连线未单独分页。没有新千节点/20中心/真实Ollama性能、完整读屏、系统150%、高显存复现、长时或安装升级验收；此前高负载模型根因未确定限制继续有效。相机保留当前视角，不因展开强制适应；视口裁切及标签遮挡交下一阅读切片。
+
+本轮停止在第3项验收点。后续剩第4图谱阅读整理、第5Windows桌面交付、第6Decision Lab/评估；LoRA继续后置，不宣称整个P1-C或项目完成。

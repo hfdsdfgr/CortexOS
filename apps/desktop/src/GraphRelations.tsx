@@ -36,6 +36,18 @@ export function GraphRelations({
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const [loading, setLoading] = useState(false);
+  const list = useRef<HTMLDetailsElement>(null);
+  const focusNext = useRef<number | null>(null);
+  useEffect(() => {
+    if (loading || !open || focusNext.current === null) return;
+    const target = list.current?.querySelectorAll<HTMLElement>(
+      ".edge-details > summary",
+    )[focusNext.current];
+    if (target) {
+      target.focus();
+      focusNext.current = null;
+    }
+  }, [page, loading, open]);
   useEffect(() => {
     if (!open || demo) return;
     let current = true;
@@ -61,14 +73,6 @@ export function GraphRelations({
       if (current) {
         setPage({ ...data!, edges, nodes });
         onNodes(nodes);
-        if (limit > 50)
-          requestAnimationFrame(() =>
-            document
-              .querySelector<HTMLElement>(
-                `.edge-details:nth-of-type(${limit - 49}) > summary`,
-              )
-              ?.focus(),
-          );
       }
     })()
       .catch((e) => {
@@ -92,9 +96,13 @@ export function GraphRelations({
   const allNodes = [...graph.nodes, ...(page?.nodes ?? [])];
   return (
     <details
+      ref={list}
       className="node-relations"
       onToggle={(e) => {
-        if (e.target === e.currentTarget) setOpen(e.currentTarget.open);
+        if (e.target === e.currentTarget) {
+          setOpen(e.currentTarget.open);
+          if (!e.currentTarget.open) focusNext.current = null;
+        }
       }}
     >
       <summary>相关关系{total !== undefined ? `（${total}）` : ""}</summary>
@@ -143,14 +151,8 @@ export function GraphRelations({
           className="button secondary"
           disabled={loading}
           onClick={() => {
+            focusNext.current = limit;
             setLimit((n) => n + 50);
-            requestAnimationFrame(() =>
-              document
-                .querySelector<HTMLElement>(
-                  `.edge-details:nth-of-type(${limit + 1}) > summary`,
-                )
-                ?.focus(),
-            );
           }}
         >
           再显示 50 条关系

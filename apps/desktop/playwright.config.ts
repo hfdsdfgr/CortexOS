@@ -39,6 +39,7 @@ export default defineConfig({
         "graph-neighborhood.spec.ts",
         "graph-instances.spec.ts",
         "graph-query.spec.ts",
+        "graph-exploration.spec.ts",
       ],
     },
     ...(process.env.CORTEXOS_REAL_CONTEXT === "1"
