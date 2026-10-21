@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-window",
-  "description": "Workspace-scoped local data and loopback model commands for the main window.",
+  "description": "Workspace-scoped data, loopback model commands and integrated window controls for the main window.",
   "windows": [
     "main"
   ],
@@ -36,6 +36,10 @@
     "core:event:allow-listen",
     "core:event:allow-unlisten",
     "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-is-maximized",
+    "core:window:allow-start-dragging",
     "allow-load-knowledge-graph",
     "allow-save-knowledge-edge",
     "allow-save-graph-view"

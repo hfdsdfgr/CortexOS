@@ -26,7 +26,7 @@ export function ChatComposer({
         </label>
         <textarea
           id="message"
-          rows={2}
+          rows={1}
           value={studio.draft}
           onChange={(event) => studio.setDraft(event.target.value)}
           placeholder={

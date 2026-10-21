@@ -116,6 +116,7 @@ test("native graph expands only active one-hop neighbors and keeps keyboard acce
       inspector.getByRole("heading", { name: "关联条目 001", exact: true }),
     ).toBeVisible();
     await expect(inspector).toBeFocused();
+    await page.getByRole("button", { name: "筛选", exact: true }).click();
     await page
       .getByLabel("节点类型筛选", { exact: true })
       .selectOption("context");

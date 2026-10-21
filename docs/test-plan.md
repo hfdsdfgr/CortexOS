@@ -129,3 +129,11 @@ graph-baseline.spec.ts只在CORTEXOS_GRAPH_BASELINE=1时出现在graph-baseline�
 同模块原graph.spec.ts同步当前列表和关系折叠入口及标点，保留原有关系冲突、知识修订确认、视角保存和重启断言。清除筛选会移除按钮，焦点须回到首个可见节点（空列表则回列表按钮），避免键盘后续操作丢失。此路径属于本轮必要相关回归。
 
 分页检查同时验证焦点进入新增的首个节点/关系摘要；最后一批关联展开完成及返回全部节点时，焦点分别回到范围返回按钮/列表按钮。
+
+## P1-C2a 必要验证
+
+graph-instances.spec.ts使用8个固定位置的隔离节点，鼠标按相机投影点击所有6种形状，检查实体ID、同类型实例筛选重排、移动后旧位置不命中/新位置命中、单击聚焦及Esc恢复原探索视角。该用例启用减少动态效果以固定投影；不把它作为动画平滑度验证。原graph/graph-neighborhood/trace专项保留业务断言，适配V3显式展开筛选及适应全图退出详情；列表Esc不得退出节点聚焦。
+
+graph-baseline支持CORTEXOS_GRAPH_FIXTURE_DIR重用同一隔离库、CORTEXOS_GRAPH_VARIANT标记版本，记录完整GraphData哈希。V3版适应全图后等待500ms，再测350ms空闲；更新前数据保留原方法。不同视觉版本单列，完整方法与局限见性能报告。
+
+CORTEXOS_REAL_GRAPH=1启用real-graph项目。graph-model.spec.ts使用已有Ollama与qwen3:4b-instruct，先短生成预热，再以默认512 Token上限输出纯数字合成表格；CORTEXOS_GRAPH_OUTPUT_LIMIT=2048用于独立长回答压力场景，结果分别保存。断言拖动画布和类型筛选前后仍在生成、文本增长、最终事件与请求配置落盘、GraphData哈希未变化。保存实际视口/DPR、宿主与WebView2累计CPU及工作集/私有内存、CDP主线程/JS堆、Ollama加载信息与设备整体GPU/显存。仅停止本检查启动的服务，不改变用户默认服务配置。不是模型答案正确性或屏幕FPS检查；流式更新长时开销、模型进程CPU、整机归因和打包仍另验。长回答超时保留失败证据，不用默认场景通过覆盖。

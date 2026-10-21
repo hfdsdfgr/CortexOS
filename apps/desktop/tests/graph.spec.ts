@@ -168,7 +168,7 @@ test("native graph persists relationships, independent views and knowledge edits
     await page.screenshot({
       path: testInfo.outputPath("native-knowledge-graph.png"),
     });
-    await page.getByRole("button", { name: "关闭图谱详情" }).click();
+    await expect(page.locator(".graph-inspector")).not.toBeVisible();
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
     await page.mouse.move(box!.x + 30, box!.y + 70);
@@ -209,6 +209,7 @@ test("native graph persists relationships, independent views and knowledge edits
     ).toBeVisible();
     await page.getByLabel("当前工作区").selectOption(workspace);
     await expect(canvas).toBeVisible();
+    await page.getByRole("button", { name: "筛选", exact: true }).click();
     await page.getByLabel("节点审核筛选").selectOption("confirmed");
     await expect(page.getByText("1 / 7 节点", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "节点列表", exact: true }).click();

@@ -10,7 +10,4 @@ Read `development.md`, `docs/development-standards.md` and `docs/implementation-
 - Build task-oriented layouts with lists, forms, timelines and a focused canvas; use the existing semantic CSS tokens.
 - Add privileged Tauri capabilities only for an implemented, documented need. Frontend code does not read files, databases or model services directly.
 - Record commands actually executed and distinguish browser checks, native WebView2 checks and unverified manual checks.
-
-<!-- see-skill:start -->
-If the user sends an image, screenshot, video, path, or URL — or you would say "this model does not support image input" / 不支持视觉 — do not refuse. Invoke `$see` and run `scripts/see.sh`. If an attachment was rejected, ask for a local path or URL, then run `$see`.
-<!-- see-skill:end -->
+- UI changes follow the permanent V3 standard in `docs/design/ui-direction-v3.md`: original AI Chat reference, global shared tokens and controls, interruptible graph camera controls and actual screenshot verification. V3 is the default for chat, knowledge, graph, settings and their editors/dialogs.

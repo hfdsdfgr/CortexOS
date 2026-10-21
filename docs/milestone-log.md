@@ -575,3 +575,155 @@ artifacts/p1-b1保留真正原生选择后显示的来源窗口截图，已查�
 完成P1-C1后停止。全图仍由原API一次读取，显示分页不等于数据库分页；多中心范围合并/收起、数据库/历史读取规模和批量绘制在P1-C2继续。基线在最终焦点/降级小修前采集，最终绘制实现与基线相同，未重复基线测量。此轮未测真实模型共存、完整CPU/GPU占用/进程内存/显存、系统150%缩放、完整读屏、长期性能或安装包。不会据一次原生合成首画面小于2秒就宣称达标。后续按基线优先测量节点/箭头独立mesh的绘制开销，再优化并同场景对照。
 
 仓库按显式文件范围提交本轮变更，并使用配置凭据正常推送codex/graph-neighborhood；最终提交与推送结果见本轮工具输出和汇报。未读取Gittoken.txt，用户参考图和其他改动保持原样。
+
+## 2026-10-21 V3 图谱视觉与相机切片
+
+### 范围和永久规范
+
+按用户先计划后实施的要求，读取本地 ai-chat.jpg（4797×2763），输出计划后实施。新增 design/ui-direction-v3.md 永久规范并由 AGENTS.md、development-standards.md 和 implementation-plan.md 引用。规定原始AI Chat视觉优先、统一Tokens、适中留白、必要边框、按需信息、图谱交互与每轮实际截图验收。先图谱后其他页面，停在图谱视觉确认门槛。
+
+新增 design-tokens.css 和 graph-design.css，V3主题仅在图谱外壳启用；其余页面保持此前样式。图谱筛选默认折叠且显示启用数量，知识检查器和执行详情按选择显示浮层，保持画布尺寸。低饱和节点保留类型形状和细腻高光，细半透明方向连线与页面浅灰蓝背景一致。复用已有公共控件和知识编辑器。
+
+新增 GraphCamera 作为知识/执行图唯一相机控制器。点击聚焦保存探索镜头，420ms可中断动画；Esc/关闭恢复，空白拖动立即恢复后接续旋转，右键平移、滚轮缩放，尊重减少动态效果，编辑器Esc与相机隔离。聚焦不改节点位置或邻接数据。
+
+保留本轮之前未提交的GraphInstances批量绘制、Rust关系读取、测试/配置改动和ADR0012；仅在相关前端上增量适配。既有Benchmark已由 CORTEXOS_GRAPH_BASELINE / CORTEXOS_REAL_GRAPH 开关进入独立测试项目，未删除数据、报告或普通视图功能，也未新增常驻性能面板。
+
+### 实际命令与结果
+
+- py -3 D:/CodexData/skills/ui-ux-pro-max/scripts/search.py 'personal workspace minimal calm' --design-system -p CortexOS：结果偏营销/健康产品，未采用；随后 'motion interruption reduced motion' --domain ux 返回匹配的动态效果与可访问性规则。外部参考搜索工具返回错误，产品交互只按用户提供的要求与本地参考落实。
+- npm.cmd run build（apps/desktop）：类型检查与Vite构建通过。一次从仓库根运行同名命令因无package.json失败，随后在正确目录通过桌面构建执行前端检查。
+- npm.cmd run tauri -- build --debug --no-bundle（apps/desktop）：两次通过，包含前端类型检查/构建。保留已有图模块约937kB告警。
+- node artifacts/ui-v3/review.cjs：默认沙箱未提供可用调试连接，停止后以 require_escalated 运行隔离原生脚本。首轮脚本滚轮时指针停在保存按钮，修正为先移回画布；第二轮执行视图未指定回答记录，修正为选择实际run ID。第三轮成功，errors=[]，11张截图，无页面横向溢出。
+- git diff --check：通过（正常CRLF/LF提示）。未运行单元测试、整套回归或Benchmark；未连接真实Ollama，使用本地HTTP合成回答生成真实应用事件。
+
+### 原生 WebView2 验收
+
+artifacts/ui-v3/review.cjs 使用时间戳隔离数据与WebView目录。实际检查：7个不同类型知识节点、6条关系；默认收起筛选/检查器；筛选和重置；列表选择；真实实例节点鼠标点击；聚焦和Esc恢复（比较保存的camera/target数值）；空白拖拽退出并继续旋转；右键平移；滚轮缩放；飞行动画中断后保持停止；减少动态效果；知识编辑弹窗Esc保持图谱聚焦；执行图选择与Esc退出。所有断言通过。
+
+截图：1600×900默认/筛选/聚焦/编辑/真实节点选择/减少动态效果/执行概览/执行选择，加1366×768、800×600、375×812概览，共11张。已对照原图查看默认、聚焦、筛选、编辑、375px和执行选择截图。375px是CDP内容视口，不代表原生外窗支持低于800px最小宽度。指标与相机快照在 artifacts/ui-v3/metrics.json。
+
+### 停止点
+
+图谱V3切片完成，等待用户视觉确认后同步知识、对话和设置。未验证150%系统缩放、完整读屏、安装包、真实模型共存和大图新材质性能；既有Benchmark历史不代表本轮成绩。未改变数据模型或业务命令。最后仅整理GraphCamera排版，再构建核对产物与原生截图版本一致。
+`npm.cmd run build` 最终排版后通过，产物仍为 index-BFsZvh0n.css、index-BtkOPcSH.js、GraphViewport-DKirpM0-.js，与原生截图检查版本一致。
+
+## 2026-10-21 V3 剩余页面全局同步完成
+
+### 交付
+
+用户要求将V3剩余范围推进完。本轮复核原始 ai-chat.jpg 和V3永久规范后，输出范围与验收计划，将 AppShell 的V3从图谱专用改为全局默认。新增 workspace-v3.css，提取原图谱文件中的导航/顶栏共享规则，统一对话、知识、设置及编辑/确认/资料窗口、处理记录和版本抽屉。全局Tokens增加面板/控件/输入区圆角、内容宽度、页面边距及表面/强调变体；各页继续复用已有公共组件。
+
+对话保留960px开放阅读区和输入框，发送及复选框采用克制紫色；知识保留240px侧栏、1040px正文外层、版本历史与来源，标题层级与必要边框统一；设置分类采用柔和分段外观，参数/说明仍按需展开。补齐筛选与版本下拉、表单和搜索的12px圆角，浮层统一20px与轻阴影。保留此前收紧的间距，不增加装饰卡片或常驻说明。
+
+本轮产品逻辑只改共享外壳类名和样式导入；未改业务状态、命令、数据库、依赖、锁文件或相机行为。保留此前所有未提交的图谱、Rust、测试及配置改动。永久规范 design/ui-direction-v3.md、AGENTS.md、development-standards.md 和 implementation-plan.md 已更新为全局V3，取消已结束的图谱先行临时门槛。
+
+### 实际命令与结果
+
+- npm.cmd run build（apps/desktop）：tsc --noEmit、Vite构建通过。
+- npm.cmd run tauri -- build --debug --no-bundle（apps/desktop）：两次通过，包含前端构建。最终资源 index-zlxuMGtx.css、index-7L8CMbIC.js、GraphViewport-H66BL5qP.js。已有约937kB图模块体积告警保留。
+- node artifacts/ui-v3-complete/review.cjs：使用 require_escalated 运行独立原生WebView2检查。首轮29张截图通过，检查后补齐知识筛选下拉圆角和复选框强调色；针对最终样式增加窄窗口弹窗与弹窗横向溢出检查，最终 errors=[]、captures=33、overflow=[]、smoothCorners=true，所有页面V3 Token断言通过。
+- git diff --check：通过，仅现有CRLF/LF提示。未运行单元测试、整套测试或Benchmark。
+
+### 实际原生操作与截图
+
+脚本使用 artifacts/ui-v3-complete 中独立时间戳数据库、来源文件和WebView目录、本地HTTP合成模型响应，工作区标注为“V3 全局验收（隔离数据）”；没有使用日常工作区或真实Ollama。最终退出由脚本启动的进程。
+
+对话/知识：1366×768、1600×900、1920×1080、800×600、375×812；设置：1366×768、1600×900、800×600、375×812。知识编辑/确认、资料、处理记录额外检查375×812。375px为CDP内容视口，原生窗口最低宽度仍为800px。每次截图断言主文档、main和打开的dialog无横向溢出，并核对全局背景#FAFAF9、强调#625CAC。
+
+实际操作：创建工作区和合成知识，发送并完成回答；打开处理记录，进入执行图并选择事件；查看知识与版本历史；修改标题→取消→继续编辑（内容保留）→填写修改说明→保存新草稿→审核并确认；手动选用已确认知识并预览资料；预览并确认导入UTF-8文件、查看行号；进入知识图谱、展开关系、打开/取消关系编辑；切换设置分类、展开参数、修改温度→跨分类返回（草稿保留）→保存设置；通过本地503响应触发连接错误、再恢复并重试成功。
+
+已对照本地参考查看桌面对话/空态/知识/设置/版本/资料/上下文预览和375px对话、知识、设置、编辑、确认、资料及处理记录截图。最终33张PNG、metrics.json和review.cjs位于 artifacts/ui-v3-complete。
+
+### 验证边界与停止点
+
+V3全局界面同步完成，停止在本轮视觉交付门槛。保留现有业务能力；本次视觉与关键操作检查不替代完整业务回归、真实模型性能共存、150%系统缩放、完整读屏、安装包或大图Benchmark。未宣称新的性能成绩。
+
+## 2026-10-21 对话气泡比例与输入区密度修正
+
+用户指出短发言与边框比例失衡、输入框和整体对话留白过大。根因是用户article作为块占据88%宽度，消息滚动区flex:1强撑剩余高度，空态100px最小高度及输入区旧textarea最小高度叠加。
+
+本轮在 workspace-v3.css 修正：用户气泡width:fit-content、上限min(85%,720px)、内边距8px 12px；短对话message-scroll改为flex:0 1 auto，长历史仍缩入可用空间滚动；阅读区宽度由960→1120px，标题/消息上下边距缩小、末条消息外边距归零、欢迎区不按视口强撑高度。ChatComposer仅将rows由2→1，默认26px文本区，支持原生field-sizing:content时随输入增长，上限160px，保留换行/滚动与手动调整回退；输入框内边距12px 16px，发送36px。更新永久V3规范与实施计划，其他页面与业务逻辑保持原实现。
+
+实际执行 npm.cmd run tauri -- build --debug --no-bundle（apps/desktop）两次通过，包含tsc和Vite构建。首次截图发现空态最小高度与末条消息外边距仍制造空隙，修正后完成最终同一原生脚本复验。最终资源index-CV49kMPD.css、index-8mdNDOEO.js、GraphViewport-DQ6j45uE.js；已有约937kB图模块告警保留。
+
+node artifacts/chat-density-v3/review.cjs 通过require_escalated运行两次；使用专用时间戳隔离数据库、WebView目录和本地合成模型响应。最终errors=[]、12张截图：空态1600，短对话1366×768/1600×900/1920×1080/800×600/375×812，多行草稿1600及375，长问题375，长历史1600/800/375。所有视口主文档和main无横向溢出。375为CDP内容视口，非原生窗口最小宽度。
+
+原生实测：短句“你好”气泡约59.6×45.65px，单行输入框约95.6px高，12行草稿的文本区增长至160px上限；短对话输入框直接跟随消息容器。检查Shift+Enter插入换行、Enter发送、长中文/无空格URL换行、6轮历史滚动、回到最新内容均通过，field-sizing支持检测为true。已查看最终空态、短对话桌面和窄屏、长历史截图。证据在artifacts/chat-density-v3（含metrics.json、review.cjs）。
+
+git diff --check通过，未运行单元测试、完整业务回归或真实模型性能测试。本轮仅修正对话比例与密度，停止在该视觉验收点。
+
+## 2026-10-21 连续圆角与输入区底边修正
+
+用户再次明确需要苹果式圆润、无突兀转折的圆角，且输入框下方留白过大。本轮检查发现旧规则分散且squircle配小半径视觉偏方，上一轮短对话输入区随消息排布导致其下方留下较大窗口余量。按用户最新指示覆盖该布局选择。
+
+统一Token为 --v3-corner-shape:superellipse(1.4)，控件半径16px、面板28px、输入框32px、图标按钮14px、用户气泡18px；曲线从单一共享规则应用到按钮/表单/搜索/筛选/版本/图谱检查器与浮层/抽屉等。清理workspace-design.css和graph-design.css中旧squircle规则，workspace-v3.css集中管理。圆形发送按钮保留圆形。此为Apple连续圆角视觉适配，不声称与原生CALayer曲线逐点相同；旧WebView保留常规圆角回退。
+
+对话消息区恢复使用剩余可用空间滚动，输入区靠底部，桌面12px、375px内容视口8px；空态输入区同样靠底部。辅助操作与快捷键入口桌面合为同一行，距输入框6px，窄屏换行；展开资料选择或说明仍可操作。保留之前消息气泡按文字定宽、约96px紧凑输入框、多行自动增长和发送逻辑。更新永久规范与实施计划。
+
+实际命令：npm.cmd run tauri -- build --debug --no-bundle（apps/desktop）通过，含类型检查和Vite构建；最终资源index-BWBBl2ox.css、index-B6v0lYxL.js、GraphViewport-CKPrHaMj.js。原有约937kB模块告警保留。
+
+node artifacts/continuous-corners-v3/review.cjs（require_escalated）通过：errors=[]，35张页面截图及1张输入框局部截图；检测当前WebView2支持superellipse(1.4)，所有被检查的可见按钮/表单/输入框/浮层等计算样式均为同一曲线；输入区底边均为7–13px容差内（桌面12、窄屏8）。对话、知识、设置与编辑/审核/资料/处理记录弹窗、图谱及执行图，1366/1600/1920/800/375相关视口均无主文档、main或dialog横向溢出；额外检查375px资料选择展开和桌面说明展开。继续检查了草稿、审核、文件导入、设置保存及连接失败恢复。
+
+node artifacts/continuous-corners-v3/check-density.cjs（require_escalated）通过：errors=[]，另12张对话密度截图；短气泡、单行紧凑高度、多行增长上限160px、底边、长中文/无空格URL换行、6轮历史滚动、回到最新内容、Shift+Enter/Enter均通过。脚本使用各自时间戳隔离数据库、WebView目录和本地合成模型响应，结束后关闭拥有的应用进程。375px为CDP内容视口，非原生窗口最小宽度。
+
+已查看输入框局部、桌面对话/设置/编辑、375px展开资料截图；截图与两组metrics在artifacts/continuous-corners-v3。外部文档核对使用MDN superellipse和Apple连续圆角官方文档，引用已写入永久规范。git diff --check通过；未运行单元测试、完整业务回归或性能Benchmark。本轮停止在圆角与底边视觉验收点。
+
+## 2026-10-21 移除系统标题栏与空输入框高度调整
+
+用户明确白条是Windows系统标题栏，并追加要求空输入框默认高度稍提高。本轮tauri.conf.json设置decorations:false、启动背景#FAFAF9，复用原64px顶栏而不增加另一条标题区。新增WindowControls.tsx：空白区域左键调用startDragging、双击toggleMaximize，右侧36px最小化/最大化或还原/关闭按钮，监听原生resize同步还原图标，浏览器不挂载原生操作。操作错误沿用studio.reportError，close沿用原关闭路径和草稿监听。workspace-v3.css设置窄视口控件布局。只为main增加allow-minimize、allow-toggle-maximize、allow-is-maximized、allow-start-dragging四项权限，复用既有close/event授权，需求与范围已写入security.md和永久UI规范；没有启用core默认权限包或文件/shell能力。
+
+输入文本区最小高度26→42px，空输入框整体约95.6→111.6px，输入后保持稳定的最小高度，多行上限仍160px；底边仍桌面12px、窄内容视口8px。永久V3规范和实施计划已同步。
+
+实际执行 npm.cmd run tauri -- build --debug --no-bundle（apps/desktop）三次通过，含tsc --noEmit和Vite构建。最终资源index-BvLt9UEy.css、index-BYNcGG0Y.js、GraphViewport-BKzRUZoX.js；已有约937kB图模块告警保留。git diff --check通过，未运行单元测试或完整业务/性能回归。
+
+原生验收脚本 artifacts/frameless-window/review.cjs 和 native-window.ps1 通过require_escalated运行，只操作本次启动的隔离进程及经PID校验的HWND。初版辅助脚本生成的here-string嵌套未写出文件，改为独立文件后继续；最小化后Get-Process.MainWindowHandle误选18px辅助窗口，改为保持最初主窗口句柄并校验拥有PID，排除验收脚本误判。最终errors=[]：Win32测量正常窗口client顶部与外框顶部差1px，确认系统标题栏已移除；真实最小化IsIconic=true，最大化IsZoomed=true，还原后false；双击处理调用和拖动API成功；1600/800/375内容视口无横向溢出，窗口按钮可达；未保存知识编辑下发送原生WM_CLOSE弹出保护，继续编辑保持标题，放弃草稿后自定义关闭按钮能正常退出进程。
+
+使用PrintWindow保存真实完整窗口截图native-window.png（包含原生边缘），另有3张客户区截图client-1600/800/375.png，已查看完整窗口和375布局。实际缩放环境中客户区1800×1125物理像素，对应1440×900逻辑尺寸，记录原生数值，未把CDP模拟当真实外窗缩放。375px仅内容视口，外窗最小宽度仍800px。
+
+真实鼠标拖动自动模拟未通过：Win32鼠标注入在管理环境没有产生任何浏览器mousedown事件，窗口位置未改变。该项记录nativeDragVerified=false、nativeMouseEvents=[]；另通过派发真实组件事件调用原生startDragging确认权限/API通路，无错误。不能宣称真实鼠标拖动已验收；边缘缩放和Windows吸附也未专项验证。未增加为测试而放宽的应用权限。
+
+artifacts/frameless-window/check-composer.cjs 对最终构建通过，errors=[]，12张截图覆盖1366/1600/1920/800/375相关视口；约112px默认输入框、文字定宽气泡、42–160px文本区、底边、长文字/URL换行、6轮历史滚动、回到最新内容、Shift+Enter/Enter均正常。截图和两组metrics保存在artifacts/frameless-window。使用时间戳专用数据库、WebView目录和本地合成模型响应，没有使用日常数据；脚本退出后无测试应用进程残留。
+
+窗口配置与能力用法核对Tauri官方Window Customization及本地2.12.4 API/Schema，参考链接已写入永久规范。本轮完成系统标题栏移除和输入框高度调整，停在该交付点；保留真实拖动的自动验收限制，不宣称全套窗口交互或完整回归通过。
+
+## 2026-10-21 P1-C2a 批量绘制、等值读取与真实模型共存
+
+### 范围与实现
+
+用户要求继续按计划开发，并在本轮期间进一步微调UI。已复读development、development-standards、implementation-plan和最新永久V3，保留用户完成的全局Tokens/控件、GraphCamera、收起筛选/按需详情、无系统标题栏与约112px输入区；不重复设计页面。上述V3工作及独立验证保留在前面的日志，不能算作本轮新性能证据。
+
+本轮GraphInstances按类型批量绘制节点、统一箭头实例；筛选/移动更新矩阵和包围球，点击仍映射真实实体UUID。GraphViewport保持标签最多7项、按需绘制、DPR限制及知识/执行两种事实来源。适配V3后由GraphCamera管理单击聚焦与返回探索镜头，实例标记graphNode供空白拖动判断。原生专项发现列表Esc还会被相机处理，在Graph列表处理处增加preventDefault，恢复“先关闭列表、详情仍在”的原键盘路径。
+
+graph.rs将每条关系一次历史查询改为一次限定工作区的LEFT JOIN，返回ID/字段类型/完整历史/版本顺序保持不变。无数据库迁移、依赖、锁文件或模型调用修改；本性能切片无新增能力。已授权的四项窗口权限保留为用户最新V3外壳基线。
+
+实现文件：GraphInstances.tsx、GraphViewport.tsx、Graph.tsx、src-tauri/src/graph.rs。同时纳入用户最新GraphCamera.tsx、App/ExecutionTrace/AppShell/ChatComposer/WindowControls、design-tokens/graph-design/workspace-v3及旧workspace样式清理、Tauri窗口配置/能力及V3规范。验证文件为playwright.config、graph-baseline/graph-instances/graph-model/graph-neighborhood/graph/trace专项。文档为ADR0012、graph-performance-p1-c2a、architecture、test-plan、implementation-plan、refactoring-plan与本日志；用户更新的AGENTS/development-standards/security/V3永久规范一并保留。原始参考图片和未改动内容的desktop.spec.ts不混入性能提交。
+
+### 实际命令与结果
+
+命令从独立仓库执行；npm/Playwright命令目录为apps/desktop，Rust与git命令目录为仓库根。下列均实际执行，未运行单元或整套测试。
+
+- npm.cmd run typecheck：多次通过，最终V3及测试调整后再次通过。首次编辑曾出现TS1109（条件索引末尾多余逗号），修正后通过。
+- rustfmt --edition 2024 apps/desktop/src-tauri/src/graph.rs；cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked：通过。未对无关Rust文件全局格式化。
+- npm.cmd exec --yes --package=prettier@3.9.10 -- prettier --write：本轮仅整理GraphInstances/GraphViewport及新增/修改的性能专项，没有加入项目依赖。
+- npm.cmd run tauri -- build --debug --no-bundle：性能版与最终V3/Esc修复版均通过，包含类型检查/Vite。最终Rust编译36.79s，资源index-BvLt9UEy.css、index-P4_8NBWo.js、GraphViewport-CgpVKyGZ.js；已有约937kB图模块告警保留。
+- CORTEXOS_GRAPH_BASELINE=1、CORTEXOS_GRAPH_FIXTURE_DIR=仓库artifacts/p1-c2a-fixture，分别以before-7187f83/after-batched-render-and-query标记执行npx.cmd playwright test graph-baseline.spec.ts --project graph-baseline --output ../../artifacts/p1-c2a-before（及p1-c2a-after）：各1条通过，总50.7s/12.1s。同一库的完整GraphData哈希三规模全部相等。
+- npx.cmd playwright test graph-instances.spec.ts graph-neighborhood.spec.ts graph.spec.ts trace.spec.ts --project desktop --output ../../artifacts/p1-c2a-checks：3通过、trace因旧选择器失败；trace两次针对性复核，先修隐藏版本文字、再修旧“定位原消息”按钮名，最终p1-c2a-trace为1条通过/10.4s，原有业务断言保留。
+- CORTEXOS_REAL_GRAPH=1执行graph-model.spec.ts --project real-graph，输出p1-c2a-model：1条通过，但模型很快拒绝软件话题，不能作为持续共存证据。改用独立数字表格问题并要求交互前后均streaming，输出p1-c2a-model-long：1条通过/47.7s，2048 Token、模型总耗时约32.4s；此为V3更新前结果。
+- 最新UI先执行上述四个desktop专项，输出p1-c2a-v3-checks：3通过，关联专项因列表Esc同时退出聚焦失败；修复后重新桌面构建。
+- CORTEXOS_GRAPH_BASELINE=1、CORTEXOS_REAL_GRAPH=1、同一fixture目录及final-v3-batched标记，执行npx.cmd playwright test graph-instances.spec.ts graph-neighborhood.spec.ts graph.spec.ts trace.spec.ts graph-baseline.spec.ts graph-model.spec.ts --project desktop --project graph-baseline --project real-graph --output ../../artifacts/p1-c2a-v3-final：4个交互专项与1个三规模基线通过；2048 Token真实模型完成等待150s超时，结果5通过/1失败，总3.7min，保留失败报告。不能按PowerShell包装器返回码代替Playwright失败结果。
+- 将共存专项默认上限设为产品起始512 Token，保留CORTEXOS_GRAPH_OUTPUT_LIMIT=2048独立压力入口。CORTEXOS_REAL_GRAPH=1、同一fixture执行npx.cmd playwright test graph-model.spec.ts --project real-graph --output ../../artifacts/p1-c2a-v3-model-default：1条通过/28.5s（用例24.5s），保留终态、配置、实际事件及数据哈希断言。没有以此覆盖长回答失败。
+- py -3 -X utf8只读汇总JSON，断言before/after/final-v3三版本每个规模完整GraphData哈希一致，通过。为排查长回答读取隔离SQLite，曾误用不存在的finish_reason/事件created_at列，失败后改按实际messages结构读取，未修改数据库。默认py编码及缺少PIL的初期检查失败后使用UTF-8和标准库读取图片信息，未安装库。
+- 长回答等待排查中，默认沙箱拒绝CIM读取；require_escalated后只取得本次应用子进程的调试端口。随后只读CDP连接时测试已退出，ECONNREFUSED，未据此声称读取了运行中的界面。
+- git rev-parse --show-toplevel为D:/vibecoding/CortexOS；git check-ignore Gittoken.txt确认忽略；credential.helper为manager。git diff --check通过，仅现有换行提示；未读取令牌正文。
+
+### 实测结论与截图
+
+V3更新前同条件比较：1000节点/5000关系上一帧绘制提交6001→4，打开至首画面600.8→240.2ms；读取往返585.3→573.0ms，不能宣称SQL延迟显著改善。最终V3画布高度626→670，单列观测：同规模打开346.2ms、读取963.0ms、提交4、350ms空闲新增0；不把视觉和设备负载差异归为优化收益。完整表格、方法与限制见graph-performance-p1-c2a.md。
+
+最终512场景在图谱拖动及筛选前后仍在生成，输出增长，最终completed/length、512 Token、862字符，模型总耗时约15.1s；图谱/历史哈希不变。设备GPU生成中93–96%，显存5897–6155MiB，结束采样7396MiB/8188MiB；这是整块设备，非本应用独占。2048场景未在150s内结束，磁盘已有2253字符，加载前设备4568MiB、加载后7576MiB、交互GPU98–99%；根因未证明，保留高负载长回答限制。未清理其他应用、改变GPU设置或静默降低用户实际配置。
+
+已对照本地AI Chat参考并查看最终原生截图：8节点形状、大图、1366×768/1600×900/1920×1080关联与详情、375px知识图、执行图、默认真实模型并行画布。三桌面尺寸无横向溢出；375px为CDP内容视口，非实际外窗最小尺寸。原有编辑/审核、四个关系修订、视角与重启、知识版本/消息导航、WebGL降级和键盘焦点专项均通过。截图只证明实际检查范围；未重新跑全部来源/聊天业务。独立证据目录见上述artifacts路径，没有以静态图片替代界面。
+
+### 交付门槛与剩余事项
+
+本切片完成批量绘制和默认模型设置下的可用闭环，停止在P1-C2a。高负载2048 Token场景仍未通过，完整性能验收尚未完成；后续需拆分模型响应、流式刷新/内存和读取开销。千节点标签仍会重叠，邻域模式/避让后续另做；仍为全图/全部历史读取，不称数据库分页。多中心展开/收起、系统150%缩放、完整读屏、长时/热机和安装包各有独立门槛。用户先前V3窗口日志中的真实鼠标拖动/边缘吸附验证限制继续保留，不因本轮构建通过而消失。

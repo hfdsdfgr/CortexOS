@@ -109,3 +109,9 @@ AnswerContent 将保存位置投影为文字按钮，CitationDetail 使用保存
 ## P1-C1 关联范围与会话浏览状态
 
 graph-data.relatedNodeIds 从已加载工作区数据计算当前有效的一跳关系，按节点顺序去重。Graph 的范围、筛选和临时显示只决定画布/列表投影；50项显示分页不修改域数据，也不是数据库邻域分页。sessionBrowse 复用执行视图已有的进程内Map模式，按工作区/演示分别保留搜索、筛选、中心与展开量，实体选择仍以导航ID为准。位置与相机保持原保存命令和并发控制。GraphViewport从canvas继承的Tokens读取颜色，保持用户主题；绘制计数仅为真实渲染观察，不生成执行事件。见ADR0011。
+
+## P1-C2a 绘制与读取
+
+GraphInstances按类型批量绘制节点，箭头共享一次实例提交；连线仍使用原批量缓冲。筛选/移动更新矩阵及包围球，instanceId只用于当前批次查找，导航/保存仍使用实体UUID。GraphViewport供知识图和执行图复用，材质继承V3语义Tokens；GraphCamera统一管理可中断动画、探索快照与退出聚焦。列表处理Esc后阻止相机重复处理，不改编辑器和弹窗的键盘语义。
+
+Rust knowledge_graph改为一次限定工作区的LEFT JOIN加载关系及全部修订，再按原ID/版本顺序分组。API、表、历史保留和视图保存不变；仍读取全图及全部历史，尚无数据库邻域分页。测量通过隔离数据库与全量GraphData哈希核对，详见ADR0012。

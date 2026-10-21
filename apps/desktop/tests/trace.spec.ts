@@ -170,14 +170,14 @@ test("execution graph uses real events and navigates to exact versions and messa
     await expect(page.locator(".knowledge-prose").first()).toHaveText(
       "旧版约定：周一发布。",
     );
-    await expect(page.getByText("知识 / v1", { exact: true })).toBeVisible();
+    await expect(page.getByText("知识 v1", { exact: true })).toBeVisible();
     await page.getByRole("link", { name: "返回执行轨迹" }).click();
     await expect(page).toHaveURL(traceUrl);
     await expect(page.getByLabel("执行节点详情")).toContainText(
       "旧版约定：周一发布。",
     );
     await page.getByRole("button", { name: "本次问题", exact: true }).click();
-    await page.getByRole("button", { name: "定位原消息", exact: true }).click();
+    await page.getByRole("button", { name: "查看对应消息", exact: true }).click();
     await expect(
       page.locator(`[id="message-${messages[0].id}"]`),
     ).toBeFocused();
@@ -210,7 +210,7 @@ test("execution graph uses real events and navigates to exact versions and messa
       ),
     ).toBe(true);
     await page
-      .getByRole("button", { name: "定位原消息", exact: true })
+      .getByRole("button", { name: "查看对应消息", exact: true })
       .scrollIntoViewIfNeeded();
     await page.screenshot({
       path: testInfo.outputPath("native-trace-narrow.png"),

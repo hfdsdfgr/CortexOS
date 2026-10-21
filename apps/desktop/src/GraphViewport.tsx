@@ -1,22 +1,22 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { GraphCamera } from "./GraphCamera";
 import {
   Component,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   type ReactNode,
   type Ref,
 } from "react";
 import * as THREE from "three";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 import type { Point } from "./graph-data";
+import { ArrowInstances, NodeInstances } from "./GraphInstances";
 
 export interface ViewportApi {
   capture: () => { camera: Point; target: Point };
   focus: (point: Point) => void;
+  exitFocus: () => void;
   reset: () => void;
   fit: () => void;
   restore: (camera: Point, target: Point) => void;
@@ -46,29 +46,11 @@ interface Props {
   onSelect: (id: string) => void;
   onChange: () => void;
   onFailure: () => void;
-}
-function NodeShape({ kind }: { kind: string }) {
-  switch (kind) {
-    case "event":
-    case "input":
-    case "context":
-      return <boxGeometry args={[0.7, 0.7, 0.7]} />;
-    case "hypothesis":
-      return <tetrahedronGeometry args={[0.55]} />;
-    case "decision":
-      return <coneGeometry args={[0.47, 0.9, 5]} />;
-    case "evidence":
-      return <cylinderGeometry args={[0.37, 0.37, 0.8, 12]} />;
-    case "error":
-    case "conflict":
-      return <octahedronGeometry args={[0.53]} />;
-    default:
-      return <sphereGeometry args={[0.42, 20, 14]} />;
-  }
+  onExitFocus?: () => void;
+  onFocused?: () => void;
 }
 function Scene(props: Props) {
   const { camera, gl, invalidate } = useThree();
-  const controls = useRef<OrbitControlsImpl>(null);
   const labelElements = useRef<
     { element: HTMLSpanElement; point: THREE.Vector3 }[]
   >([]);
@@ -90,6 +72,30 @@ function Scene(props: Props) {
       ].map((kind) => [kind, styles.getPropertyValue(`--node-${kind}`).trim()]),
     );
   }, [gl]);
+  const edgeColors = useMemo(() => {
+    const styles = getComputedStyle(gl.domElement);
+    return Object.fromEntries(
+      [
+        "--trace-order",
+        "--trace-context",
+        "--trace-output",
+        "--graph-edge",
+      ].map((name) => [
+        name,
+        new THREE.Color(styles.getPropertyValue(name).trim()),
+      ]),
+    );
+  }, [gl]);
+  const nodeGroups = useMemo(() => {
+    const groups = new Map<string, DisplayNode[]>();
+    for (const node of nodes) {
+      const group = groups.get(node.kind);
+      if (group) group.push(node);
+      else groups.set(node.kind, [node]);
+    }
+    return [...groups.entries()];
+  }, [nodes]);
+  const selectedNode = nodes.find((node) => node.id === selected);
   useEffect(() => {
     const canvas = gl.domElement;
     canvas.setAttribute("aria-label", props.label ?? "3D 知识画布");
@@ -116,58 +122,6 @@ function Scene(props: Props) {
       label.element.style.transform = `translate(-50%, -50%) translate3d(${((projected.x + 1) * canvas.clientWidth) / 2}px,${((-projected.y + 1) * canvas.clientHeight) / 2}px,0)`;
     }
   });
-  const restore = (position: Point, target: Point) => {
-    camera.position.fromArray(position);
-    controls.current?.target.fromArray(target);
-    controls.current?.update();
-    invalidate();
-  };
-  const focus = (point: Point) => {
-    const offset = camera.position
-      .clone()
-      .sub(controls.current?.target ?? new THREE.Vector3())
-      .normalize()
-      .multiplyScalar(9);
-    restore(new THREE.Vector3(...point).add(offset).toArray() as Point, point);
-    onChange();
-  };
-  useImperativeHandle(props.apiRef, () => ({
-    capture: () => ({
-      camera: camera.position.toArray() as Point,
-      target: (controls.current?.target.toArray() ?? [0, 0, 0]) as Point,
-    }),
-    focus,
-    fit: () => {
-      if (!nodes.length) return;
-      const box = new THREE.Box3().setFromPoints(
-        nodes.map((node) => new THREE.Vector3(...positions[node.id])),
-      );
-      const center = box.getCenter(new THREE.Vector3());
-      const perspective = camera as THREE.PerspectiveCamera;
-      const size = box.getSize(new THREE.Vector3()).length();
-      const distance = Math.max(
-        8,
-        ((size /
-          (2 * Math.tan(THREE.MathUtils.degToRad(perspective.fov / 2)))) *
-          1.25) /
-          Math.min(1, perspective.aspect),
-      );
-      const direction = camera.position
-        .clone()
-        .sub(controls.current?.target ?? new THREE.Vector3())
-        .normalize();
-      restore(
-        center.clone().addScaledVector(direction, distance).toArray() as Point,
-        center.toArray() as Point,
-      );
-      onChange();
-    },
-    reset: () => {
-      restore([0, 9, Math.max(22, Math.sqrt(nodes.length) * 5)], [0, 0, 0]);
-      onChange();
-    },
-    restore,
-  }));
   const links = useMemo(
     () =>
       edges.map((edge) => {
@@ -178,19 +132,16 @@ function Scene(props: Props) {
         const tip = to.clone().addScaledVector(direction, -0.7);
         return {
           id: edge.id,
-          color: new THREE.Color(
-            getComputedStyle(gl.domElement)
-              .getPropertyValue(
-                edge.relation === "executed_before"
-                  ? "--trace-order"
-                  : edge.relation === "included_in_context"
-                    ? "--trace-context"
-                    : edge.relation === "saved_output"
-                      ? "--trace-output"
-                      : "--graph-edge",
-              )
-              .trim(),
-          ),
+          color:
+            edgeColors[
+              edge.relation === "executed_before"
+                ? "--trace-order"
+                : edge.relation === "included_in_context"
+                  ? "--trace-context"
+                  : edge.relation === "saved_output"
+                    ? "--trace-output"
+                    : "--graph-edge"
+            ],
           from,
           to,
           tip,
@@ -200,7 +151,7 @@ function Scene(props: Props) {
           ),
         };
       }),
-    [edges, positions, gl],
+    [edges, positions, edgeColors],
   );
   const points = useMemo(
     () =>
@@ -266,65 +217,50 @@ function Scene(props: Props) {
             .trim(),
         ]}
       />
-      <ambientLight intensity={1.4} />
-      <directionalLight position={[8, 12, 10]} intensity={2.2} />
-      <OrbitControls
-        ref={controls}
-        makeDefault
+      <ambientLight intensity={0.85} />
+      <hemisphereLight args={["#ffffff", "#adb4c4", 0.65]} />
+      <directionalLight position={[8, 12, 10]} intensity={1.65} />
+      <GraphCamera
+        apiRef={props.apiRef}
+        positions={nodes.map((node) => positions[node.id])}
         target={props.target}
-        enableDamping={false}
-        minDistance={3}
-        maxDistance={50000}
-        onEnd={onChange}
+        onChange={onChange}
+        onExitFocus={props.onExitFocus}
+        onFocused={props.onFocused}
       />
       <lineSegments>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[points, 3]} />
           <bufferAttribute attach="attributes-color" args={[lineColors, 3]} />
         </bufferGeometry>
-        <lineBasicMaterial vertexColors />
+        <lineBasicMaterial
+          vertexColors
+          transparent
+          opacity={0.48}
+          depthWrite={false}
+        />
       </lineSegments>
-      {links.map((link) => (
-        <mesh key={link.id} position={link.tip} quaternion={link.quaternion}>
-          <coneGeometry args={[0.13, 0.4, 6]} />
-          <meshBasicMaterial color={link.color} />
+      {links.length > 0 && <ArrowInstances links={links} />}
+      {nodeGroups.map(([kind, group]) => (
+        <NodeInstances
+          key={kind}
+          nodes={group}
+          positions={positions}
+          color={colors[kind]}
+          onSelect={props.onSelect}
+        />
+      ))}
+      {selectedNode && (
+        <mesh position={positions[selectedNode.id]} scale={1.5}>
+          <sphereGeometry args={[0.48, 18, 14]} />
+          <meshBasicMaterial
+            color={colors[selectedNode.kind]}
+            transparent
+            opacity={0.12}
+            depthWrite={false}
+          />
         </mesh>
-      ))}
-      {nodes.map((node) => (
-        <group key={node.id} position={positions[node.id]}>
-          <mesh
-            onClick={(event) => {
-              if (event.delta <= 4) {
-                event.stopPropagation();
-                props.onSelect(node.id);
-              }
-            }}
-            onDoubleClick={(event) => {
-              event.stopPropagation();
-              props.onSelect(node.id);
-              focus(positions[node.id]);
-            }}
-          >
-            <NodeShape kind={node.kind} />
-            <meshStandardMaterial
-              color={colors[node.kind]}
-              roughness={0.55}
-              metalness={0.1}
-            />
-          </mesh>
-          {node.id === selected && (
-            <mesh scale={1.5}>
-              <sphereGeometry args={[0.48, 18, 14]} />
-              <meshBasicMaterial
-                color={colors[node.kind]}
-                wireframe
-                transparent
-                opacity={0.4}
-              />
-            </mesh>
-          )}
-        </group>
-      ))}
+      )}
     </>
   );
 }

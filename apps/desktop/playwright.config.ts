@@ -37,6 +37,7 @@ export default defineConfig({
         "citations.spec.ts",
         "graph.spec.ts",
         "graph-neighborhood.spec.ts",
+        "graph-instances.spec.ts",
       ],
     },
     ...(process.env.CORTEXOS_REAL_CONTEXT === "1"
@@ -47,6 +48,9 @@ export default defineConfig({
       : []),
     ...(process.env.CORTEXOS_REAL_OLLAMA === "1"
       ? [{ name: "ollama", testMatch: "ollama.spec.ts" }]
+      : []),
+    ...(process.env.CORTEXOS_REAL_GRAPH === "1"
+      ? [{ name: "real-graph", testMatch: "graph-model.spec.ts" }]
       : []),
   ],
 });

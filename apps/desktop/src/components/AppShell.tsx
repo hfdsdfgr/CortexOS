@@ -6,6 +6,7 @@ import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { ModelStatus } from "./ModelStatus";
 import { ConversationList } from "./ConversationList";
 import { NavigationIcon } from "./NavigationIcon";
+import { WindowControls, WindowDragRegion } from "./WindowControls";
 export const pages = [
   { id: "chat", label: "对话" },
   { id: "knowledge", label: "知识" },
@@ -28,7 +29,7 @@ export function AppShell({
   const drawer = useRef<HTMLDialogElement>(null);
   return (
     <div
-      className={`app-shell reference-chat compact-shell ${page === "knowledge" ? "reference-knowledge" : ""} ${page === "chat" ? "with-conversations" : ""} ${expanded ? "navigation-expanded" : ""}`}
+      className={`app-shell reference-chat compact-shell design-v3 ${page === "knowledge" ? "reference-knowledge" : ""} ${page === "chat" ? "with-conversations" : ""} ${expanded ? "navigation-expanded" : ""}`}
     >
       <a
         className="skip-link"
@@ -91,7 +92,9 @@ export function AppShell({
           page={page}
           openCreateWorkspace={openCreateWorkspace}
         />
+        {studio.desktop && <WindowDragRegion onError={studio.reportError} />}
         <ModelStatus studio={studio} />
+        {studio.desktop && <WindowControls onError={studio.reportError} />}
       </header>
       {page === "chat" && (
         <>

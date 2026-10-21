@@ -178,13 +178,16 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
     };
   }, [workspaceId, runId, refresh, key]);
   const graph = useMemo(() => (data ? projectExecution(data) : null), [data]);
-  const select = (id: string) =>
+  const select = (id: string) => {
+    if (graph?.positions[id] && !failed) api.current?.focus(graph.positions[id]);
     navigate("graph", {
       workspace: workspaceId,
       mode: "execution",
       run: runId,
       event: id,
     });
+  };
+  const exitFocus = () => navigate("graph", { workspace: workspaceId, mode: "execution", run: runId });
   const changed = useCallback(() => {
     const capture = api.current?.capture();
     if (capture) {
@@ -311,7 +314,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
               {dirty ? "视角未保存" : "视角已保存或使用默认视角"}
             </span>
           </div>
-          <div className="trace-workbench">
+          <div className={`trace-workbench ${route.event ? "has-selection" : ""}`}>
             <section className="trace-index" aria-label="执行节点列表">
               <h2>实际事件与输入输出</h2>
               {graph.nodes.map((node) => (
@@ -352,6 +355,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                     target={initial.current!.target}
                     apiRef={api}
                     onSelect={select}
+                    onExitFocus={exitFocus}
                     onChange={changed}
                     onFailure={failure}
                     onReady={onReady}
@@ -359,7 +363,8 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                 </Suspense>
               )}
             </div>
-            <section className="trace-detail" aria-label="执行节点详情">
+            {route.event && <section className="trace-detail" aria-label="执行节点详情">
+              <button className="button text-button" onClick={() => { api.current?.exitFocus(); exitFocus(); }}>关闭执行详情</button>
               {selected ? (
                 <>
                   <h2>{selected.title}</h2>
@@ -483,7 +488,7 @@ function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
                 </p>
                 <code>{runId}</code>
               </details>
-            </section>
+            </section>}
           </div>
           <details className="trace-caption">
             <summary>图例与记录说明</summary>

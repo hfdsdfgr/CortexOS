@@ -160,6 +160,8 @@ function KnowledgeGraph({
   );
   const [since, setSince] = useState(previousBrowse?.since ?? "");
   const [listOpen, setListOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [inspectorReady, setInspectorReady] = useState(!!route.node);
   const [range, setRange] = useState<BrowseState["range"]>(
     previousBrowse?.range ?? null,
   );
@@ -261,7 +263,7 @@ function KnowledgeGraph({
   useEffect(() => {
     if (selectedNode) inspector.current?.focus({ preventScroll: true });
     setRelationLimit(50);
-  }, [selectedNode?.id]);
+  }, [selectedNode?.id, inspectorReady]);
   useEffect(() => {
     setRevealed(null);
     setListLimit(50);
@@ -275,6 +277,8 @@ function KnowledgeGraph({
   const select = (id: string) => {
     setRevealed(null);
     setSelected(id);
+    setInspectorReady(failed || !visibleIds.has(id));
+    if (!failed && visibleIds.has(id)) api.current?.focus(positions[id]);
     if (!demo)
       navigate("graph", {
         workspace,
@@ -286,6 +290,11 @@ function KnowledgeGraph({
     requestAnimationFrame(() =>
       inspector.current?.focus({ preventScroll: true }),
     );
+  };
+  const closeInspector = () => {
+    setSelected(null);
+    setInspectorReady(false);
+    if (!demo) navigate("graph", { workspace, mode: "knowledge" });
   };
   const focusSelected = () => {
     if (selected && positions[selected])
@@ -373,38 +382,9 @@ function KnowledgeGraph({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <select
-          aria-label="节点类型筛选"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-        >
-          <option value="all">全部类型</option>
-          {Object.entries(kinds).map(([value, name]) => (
-            <option key={value} value={value}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="节点审核筛选"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">全部状态</option>
-          <option value="confirmed">已确认</option>
-          <option value="draft">待确认 / 新草稿</option>
-        </select>
-        <details className="graph-more-filters">
-          <summary>时间</summary>
-          <label>
-            更新日期不早于
-            <input
-              type="date"
-              value={since}
-              onChange={(e) => setSince(e.target.value)}
-            />
-          </label>
-        </details>
+        <button className="button secondary" aria-expanded={filtersOpen} aria-controls="graph-filters" onClick={() => setFiltersOpen(!filtersOpen)}>
+          筛选{[typeFilter !== "all", statusFilter !== "all", !!since].filter(Boolean).length > 0 ? `（${[typeFilter !== "all", statusFilter !== "all", !!since].filter(Boolean).length}）` : ""}
+        </button>
         <span className="graph-visible-count" role="status">
           {visible.length} / {graph?.nodes.length ?? 0} 节点
         </span>
@@ -444,6 +424,40 @@ function KnowledgeGraph({
             </button>
           )}
         </div>
+      </div>
+      <div id="graph-filters" className="graph-filter-panel" hidden={!filtersOpen}>
+        <select
+          aria-label="节点类型筛选"
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+        >
+          <option value="all">全部类型</option>
+          {Object.entries(kinds).map(([value, name]) => (
+            <option key={value} value={value}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="节点审核筛选"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">全部状态</option>
+          <option value="confirmed">已确认</option>
+          <option value="draft">待确认 / 新草稿</option>
+        </select>
+        <div className="graph-date-filter">
+          <label>
+            更新日期不早于
+            <input
+              type="date"
+              value={since}
+              onChange={(e) => setSince(e.target.value)}
+            />
+          </label>
+        </div>
+        <button className="button text-button" onClick={() => { setTypeFilter("all"); setStatusFilter("all"); setSince(""); }}>重置筛选</button>
       </div>
       {error && (
         <div className="error-banner" role="alert">
@@ -492,7 +506,7 @@ function KnowledgeGraph({
         </div>
       )}
       <div
-        className={`graph-workbench ${selectedNode ? "has-inspector" : ""} ${listOpen ? "list-is-open" : ""} ${saving ? "is-saving" : ""}`}
+        className={`graph-workbench ${selectedNode && inspectorReady ? "has-inspector" : ""} ${listOpen ? "list-is-open" : ""} ${saving ? "is-saving" : ""}`}
       >
         <aside
           id="knowledge-node-index"
@@ -500,6 +514,7 @@ function KnowledgeGraph({
           aria-label="图谱节点列表"
           onKeyDown={(event) => {
             if (event.key === "Escape" && (listOpen || !failed)) {
+              event.preventDefault();
               setListOpen(false);
               listToggle.current?.focus();
             }
@@ -617,6 +632,8 @@ function KnowledgeGraph({
                 target={initialView.current?.target ?? [0, 0, 0]}
                 apiRef={api}
                 onSelect={select}
+                onExitFocus={closeInspector}
+                onFocused={() => setInspectorReady(true)}
                 onChange={viewChanged}
                 onFailure={onFailure}
               />
@@ -634,7 +651,7 @@ function KnowledgeGraph({
               ))}
             </ul>
             <p>
-              拖动旋转，右键拖动平移，滚轮缩放。可从列表选择，再点击“移到选中节点”。方向按“起点
+              左键拖动旋转，右键拖动平移，滚轮缩放。点击节点聚焦；拖动画布空白或按 Esc 返回原视角。方向按“起点
               → 关系 → 终点”阅读。
             </p>
             <p>节点的位置只是排布方式，不能据此判断因果关系或内容是否可信。</p>
@@ -653,7 +670,7 @@ function KnowledgeGraph({
                   : "已载入保存视图"}
           </div>
         </div>
-        {selectedNode && (
+        {selectedNode && inspectorReady && (
           <aside
             ref={inspector}
             tabIndex={-1}
@@ -673,10 +690,9 @@ function KnowledgeGraph({
                 className="icon-button"
                 aria-label="关闭图谱详情"
                 onClick={() => {
-                  setSelected(null);
+                  api.current?.exitFocus();
+                  closeInspector();
                   listToggle.current?.focus();
-                  if (!demo)
-                    navigate("graph", { workspace, mode: "knowledge" });
                 }}
               >
                 <X size={19} />
@@ -719,9 +735,8 @@ function KnowledgeGraph({
                 requestedVersion={route.version}
                 revision={revision + refresh}
                 onBack={() => {
-                  setSelected(null);
-                  if (!demo)
-                    navigate("graph", { workspace, mode: "knowledge" });
+                  api.current?.exitFocus();
+                  closeInspector();
                 }}
                 onEdit={(request) => onEdit({ ...request, returnTo: "graph" })}
                 onChanged={() => setRefresh((n) => n + 1)}

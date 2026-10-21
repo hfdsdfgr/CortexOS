@@ -261,10 +261,6 @@
 .reference-chat .source-reader { padding-left: 24px; }
 .reference-chat .source-text { background: transparent; border-block: 1px solid var(--line); padding: 14px 0; font-size: 16px; line-height: 1.75; }
 .reference-chat .source-line-inputs { margin-block: 20px; }
-@supports (corner-shape: squircle) {
-  .reference-chat :is(.button, .icon-button, .composer, .composer-model, .form-dialog, .source-browser, .search-field),
-  .reference-chat .field :is(input, select, textarea) { corner-shape: squircle; }
-}
 @media (max-width: 1100px) {
   .reference-chat { --page-inset: 24px; }
   .reference-chat .settings-section { grid-template-columns: 1fr; gap: 24px; }

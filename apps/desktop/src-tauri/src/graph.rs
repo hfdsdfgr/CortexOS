@@ -96,35 +96,32 @@ impl Database {
             .map_err(error)?
             .collect::<rusqlite::Result<Vec<_>>>()
             .map_err(error)?;
-        let mut statement = connection
-            .prepare("SELECT id FROM knowledge_edges WHERE workspace_id=?1 ORDER BY id")
-            .map_err(error)?;
-        let ids = statement
-            .query_map(params![workspace], |r| r.get::<_, String>(0))
-            .map_err(error)?
-            .collect::<rusqlite::Result<Vec<_>>>()
-            .map_err(error)?;
-        let mut edges = Vec::new();
-        let mut statement=connection.prepare("SELECT version,from_node_id,to_node_id,relation,active,change_reason,created_at FROM knowledge_edge_versions WHERE workspace_id=?1 AND edge_id=?2 ORDER BY version DESC").map_err(error)?;
-        // ponytail: one history query per edge; batch this when measured graph load requires it.
-        for id in ids {
-            let versions = statement
-                .query_map(params![workspace, id], |r| {
-                    Ok(EdgeVersion {
-                        version: r.get(0)?,
-                        from_node_id: r.get(1)?,
-                        to_node_id: r.get(2)?,
-                        relation: r.get(3)?,
-                        active: r.get(4)?,
-                        change_reason: r.get(5)?,
-                        created_at: r.get(6)?,
-                    })
-                })
-                .map_err(error)?
-                .collect::<rusqlite::Result<Vec<_>>>()
-                .map_err(error)?;
-            edges.push(GraphEdge { id, versions });
-        }
+        let edges = {
+            let mut statement = connection.prepare("SELECT e.id,v.version,v.from_node_id,v.to_node_id,v.relation,v.active,v.change_reason,v.created_at FROM knowledge_edges e LEFT JOIN knowledge_edge_versions v ON v.edge_id=e.id AND v.workspace_id=e.workspace_id WHERE e.workspace_id=?1 ORDER BY e.id,v.version DESC").map_err(error)?;
+            let mut rows = statement.query(params![workspace]).map_err(error)?;
+            let mut edges: Vec<GraphEdge> = Vec::new();
+            while let Some(row) = rows.next().map_err(error)? {
+                let id: String = row.get(0).map_err(error)?;
+                if edges.last().map(|edge| edge.id.as_str()) != Some(id.as_str()) {
+                    edges.push(GraphEdge {
+                        id,
+                        versions: Vec::new(),
+                    });
+                }
+                if let Some(version) = row.get::<_, Option<i64>>(1).map_err(error)? {
+                    edges.last_mut().unwrap().versions.push(EdgeVersion {
+                        version,
+                        from_node_id: row.get(2).map_err(error)?,
+                        to_node_id: row.get(3).map_err(error)?,
+                        relation: row.get(4).map_err(error)?,
+                        active: row.get(5).map_err(error)?,
+                        change_reason: row.get(6).map_err(error)?,
+                        created_at: row.get(7).map_err(error)?,
+                    });
+                }
+            }
+            edges
+        };
         let stored: Option<(i64, String, String)> = connection
             .query_row(
                 "SELECT revision,camera_json,target_json FROM graph_layouts WHERE workspace_id=?1",

@@ -1,13 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 import { performance } from "node:perf_hooks";
+import { createHash } from "node:crypto";
 import { createWorkspace, launchNative, nativeInvoke } from "./native";
 import { seedGraph } from "./graph-fixture";
 import type { GraphData } from "../src/graph-data";
+import type { Bootstrap } from "../src/studio";
 
 test("measure isolated native synthetic graphs without asserting unmeasured performance targets", async ({}, info) => {
   test.setTimeout(240000);
-  const app = await launchNative(info);
+  const app = await launchNative(info, {
+    dataDirectory: process.env.CORTEXOS_GRAPH_FIXTURE_DIR,
+  });
   const observations = [];
   try {
     const { page } = app;
@@ -28,14 +32,21 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
       [500, 1000],
       [1000, 5000],
     ]) {
-      await createWorkspace(page, `合成基线 ${nodes} 节点 ${edges} 连线`);
-      const workspaceId = await page.getByLabel("当前工作区").inputValue();
       await page
         .getByRole("navigation")
         .getByRole("link", { name: "设置", exact: true })
         .click();
-      await seedGraph(page, workspaceId, nodes, edges);
+      const name = `合成基线 ${nodes} 节点 ${edges} 连线`;
+      const existing = (
+        await nativeInvoke<Bootstrap>(page, "bootstrap")
+      ).workspaces.find((item) => item.name === name);
+      if (existing)
+        await page.getByLabel("当前工作区").selectOption(existing.id);
+      else await createWorkspace(page, name);
+      const workspaceId = await page.getByLabel("当前工作区").inputValue();
+      if (!existing) await seedGraph(page, workspaceId, nodes, edges);
       const reads = [];
+      let graphHash = "";
       for (let index = 0; index < 3; index++) {
         const start = performance.now();
         const graph = await nativeInvoke<GraphData>(
@@ -46,6 +57,11 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
         reads.push(performance.now() - start);
         expect(graph.nodes).toHaveLength(nodes);
         expect(graph.edges).toHaveLength(edges);
+        const digest = createHash("sha256")
+          .update(JSON.stringify(graph))
+          .digest("hex");
+        if (graphHash) expect(digest).toBe(graphHash);
+        graphHash = digest;
       }
       const started = performance.now();
       await page
@@ -63,7 +79,8 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
       await page
         .getByRole("button", { name: "显示全部节点", exact: true })
         .click();
-      await page.waitForTimeout(350);
+      // V3 fit animates for 420 ms; sample idle only after it has settled.
+      await page.waitForTimeout(500);
       const beforeIdle = Number(await canvas.getAttribute("data-render-count"));
       await page.waitForTimeout(350);
       const idleFrames =
@@ -106,6 +123,8 @@ test("measure isolated native synthetic graphs without asserting unmeasured perf
         nodes,
         edges,
         fixture: "synthetic-scoped-database",
+        graphHash,
+        variant: process.env.CORTEXOS_GRAPH_VARIANT ?? "unspecified",
         mode: "native WebView2, no model generation",
         viewport: [1600, 900],
         renderer,
