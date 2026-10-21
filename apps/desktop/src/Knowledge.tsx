@@ -295,7 +295,7 @@ export function KnowledgeInspector({
   onChanged,
   requestedVersion,
 }: {
-  studio: Studio;
+  studio: Pick<Studio, "openConversation" | "reportError">;
   workspace: string | null;
   selected: string | null;
   revision: number;

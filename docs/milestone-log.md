@@ -733,3 +733,42 @@ V3更新前同条件比较：1000节点/5000关系上一帧绘制提交6001→4�
 用户询问继续开发的计划。本轮核对git状态/9f8cad9、现有实施与纠偏计划、性能报告，并用rg检查studio流式更新、Graph全图读取/筛选/投影及Rust命令入口。细化六步顺序：长回答和刷新定位→按需读取→多中心探索→图谱阅读→Windows交付→Decision Lab/评估；下一实施切片限定为第一步。详细范围和可验证标准写入implementation-plan。
 
 本轮仅修改计划和记录，未实施上述优化，未运行类型检查、构建、单元或集成测试。用户参考图片及原desktop.spec.ts改动保留；无数据库、业务代码、模型参数、依赖或系统设置变化。
+
+## 2026-10-21 长回答与图谱刷新隔离
+
+用户确认实施后续计划第一项。复读development、开发规范、实施计划与AGENTS，先测量再优化，沿用永久V3；本轮未推进数据库按需读取或多中心探索。
+
+### 修改及依据
+
+代码路径为studio流式Channel→根App→完整studio属性→GraphPage→KnowledgeGraph重新筛选及新建数组→GraphViewport的缓冲/实例/标签效果。固定流原生基线证实200段文字期间，静置千节点/五千关系图谱标签层增删各206次、绘制307次。修改App使用useMemo组合图谱所用四项稳定依赖，GraphPage使用React.memo默认比较；GraphStudio/KnowledgeInspector以Pick限定方法依赖。导航订阅、自身状态、工作区和knowledgeRevision继续更新；执行图继续真实轮询。两个方法均沿用已有useCallback及当前view引用。
+
+保留原片段更新节奏、seq检查、取消、保存点和终态，不增加刷新节流、状态库、Worker、自定义比较器、数据库迁移、业务命令、能力或依赖。仅性能标记启用时，studio记录一条有界准备IPC耗时；测试转发观察真实Ollama首文字及结束，不写虚构执行事件或普通UI指标。
+
+实际产品文件为App.tsx、Graph.tsx、ExecutionTrace.tsx、Knowledge.tsx、studio.ts；检查文件为playwright.config.ts、stream-profile.spec.ts、graph-model.spec.ts、chat.spec.ts；文档为ADR0013、streaming-performance、architecture、test-plan、implementation-plan、refactoring-plan、本日志及旧性能报告的后续说明。用户参考图和desktop.spec.ts改动保留。
+
+### 实际命令和检查
+
+以下npm/Playwright命令目录为apps/desktop；原生操作使用require_escalated与隔离数据库/专用WebView目录。未运行单元或全套测试。
+
+- npm.cmd run typecheck：实现稳定props后、计时修改后及最终脚本排版后通过。最初按不存在的src-tauri/src/context.rs查找计时路径失败，随后用rg定位实际db.rs/retrieval.rs，未更改这些文件。
+- CORTEXOS_STREAM_PROFILE=1、fixture为artifacts/p1-c2a-fixture、variant=before-fa52fd6：npx.cmd playwright test stream-profile.spec.ts --project stream-profile --output ../../artifacts/stream-before：1条通过，总12.5s，用例10.6s；使用改动前原生二进制。
+- CORTEXOS_REAL_GRAPH=1、同fixture/variant，依次CORTEXOS_GRAPH_ACTIVITY=idle/interactive运行npx.cmd playwright test graph-model.spec.ts --project real-graph，输出stream-model-before-idle/stream-model-before-interactive：各1条通过，总17.9s/13.4s，用例15.8s/11.5s。两次实际请求哈希一致。测试端替换invoke未捕获准备计时，该项缺失；后改为独立Performance标记，不推导旧版准备耗时。
+- npm.cmd exec --yes --package=prettier@3.9.10 -- prettier --write tests/stream-profile.spec.ts tests/graph-model.spec.ts；最终又整理graph-model/chat脚本。未新增依赖。
+- npm.cmd run tauri -- build --debug --no-bundle：两次通过，含类型/Vite构建，Rust部分14.65s/10.21s。第二次加入有界准备计时；最终资源index-BvLt9UEy.css、index-DkvE4lSB.js、GraphViewport-BJsOR2H2.js。CSS产物哈希与之前相同，已有约937kB图模块警告保留。
+- CORTEXOS_STREAM_PROFILE=1、CORTEXOS_EXPECT_STABLE_GRAPH=1、同fixture、variant=after-stable-graph：npx.cmd playwright test stream-profile.spec.ts chat.spec.ts graph-instances.spec.ts graph.spec.ts trace.spec.ts --project desktop --project stream-profile --output ../../artifacts/stream-after：4通过/1失败，总37.8s。固定流、实例点击/聚焦恢复、知识/关系/视角与重启、执行事件及精确版本/消息导航均通过；chat旧预期漏掉已实现的citations_checked事件。
+- 补齐chat事件后，npx.cmd playwright test chat.spec.ts --project desktop --output ../../artifacts/stream-chat-check：在9.9s因旧云模型错误文案失败；核对当前Rust和界面，同步云模型拒绝及输出上限文字，保留调用数量、事件顺序和持久化断言。再次输出stream-chat-final：1条通过，总38.0s，用例35.7s。实际覆盖跨工作区/草稿、取消、异常NDJSON、正常关窗取消、强制中断后重启恢复、云模型/缺失模型阻止、连接失败恢复、30秒超时和长度上限后重试。
+- CORTEXOS_REAL_GRAPH=1、同fixture、variant=after-stable-graph，按512/idle、512/interactive、2048/interactive依次设置CORTEXOS_GRAPH_OUTPUT_LIMIT与CORTEXOS_GRAPH_ACTIVITY，运行graph-model.spec.ts --project real-graph，分别输出stream-model-after-512-idle、stream-model-after-512-interactive、stream-model-after-2048-interactive：各1条通过，总17.2s/14.3s/34.5s，用例15.1s/12.2s/32.5s。
+- py -3 -X utf8只读汇总上述JSON，断言四次512实际请求哈希相同、五次GraphData哈希相同，通过。真实模型检查五次serviceStartedByCheck均为false，保留原服务；没有调整系统环境、结束其他应用或下载模型。
+- git diff --check通过，仅已有换行提示。提交前确认独立仓库根目录；保持令牌与artifacts忽略，不读取或提交凭据。
+
+### 实测与验收边界
+
+固定流前后采样墙钟6311.5/6286.3ms：标签层增删206/206→0/0，静置绘制307→0，渲染器累计任务1968.7→117.4ms，JS堆样本55.8→13.5MiB。随后筛选正常，200段最终文字逐字一致落盘，图谱未改变。模拟HTTP不是模型吞吐或屏幕FPS；JS堆不是进程内存上限。
+
+真实512静置/交互前后请求相同。静置观察绘制291→0、任务1889.4→165.7ms；交互任务1169.1→301.8ms，操作时间和采样间隔不同，不当作CPU利用率。模型吞吐仍约74–77 Token/s；收益是界面重复工作减少，没有观测到推理加速。新准备IPC约11.5–11.8ms，包含设置/上下文/事务/IPC；检索366–379微秒，独立于模型输出耗时。详表见streaming-performance。
+
+2048场景实际模型总耗时27.671s、终态completed/length、输出3035字符；交互前后仍在生成且文字增长，保存请求、事件、输出及图谱哈希一致。此时设备显存加载后约4405MiB、交互约4439/4300MiB，与上轮约7576MiB不同；未复现旧高负载超时，根因继续未确定。未以延长超时或降低用户参数冒充修复。
+
+已查看本轮实际原生1600×900真实模型静置图、375px知识详情/筛选、执行记录截图；布局/样式保持原V3。375px为CDP内容视口，执行图PNG为默认窗口的物理截图，不冒称实测系统150%缩放。图谱与知识编辑/审核、关系历史、WebGL降级、原消息与知识版本定位的原专项通过。来源文件权限/完整业务、三尺寸视觉全量、完整读屏、安装升级和持续高GPU负载未重跑。
+
+停止在本切片门槛。下一步按计划先明确图谱按需读取的摘要、有效关系、邻域、历史分页/总数、请求并发和旧界面兼容契约，再增量实现；此轮无数据库或API重构。高负载模型问题保留独立复现入口。

@@ -1,0 +1,13 @@
+# ADR 0013 — 隔离回答片段与图谱更新
+
+2026-10-21。按下一阶段计划先定位长回答和界面刷新，沿用永久V3。
+
+useStudio每次接收StreamUpdate更新根状态，App原先将完整studio对象传给GraphPage。KnowledgeGraph随后重新筛选并创建节点/连线数组，GraphViewport的缓冲和标签效果依赖这些数组。固定HTTP流的原生基线：同一千节点/五千关系、200段回答期间，静置图谱标签层增加/移除各206次，发生307次绘制回调。
+
+在App用useMemo组合图谱实际需要的desktop、workspaceId、openConversation、reportError，GraphPage使用React.memo默认比较。GraphStudio以Pick限定依赖；KnowledgeInspector也只接收所用方法。工作区、知识修订、编辑回调、导航订阅及组件自身状态继续触发更新；执行图仍按既有真实运行轮询刷新。两个方法均为已有useCallback，访问当前会话依靠原view ref，避免旧会话闭包。
+
+保持现有每片段更新、顺序检查、250ms后端保存点及终态落盘。先去除已测得的无关图谱工作，没有引入刷新节流、全局状态库、Worker或自定义props比较器。后续仅在可见聊天自身的测量证明需要时调整刷新密度。
+
+准备往返计时仅在性能检查写入cortex.profile.enabled标记后记录一条有界Performance measure，不含正文/ID且不写数据库。真实模型检查通过测试专用回环转发观察上游首文字与流结束；检索沿用已有elapsedMicros、生成沿用Ollama真实指标。准备往返包含IPC、设置读取、上下文与事务，不称纯组装耗时；首个落盘文字的轮询观测不称精确首字延迟。普通UI无性能面板或新增执行事件。
+
+验证使用同库固定HTTP流前后对照、真实Ollama静置/交互和512/2048配置、相关原生取消/断流/重启及图谱功能。结论、失败和测量限制见streaming-performance.md及milestone-log；按需读取与多中心探索保持后续独立门槛。

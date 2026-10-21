@@ -506,6 +506,7 @@ export function useStudio() {
           void refreshConversations(update.workspaceId).catch(reportError);
         }
       };
+      const prepareStarted = performance.now();
       const run = await invoke<RunSummary>("start_chat", {
         workspaceId: workspace,
         conversationId: conversation,
@@ -513,6 +514,13 @@ export function useStudio() {
         contextSelection: selectedContext,
         onUpdate: stream,
       });
+      if (performance.getEntriesByName("cortex.profile.enabled").length) {
+        performance.clearMeasures("cortex.prepare-ipc");
+        performance.measure("cortex.prepare-ipc", {
+          start: prepareStarted,
+          end: performance.now(),
+        });
+      }
       if (!finishedRuns.current.has(run.id)) setActiveRun(run);
       if (override === undefined)
         setDrafts((current) => ({
@@ -606,3 +614,7 @@ export function useStudio() {
 }
 
 export type Studio = ReturnType<typeof useStudio>;
+export type GraphStudio = Pick<
+  Studio,
+  "desktop" | "workspaceId" | "openConversation" | "reportError"
+>;

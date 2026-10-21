@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { AppShell, pages } from "./components/AppShell";
 import {
@@ -23,6 +23,11 @@ import { useNavigation, navigate } from "./navigation";
 
 export default function App() {
   const studio = useStudio();
+  const { desktop, workspaceId, openConversation, reportError } = studio;
+  const graphStudio = useMemo(
+    () => ({ desktop, workspaceId, openConversation, reportError }),
+    [desktop, workspaceId, openConversation, reportError],
+  );
   const [edgeEdit, setEdgeEdit] = useState<EditEdge | null>(null);
   const [knowledgeEdit, setKnowledgeEdit] = useState<EditKnowledge | null>(
     null,
@@ -160,7 +165,7 @@ export default function App() {
         )}
         {page === "graph" && (
           <GraphPage
-            studio={studio}
+            studio={graphStudio}
             revision={knowledgeRevision}
             onEdit={setKnowledgeEdit}
             onEditEdge={setEdgeEdit}

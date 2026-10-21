@@ -115,3 +115,7 @@ graph-data.relatedNodeIds 从已加载工作区数据计算当前有效的一跳
 GraphInstances按类型批量绘制节点，箭头共享一次实例提交；连线仍使用原批量缓冲。筛选/移动更新矩阵及包围球，instanceId只用于当前批次查找，导航/保存仍使用实体UUID。GraphViewport供知识图和执行图复用，材质继承V3语义Tokens；GraphCamera统一管理可中断动画、探索快照与退出聚焦。列表处理Esc后阻止相机重复处理，不改编辑器和弹窗的键盘语义。
 
 Rust knowledge_graph改为一次限定工作区的LEFT JOIN加载关系及全部修订，再按原ID/版本顺序分组。API、表、历史保留和视图保存不变；仍读取全图及全部历史，尚无数据库邻域分页。测量通过隔离数据库与全量GraphData哈希核对，详见ADR0012。
+
+## 回答流与图谱的更新边界
+
+App组合GraphStudio的四个稳定依赖，GraphPage按默认浅比较复用；消息片段和草稿不进入图谱props。图谱自身的导航订阅/状态、知识revision和工作区仍正常更新，执行图保留实际运行轮询。KnowledgeInspector通过受限方法接口打开当前原会话。流式顺序、取消和后端保存语义不变。性能模式使用有界Performance measure与测试端观测，详见ADR0013。

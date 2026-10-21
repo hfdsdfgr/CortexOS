@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { navigate, useNavigation } from "./navigation";
-import { errorText, type RunSummary, type Studio } from "./studio";
+import { errorText, type RunSummary, type GraphStudio } from "./studio";
 import {
   projectExecution,
   runLabels,
@@ -21,7 +21,7 @@ import type { ViewportApi } from "./GraphViewport";
 const Viewport = lazy(() => import("./GraphViewport"));
 const sessionViews = new Map<string, ExecutionView>();
 
-export function ExecutionTrace({ studio }: { studio: Studio }) {
+export function ExecutionTrace({ studio }: { studio: GraphStudio }) {
   const route = useNavigation();
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [offset, setOffset] = useState(0);
@@ -131,7 +131,7 @@ export function ExecutionTrace({ studio }: { studio: Studio }) {
     </>
   );
 }
-function TraceCanvas({ studio, runId }: { studio: Studio; runId: string }) {
+function TraceCanvas({ studio, runId }: { studio: GraphStudio; runId: string }) {
   const route = useNavigation();
   const workspaceId = studio.workspaceId!;
   const key = `${workspaceId}:${runId}`;

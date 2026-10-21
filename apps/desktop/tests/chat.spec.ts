@@ -165,6 +165,7 @@ test("native chat preserves real SQLite data through cancellation, errors and re
       "model_inspection_completed",
       "model_request_started",
       "model_response_received",
+      "citations_checked",
       "run_cancelled",
     ]);
     await expect(
@@ -270,9 +271,9 @@ test("native chat preserves real SQLite data through cancellation, errors and re
       .getByRole("button", { name: "执行过程", exact: true })
       .last()
       .click();
-    await expect(page.getByRole("dialog", { name: "本次回答的处理记录" })).toContainText(
-      "恢复中断记录",
-    );
+    await expect(
+      page.getByRole("dialog", { name: "本次回答的处理记录" }),
+    ).toContainText("恢复中断记录");
     await page.getByRole("button", { name: "关闭执行详情" }).click();
 
     mode = "remote";
@@ -281,7 +282,9 @@ test("native chat preserves real SQLite data through cancellation, errors and re
       .getByRole("textbox", { name: "你的问题", exact: true })
       .fill("云模型必须被阻止");
     await page.getByRole("button", { name: "发送消息", exact: true }).click();
-    await expect(page.getByRole("alert")).toContainText("已阻止云端模型");
+    await expect(page.getByRole("alert")).toContainText(
+      "云端模型和无法确认来源的模型暂不支持",
+    );
     expect(requests).toHaveLength(callsBeforeBlocked);
     mode = "missing";
     await page
@@ -335,9 +338,7 @@ test("native chat preserves real SQLite data through cancellation, errors and re
       .getByRole("textbox", { name: "你的问题", exact: true })
       .fill("输出上限测试");
     await page.getByRole("button", { name: "发送消息", exact: true }).click();
-    await expect(
-      page.getByText("已达到输出上限", { exact: false }),
-    ).toBeVisible();
+    await expect(page.getByText("达到输出上限", { exact: true })).toBeVisible();
     mode = "complete";
     const callsBeforeLimitRetry = requests.length;
     const answersBeforeLimitRetry = await page

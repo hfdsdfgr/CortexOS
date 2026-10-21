@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   lazy,
+  memo,
   Suspense,
   useCallback,
   useEffect,
@@ -22,7 +23,7 @@ import {
 import { KnowledgeInspector, kinds, type EditKnowledge } from "./Knowledge";
 import { navigate, useNavigation } from "./navigation";
 import { ExecutionTrace } from "./ExecutionTrace";
-import { errorText, type Studio } from "./studio";
+import { errorText, type GraphStudio } from "./studio";
 import {
   defaultPositions,
   demoContents,
@@ -53,13 +54,13 @@ export interface EditEdge {
   edge?: GraphEdge;
 }
 
-export function GraphPage({
+export const GraphPage = memo(function GraphPage({
   studio,
   revision,
   onEdit,
   onEditEdge,
 }: {
-  studio: Studio;
+  studio: GraphStudio;
   revision: number;
   onEdit: (request: EditKnowledge) => void;
   onEditEdge: (request: EditEdge) => void;
@@ -125,7 +126,7 @@ export function GraphPage({
       )}
     </section>
   );
-}
+});
 function KnowledgeGraph({
   studio,
   revision,
@@ -133,7 +134,7 @@ function KnowledgeGraph({
   onEdit,
   onEditEdge,
 }: {
-  studio: Studio;
+  studio: GraphStudio;
   revision: number;
   demo: boolean;
   onEdit: (request: EditKnowledge) => void;

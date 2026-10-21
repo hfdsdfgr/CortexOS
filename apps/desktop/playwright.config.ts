@@ -52,5 +52,8 @@ export default defineConfig({
     ...(process.env.CORTEXOS_REAL_GRAPH === "1"
       ? [{ name: "real-graph", testMatch: "graph-model.spec.ts" }]
       : []),
+    ...(process.env.CORTEXOS_STREAM_PROFILE === "1"
+      ? [{ name: "stream-profile", testMatch: "stream-profile.spec.ts" }]
+      : []),
   ],
 });

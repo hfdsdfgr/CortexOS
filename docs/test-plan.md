@@ -137,3 +137,9 @@ graph-instances.spec.ts使用8个固定位置的隔离节点，鼠标按相机�
 graph-baseline支持CORTEXOS_GRAPH_FIXTURE_DIR重用同一隔离库、CORTEXOS_GRAPH_VARIANT标记版本，记录完整GraphData哈希。V3版适应全图后等待500ms，再测350ms空闲；更新前数据保留原方法。不同视觉版本单列，完整方法与局限见性能报告。
 
 CORTEXOS_REAL_GRAPH=1启用real-graph项目。graph-model.spec.ts使用已有Ollama与qwen3:4b-instruct，先短生成预热，再以默认512 Token上限输出纯数字合成表格；CORTEXOS_GRAPH_OUTPUT_LIMIT=2048用于独立长回答压力场景，结果分别保存。断言拖动画布和类型筛选前后仍在生成、文本增长、最终事件与请求配置落盘、GraphData哈希未变化。保存实际视口/DPR、宿主与WebView2累计CPU及工作集/私有内存、CDP主线程/JS堆、Ollama加载信息与设备整体GPU/显存。仅停止本检查启动的服务，不改变用户默认服务配置。不是模型答案正确性或屏幕FPS检查；流式更新长时开销、模型进程CPU、整机归因和打包仍另验。长回答超时保留失败证据，不用默认场景通过覆盖。
+
+## 流式更新隔离检查
+
+CORTEXOS_STREAM_PROFILE=1启用独立stream-profile项目：在原生WebView2和同一隔离库中，通过固定HTTP流发送200段文本（请求间隔20ms），观察未操作图谱的标签层重建、绘制回调、主线程任务和JS堆；CORTEXOS_EXPECT_STABLE_GRAPH=1对优化版要求标签零重建且绘制不超过2次。随后实际筛选必须更新图谱，最终完整文本逐字落盘且GraphData哈希不变。模拟响应不作为模型吞吐或屏幕FPS证据。
+
+真实graph-model检查新增CORTEXOS_GRAPH_ACTIVITY=idle/interactive，预热后使用独立新会话，使两种活动的请求内容可按哈希核对。测试专用回环转发记录真实上游headers/首文字/流结束；检索耗时沿用事件elapsedMicros，模型生成速率从实际evalCount/evalDuration计算。性能标记启用准备IPC计时；与首个保存文字的轮询观测分开。记录服务由谁启动，结束仅清理检查拥有的进程。必要聊天专项保留取消/断流/重启断言，图谱与执行图专项验证稳定props未阻止业务刷新。实际执行与未通过项见日志。

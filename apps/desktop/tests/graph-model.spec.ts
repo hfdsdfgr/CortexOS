@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { performance } from "node:perf_hooks";
+import { createServer } from "node:http";
 import { createWorkspace, launchNative, nativeInvoke } from "./native";
 import { seedGraph } from "./graph-fixture";
 import type { Bootstrap, Message, RunDetail, ModelHealth } from "../src/studio";
@@ -27,11 +28,76 @@ const reachable = async () => {
 test("real local generation overlaps a 1000-node graph and records scoped resource samples", async ({}, info) => {
   test.setTimeout(240000);
   const outputLimit = Number(process.env.CORTEXOS_GRAPH_OUTPUT_LIMIT ?? "512");
+  const activity = process.env.CORTEXOS_GRAPH_ACTIVITY ?? "interactive";
+  if (!["idle", "interactive"].includes(activity))
+    throw Error("Unknown graph activity");
   if (![512, 2048].includes(outputLimit))
     throw Error("Use 512 or 2048 output tokens");
   let service: ReturnType<typeof spawn> | undefined;
   let app: Awaited<ReturnType<typeof launchNative>> | undefined;
   const observations: unknown[] = [];
+  const modelTimings: {
+    started: number;
+    headersMs?: number;
+    firstTextMs?: number;
+    totalMs?: number;
+    error?: string;
+  }[] = [];
+  // Test-only loopback relay measures the real upstream stream without changing it.
+  const proxy = createServer(async (req, res) => {
+    if (
+      !["/api/version", "/api/tags", "/api/show", "/api/chat"].includes(
+        req.url ?? "",
+      )
+    ) {
+      res.writeHead(404).end();
+      return;
+    }
+    const abort = new AbortController();
+    res.on("close", () => abort.abort());
+    const timing =
+      req.url === "/api/chat"
+        ? ({ started: performance.now() } as (typeof modelTimings)[number])
+        : undefined;
+    if (timing) modelTimings.push(timing);
+    try {
+      const body: Buffer[] = [];
+      for await (const part of req) body.push(Buffer.from(part));
+      const upstream = await fetch(endpoint + req.url, {
+        method: req.method,
+        body: req.method === "POST" ? Buffer.concat(body) : undefined,
+        headers: { "Content-Type": "application/json" },
+        signal: abort.signal,
+      });
+      if (timing) timing.headersMs = performance.now() - timing.started;
+      res.writeHead(upstream.status, {
+        "Content-Type":
+          upstream.headers.get("Content-Type") ?? "application/json",
+      });
+      res.flushHeaders();
+      const decoder = new TextDecoder();
+      let pending = "";
+      for await (const bytes of upstream.body!) {
+        if (timing && timing.firstTextMs === undefined) {
+          pending += decoder.decode(bytes, { stream: true });
+          let end: number;
+          while ((end = pending.indexOf("\n")) >= 0) {
+            const line = pending.slice(0, end);
+            pending = pending.slice(end + 1);
+            if (line.trim() && JSON.parse(line).message?.content?.length > 0) {
+              timing.firstTextMs ??= performance.now() - timing.started;
+            }
+          }
+        }
+        res.write(bytes);
+      }
+      if (timing) timing.totalMs = performance.now() - timing.started;
+      res.end();
+    } catch (error) {
+      if (timing) timing.error = String(error);
+      res.destroy();
+    }
+  });
   try {
     if (!(await reachable())) {
       if (!process.env.LOCALAPPDATA) throw Error("LOCALAPPDATA unavailable");
@@ -54,12 +120,22 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
       service.stderr?.resume();
       await expect.poll(reachable, { timeout: 30000 }).toBe(true);
     }
+    await new Promise<void>((resolve) => proxy.listen(0, "127.0.0.1", resolve));
+    const address = proxy.address();
+    if (!address || typeof address === "string")
+      throw Error("Relay port unavailable");
     app = await launchNative(info, {
       dataDirectory: process.env.CORTEXOS_GRAPH_FIXTURE_DIR,
+      endpoint: `http://127.0.0.1:${address.port}`,
     });
     const { page, context } = app;
+    await page.evaluate(() => {
+      performance.mark("cortex.profile.enabled");
+    });
     await page.setViewportSize({ width: 1600, height: 900 });
     observations.push({
+      activity,
+      serviceStartedByCheck: !!service,
       viewport: await page.evaluate(() => ({
         width: innerWidth,
         height: innerHeight,
@@ -179,6 +255,7 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
     await expect(page.getByText("已完成", { exact: true })).toHaveCount(1, {
       timeout: 150000,
     });
+    await page.getByRole("button", { name: "新建对话", exact: true }).click();
     const conversationId = (
       await nativeInvoke<{ id: string }[]>(page, "list_conversations", {
         workspaceId,
@@ -200,6 +277,7 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
     await expect
       .poll(async () => (await last()).content.length, { timeout: 150000 })
       .toBeGreaterThan(0);
+    const firstSavedTextObservedMs = performance.now() - started;
     const running = await last();
     expect(running.status).toBe("streaming");
     await navigate("图谱");
@@ -217,30 +295,36 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
       bounds.x + bounds.width / 2,
       bounds.y + bounds.height / 2,
     );
-    const dragStart = performance.now();
-    await page.mouse.down();
-    await page.mouse.move(
-      bounds.x + bounds.width / 2 + 90,
-      bounds.y + bounds.height / 2 + 40,
-      { steps: 90 },
-    );
-    await page.mouse.up();
-    const dragMs = performance.now() - dragStart;
+    let dragMs = 0;
+    let filterRoundTripMs = 0;
+    if (activity === "interactive") {
+      const dragStart = performance.now();
+      await page.mouse.down();
+      await page.mouse.move(
+        bounds.x + bounds.width / 2 + 90,
+        bounds.y + bounds.height / 2 + 40,
+        { steps: 90 },
+      );
+      await page.mouse.up();
+      dragMs = performance.now() - dragStart;
+      await page.getByRole("button", { name: "筛选", exact: true }).click();
+      const filterStart = performance.now();
+      await page
+        .getByLabel("节点类型筛选", { exact: true })
+        .selectOption("context");
+      await expect(page.locator(".graph-visible-count")).toHaveText(
+        "1 / 1000 节点",
+      );
+      await page
+        .getByLabel("节点类型筛选", { exact: true })
+        .selectOption("all");
+      await expect(page.locator(".graph-visible-count")).toHaveText(
+        "1000 / 1000 节点",
+      );
+      filterRoundTripMs = performance.now() - filterStart;
+    } else await page.waitForTimeout(2000);
     const frames =
       Number(await canvas.getAttribute("data-render-count")) - frameBefore;
-    await page.getByRole("button", { name: "筛选", exact: true }).click();
-    const filterStart = performance.now();
-    await page
-      .getByLabel("节点类型筛选", { exact: true })
-      .selectOption("context");
-    await expect(page.locator(".graph-visible-count")).toHaveText(
-      "1 / 1000 节点",
-    );
-    await page.getByLabel("节点类型筛选", { exact: true }).selectOption("all");
-    await expect(page.locator(".graph-visible-count")).toHaveText(
-      "1000 / 1000 节点",
-    );
-    const filterRoundTripMs = performance.now() - filterStart;
     const after = await sample("after-graph-interaction");
     const progress = await last();
     expect(progress.status).toBe("streaming");
@@ -277,6 +361,20 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
         providerVersion: health.version,
         model: detail.run.modelId,
         outputLimit,
+        activity,
+        variant: process.env.CORTEXOS_GRAPH_VARIANT ?? "unspecified",
+        preparationIpcMs: await page.evaluate(
+          () =>
+            performance.getEntriesByName("cortex.prepare-ipc").at(-1)?.duration,
+        ),
+        firstSavedTextObservedMs,
+        modelTiming: modelTimings.at(-1),
+        retrieval: detail.events.find((e) => e.kind === "retrieval_completed")
+          ?.payload,
+        eventTimes: detail.events.map((e) => ({
+          kind: e.kind,
+          occurredAt: e.occurredAt,
+        })),
         nodes: 1000,
         edges: 5000,
         graphHash,
@@ -306,6 +404,7 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
         {
           capturedAt: new Date().toISOString(),
           observations,
+          modelTimings,
           note: "Isolated synthetic questions and graph. Process CPU values are cumulative seconds; working sets may share pages. GPU values cover the entire device. Script input rate is not screen FPS. Ollama worker CPU and full system resources are not attributed.",
         },
         null,
@@ -313,6 +412,8 @@ test("real local generation overlaps a 1000-node graph and records scoped resour
       ),
     );
     await app?.stop();
+    proxy.closeAllConnections();
+    await new Promise<void>((resolve) => proxy.close(() => resolve()));
     if (service?.pid && service.exitCode === null)
       spawnSync("taskkill", ["/PID", String(service.pid), "/T", "/F"], {
         windowsHide: true,
