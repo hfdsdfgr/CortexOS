@@ -925,3 +925,7 @@ npm/npx命令目录为apps/desktop；原生构建及检查使用require_escalate
 真实HWND从原矩形调整到1200×800物理窗口，无横向溢出；GetDpiForWindow120及WebView2 DPR1.25，当前为125%环境。键盘Enter最大化/还原和关键控件可访问名称通过；没有以此冒称鼠标拖动或读屏实测。截图路径、三类构建与测量边界见windows-delivery。
 
 本轮交付第5项自动部分，尚未达到第5项整体验收门槛。正式Release仅构建、未安装启动，安装运行证据来自隔离debug伴随包；系统150%、鼠标窗口拖动、真实读屏、至少30分钟真实模型使用和干净系统WebView2安装仍未验证。用户选择的人工检查表已交付，全部保持待执行。以前千节点/真实512和2048观测保留原边界，高显存旧超时根因没有新结论。停止，等待人工结果及后续确认；不进入Decision Lab，不标P1-C完成或公开发行。
+
+## 2026-10-22 正式Release交由用户验收
+
+用户要求“弹出来给我测试我来验收”。确认独立仓库、Release exe版本0.1.0及当前无同名应用进程后，经require_escalated用Start-Process启动正式Release并WaitForInputIdle；随后Get-Process及原生IsWindowVisible确认进程存活、窗口标题正确且可见。ShowWindowAsync显示窗口；SetForegroundWindow返回false，未绕过Windows前台限制。使用正常应用目录，不启用调试数据/CDP覆盖，不安装正式NSIS包，不修改缩放或读取用户数据库正文。程序留给用户操作；未运行测试，未声称页面/模型/安装及人工验收通过。当前仍在第5项，Decision Lab尚未启动。
