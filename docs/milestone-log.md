@@ -10,6 +10,8 @@
 
 本轮仅文档修改，按用户要求未运行单元测试、类型检查、构建或原生界面测试；未将旧测试冒称本轮新结果。已发布安装包和v0.1.0标签保持不变。原有desktop.spec.ts与未跟踪参考文件保持原样并排除提交。Release正文同步为公开仓库说明，二进制资产及其SHA-256不变。
 
+最终结果：23份Markdown、108个本地链接、UTF-8与代码围栏检查通过，git diff --cached --check通过。文档主体提交f2d42fc，git push --atomic将main从65800c1快进到f2d42fc，并发布codex/public-docs-refresh；无强制推送。GitHub API逐字核对main上的README、文档索引、入门、CONTRIBUTING和SECURITY共5份文件与本地相等；更新并回读Release正文，确认两个资产的名称/大小/校验码及v0.1.0标签完全不变，public=true。分支与上游差异0/0，剩余改动仅用户原有文件。本条为上述实际结果补记。
+
 ## 2026-10-22：v0.1.0 私有仓库预发布
 
 用户要求 release 一个版本。沿用已完成 Release/NSIS 构建及三项原生专项验证的 b7ad417，不修改业务代码、不重打同一安装包、不重复运行单元测试。新增 docs/releases/v0.1.0.md，补充 windows-delivery 发布入口；人工验收仍待完成，P1-C 第5项不改为全部完成。
