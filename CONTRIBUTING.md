@@ -65,7 +65,7 @@ try {
 
 ## 修改约定
 
-先读 [AGENTS.md](AGENTS.md)、[产品总纲](development.md)、[开发规范](docs/development-standards.md)、[实施计划](docs/implementation-plan.md) 与 [V3 界面规范](docs/design/ui-direction-v3.md)。
+先读 [AGENTS.md](AGENTS.md)、[产品总纲](development.md)、[开发规范](docs/development-standards.md)、[实施计划](docs/implementation-plan.md) 与 [HTML 参考界面规范](docs/design/html-prototype-ui.md)。
 
 复用共享组件、语义 CSS Tokens 和现有状态。前端通过类型化 Tauri 命令访问 Rust，数据库、模型和文件操作留在后端。知识修改保留版本，执行记录只保存真实事实；修改历史迁移会破坏校验，应使用新增迁移。
 

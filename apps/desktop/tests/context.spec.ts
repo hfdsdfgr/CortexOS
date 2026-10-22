@@ -42,6 +42,7 @@ test("effective knowledge reaches the exact saved model request and survives res
   let app = await launchNative(testInfo, { endpoint });
   try {
     let page = app.page;
+  page.setDefaultTimeout(10_000);
     await createWorkspace(page, "上下文闭环");
     const workspaceId = await page.getByLabel("当前工作区").inputValue();
     const input = {
@@ -112,6 +113,7 @@ test("effective knowledge reaches the exact saved model request and survives res
       "model_inspection_completed",
       "model_request_started",
       "model_response_received",
+      "citations_checked",
       "response_completed",
     ]);
     await nativeInvoke(page, "approve_knowledge", {
@@ -131,11 +133,11 @@ test("effective knowledge reaches the exact saved model request and survives res
     await page.getByText("手动选择：1 项知识", { exact: true }).click();
     await page.getByRole("button", { name: "刷新知识列表" }).click();
     const choice = page.getByRole("checkbox", { name: /发布日/ });
-    await expect(page.getByText(/生效 v2/)).toBeVisible();
+    await expect(page.getByText(/当前使用 v2/)).toBeVisible();
     await choice.uncheck();
     await choice.check();
     await page.getByRole("button", { name: "查看本次会用的资料", exact: true }).click();
-    await expect(page.getByText(/预算 .*UTF-8/)).toBeVisible();
+    await expect(page.getByText(/预计发送内容用量 .*UTF-8/)).toBeVisible();
     await page.getByRole("button", { name: "发送消息", exact: true }).click();
     await expect.poll(() => requests.length).toBe(2);
     await expect(page.getByText("已完成", { exact: true })).toHaveCount(2);
@@ -155,9 +157,9 @@ test("effective knowledge reaches the exact saved model request and survives res
       .last()
       .click();
     await expect(
-      page.getByText("发布日 · 本次使用 v2", { exact: true }),
+      page.getByText("发布日，本次使用 v2", { exact: true }),
     ).toBeVisible();
-    await page.getByText("完整请求快照", { exact: true }).click();
+    await page.getByText("发给模型的完整内容", { exact: true }).click();
     await page.screenshot({
       path: testInfo.outputPath("context-snapshot.png"),
     });
@@ -183,6 +185,7 @@ test("effective knowledge reaches the exact saved model request and survives res
       "retrieval_completed",
       "context_prepared",
       "model_inspection_started",
+      "citations_checked",
       "run_failed",
     ]);
     expect(failed.snapshot).not.toBeNull();

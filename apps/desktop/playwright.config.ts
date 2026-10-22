@@ -29,6 +29,7 @@ export default defineConfig({
       name: "desktop",
       testMatch: [
         "desktop.spec.ts",
+        "prototype-ui.spec.ts",
         "chat.spec.ts",
         "markdown-camera.spec.ts",
         "chat-design.spec.ts",

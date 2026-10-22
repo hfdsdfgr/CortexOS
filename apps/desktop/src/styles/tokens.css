@@ -1,0 +1,45 @@
+/* The supplied HTML is the visual source of truth. All surfaces stay local. */
+:root {
+  color-scheme: light;
+  --background: #eef1f7; --mist-blue: #dae2fb; --mist-green: #d4eee8;
+  --text: #1b2230; --text-secondary: #3a4456; --muted: #566073;
+  --primary: #4f5bd5; --primary-hover: #404cc4; --on-primary: #fff;
+  --success: #4fb6a8; --success-text: #1b5f57; --danger: #ad3e45; --warning: #6e470b;
+  --glass: rgb(255 255 255 / 58%); --glass-highlight: rgb(255 255 255 / 75%);
+  --surface: rgb(255 255 255 / 88%); --surface-subtle: rgb(255 255 255 / 55%);
+  --surface-hover: rgb(255 255 255 / 85%); --surface-graph: #edf2f6;
+  --line: rgb(27 34 48 / 10%); --control-border: rgb(27 34 48 / 12%);
+  --selected: rgb(79 91 213 / 9%); --chip: rgb(79 182 168 / 18%);
+  --warning-bg: rgb(227 168 79 / 16%); --danger-bg: rgb(173 62 69 / 8%);
+  --micro-raised: rgb(255 255 255 / 3%); --micro-inset: rgb(27 34 48 / 2%);
+  --shadow: 0 8px 32px rgb(40 50 90 / 8%), inset 0 1px 0 var(--glass-highlight);
+  --shadow-overlay: 0 16px 56px rgb(40 50 90 / 16%), inset 0 1px 0 var(--glass-highlight);
+  --font-normal: 400; --font-medium: 500; --font-strong: 600;
+  --font-ui: Inter, "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --ease: cubic-bezier(.22, 1, .36, 1); --spring: cubic-bezier(.2, 1.4, .5, 1);
+  --motion: 180ms; --sidebar-width: 252px; --reading-width: 720px;
+  --node-knowledge: #4fb6a8; --node-context: #8599ba; --node-hypothesis: #a899c5;
+  --node-decision: #6a83d3; --node-evidence: #5baca8; --node-conflict: #c38a23;
+  --node-event: #8b9bbb; --node-input: #bd9b67; --node-output: #4fb6a8; --node-error: #c5787e;
+  --graph-edge: #9aa6bc; --trace-order: #9aa6bc; --trace-context: #9e91bc; --trace-output: #4fb6a8;
+  --surface-readonly: var(--micro-inset); --surface-disabled: var(--micro-inset);
+}
+:root[data-color-scheme=dark] {
+  color-scheme: dark;
+  --background: #0e121c; --mist-blue: #1b2347; --mist-green: #12302f;
+  --text: #e8ecf5; --text-secondary: #c3ccdc; --muted: #9aa6bc;
+  --primary: #7f8bff; --primary-hover: #939cff; --on-primary: #101628;
+  --success: #66c9b9; --success-text: #7fe0d1; --danger: #f0a0a5; --warning: #f1c777;
+  --glass: rgb(30 36 52 / 60%); --glass-highlight: rgb(255 255 255 / 10%);
+  --surface: rgb(24 30 46 / 94%); --surface-subtle: rgb(255 255 255 / 6%);
+  --surface-hover: rgb(255 255 255 / 12%); --surface-graph: #172333;
+  --line: rgb(255 255 255 / 12%); --control-border: rgb(255 255 255 / 14%);
+  --selected: rgb(120 130 255 / 16%); --chip: rgb(79 182 168 / 22%);
+  --warning-bg: rgb(227 168 79 / 13%); --danger-bg: rgb(240 160 165 / 10%);
+  --micro-raised: rgb(255 255 255 / 3%); --micro-inset: rgb(0 0 0 / 3%);
+  --shadow: 0 8px 32px rgb(0 0 0 / 14%), inset 0 1px 0 var(--glass-highlight);
+  --shadow-overlay: 0 16px 56px rgb(0 0 0 / 28%), inset 0 1px 0 var(--glass-highlight);
+  --font-normal: 380; --font-medium: 450; --font-strong: 500;
+  --graph-edge: #7688a5;
+}

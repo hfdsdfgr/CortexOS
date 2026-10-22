@@ -1,6 +1,6 @@
 # CortexOS 开发与交互规范
 
-> 当前阅读入口（2026-10-22）：本文保留开发约束及阶段补充。产品状态见 [路线](roadmap.md)，UI 采用 [永久 V3 规范](design/ui-direction-v3.md)，实际完成见 [里程碑](milestone-log.md)；早期阶段描述不作为功能缺失或已完成的依据。
+> 当前阅读入口（2026-10-22）：本文保留开发约束及阶段补充。产品状态见 [路线](roadmap.md)，UI 按最新用户要求采用 [HTML参考界面规范](design/html-prototype-ui.md)，实际完成见 [里程碑](milestone-log.md)；早期阶段描述不作为功能缺失或已完成的依据。
 
 状态：实施规范 v0.2，2026-10-16。依据：`../development.md`。
 

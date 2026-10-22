@@ -2,7 +2,7 @@
 .markdown-content > :first-child { margin-top: 0; }
 .markdown-content > :last-child { margin-bottom: 0; }
 .markdown-content p { margin: 0 0 12px; white-space: pre-wrap; }
-.markdown-content :is(h1,h2,h3,h4,h5,h6) { margin: 24px 0 10px; line-height: 1.4; font-weight: 650; color: var(--text); }
+.markdown-content :is(h1,h2,h3,h4,h5,h6) { margin: 24px 0 10px; line-height: 1.4; font-weight: var(--font-strong); color: var(--text); }
 .markdown-content h1 { font-size: 1.5em; }
 .markdown-content h2 { font-size: 1.3em; }
 .markdown-content h3 { font-size: 1.15em; }
@@ -20,12 +20,12 @@
 .markdown-table-scroll { max-width: 100%; overflow-x: auto; margin: 16px 0; }
 .markdown-table-scroll table { border-collapse: collapse; width: max-content; min-width: 60%; }
 .markdown-table-scroll :is(th,td) { border: 1px solid var(--line); padding: 8px 12px; text-align: left; }
-.markdown-table-scroll th { background: var(--surface-subtle); font-weight: 600; }
+.markdown-table-scroll th { background: var(--surface-subtle); font-weight: var(--font-strong); }
 .markdown-content .task-list-item { list-style: none; }
 .markdown-content .task-list-item input { margin-right: 8px; }
 .composer-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.design-v3.reference-chat .composer textarea[hidden] { display: none; }
-.design-v3 .composer-preview { min-height: 42px; max-height: 240px; overflow-y: auto; font-size: 16px; line-height: 1.65; }
-.design-v3 .composer-model { min-width: 0; max-width: calc(100% - 96px); }
+.prototype-shell .composer textarea[hidden] { display: none; }
+.prototype-shell .composer-preview { min-height: 42px; max-height: 240px; overflow-y: auto; font-size: 16px; line-height: 1.65; }
+.prototype-shell .composer-model { min-width: 0; max-width: calc(100% - 96px); }
 .markdown-image { overflow-wrap: anywhere; }
 .markdown-source { white-space: pre-wrap; }

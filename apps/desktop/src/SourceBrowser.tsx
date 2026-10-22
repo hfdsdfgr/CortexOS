@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
+import { notify } from "./components/Toast";
 import { FileText, Plus, X } from "lucide-react";
 import { errorText } from "./studio";
 import type { EditKnowledge } from "./Knowledge";
@@ -226,6 +227,7 @@ export function SourceBrowser({
                       { workspaceId: workspace, ticket: preview.ticket },
                     );
                     if (!live.current) return;
+                    notify("文件文字副本已保存");
                     setPreview(null);
                     await refresh();
                     await read(saved.id, saved.latestVersion);

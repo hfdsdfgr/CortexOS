@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, Pencil } from "lucide-react";
+import { ArrowDown, PanelRight, Pencil } from "lucide-react";
 import { navigate, useNavigation } from "./navigation";
 import { ChatMessage } from "./components/ChatMessage";
 import { ChatComposer } from "./components/ChatComposer";
 import { EmptyState } from "./components/EmptyState";
 import { CognitiveInspector } from "./components/CognitiveInspector";
+import { ChatEvidence } from "./components/ChatEvidence";
+import { notify } from "./components/Toast";
 import { errorText, type Message, type Studio } from "./studio";
 
 export function ChatPage({
@@ -50,6 +52,14 @@ export function ChatPage({
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
+  const [evidenceOpen, setEvidenceOpen] = useState(() => window.innerWidth > 1100);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 1100px)");
+    const update = () => setEvidenceOpen(!query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  const latestRun = [...studio.messages].reverse().find(message => message.role === "assistant" && message.modelRunId)?.modelRunId ?? null;
 
   useEffect(() => {
     nearBottom.current = true;
@@ -64,7 +74,7 @@ export function ChatPage({
   }, [currentRunning]);
   useEffect(() => {
     if (!copied) return;
-    const timer = window.setTimeout(() => setCopied(null), 2000);
+    const timer = window.setTimeout(() => setCopied(null), 2500);
     return () => window.clearTimeout(timer);
   }, [copied]);
 
@@ -79,6 +89,7 @@ export function ChatPage({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(id);
+      notify("回答已复制");
     } catch {
       studio.reportError("无法自动复制，请选中回答文字后复制。");
     }
@@ -86,7 +97,7 @@ export function ChatPage({
 
   return (
     <div
-      className={`chat-layout live-chat-layout ${studio.messages.length ? "has-messages" : "is-empty"}`}
+      className={`chat-layout live-chat-layout ${studio.messages.length ? "has-messages" : "is-empty"} ${evidenceOpen ? "evidence-open" : "evidence-closed"}`}
     >
       <section className="chat-main" aria-labelledby="page-title">
         <header className="page-heading">
@@ -97,6 +108,7 @@ export function ChatPage({
             )}
           </div>
           <div className="heading-actions">
+            <button className={`icon-button evidence-toggle ${!evidenceOpen ? "is-closed" : ""}`} aria-label={evidenceOpen ? "收起回答依据栏" : "打开回答依据"} title="回答依据" onClick={() => setEvidenceOpen(!evidenceOpen)}><PanelRight size={17} /></button>
             {conversation && (
               <button
                 className="icon-button"
@@ -203,6 +215,7 @@ export function ChatPage({
           {copied ? "，回答已复制" : ""}
         </p>
       </section>
+      {evidenceOpen && <ChatEvidence studio={studio} runId={latestRun} onInspect={() => setSelectedRun(latestRun)} onClose={() => setEvidenceOpen(false)} />}
       <dialog
         className="form-dialog"
         ref={renameDialog}

@@ -84,7 +84,7 @@ test("reference chat layouts retain compose, streaming, inspection and offline s
       });
       expect(metrics.overflow).toBe(false);
       expect(metrics.composerBottom).toBeLessThan(height);
-      expect(metrics.sidebarWidth).toBe(240);
+      expect(metrics.sidebarWidth).toBe(252);
 
       await testInfo.attach(`layout-${width}`, {
         body: JSON.stringify(metrics, null, 2),
@@ -122,12 +122,12 @@ test("reference chat layouts retain compose, streaming, inspection and offline s
     });
     await page.getByRole("button", { name: "关闭执行详情" }).click();
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.getByRole("button", { name: "打开会话列表" }).click();
-    await expect(page.getByRole("dialog", { name: "会话列表" })).toBeVisible();
+    await page.getByRole("button", { name: "打开导航", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "导航与会话", exact: true })).toBeVisible();
     await expect(page.getByLabel("当前工作区", { exact: true })).toHaveCount(1);
     await page.keyboard.press("Escape");
     await expect(
-      page.getByRole("button", { name: "打开会话列表" }),
+      page.getByRole("button", { name: "打开导航", exact: true }),
     ).toBeFocused();
     expect(
       await page.evaluate(
@@ -143,7 +143,7 @@ test("reference chat layouts retain compose, streaming, inspection and offline s
       .getByRole("link", { name: "设置", exact: true })
       .click();
     await page.getByRole("button", { name: "检测连接", exact: true }).click();
-    await expect(page.getByText("模型未连接", { exact: true })).toBeVisible();
+    await expect(page.locator(".connection-status").getByText("未连接本地 Ollama", { exact: true })).toBeVisible();
     await page
       .getByRole("navigation")
       .getByRole("link", { name: "对话", exact: true })

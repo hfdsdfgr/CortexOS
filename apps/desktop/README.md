@@ -22,7 +22,7 @@ npm.cmd run tauri -- dev
 ## 代码入口
 
 - `src/App.tsx`、`src/studio.ts`：共享状态、页面和编辑器装配。
-- `src/components/`：对话和共享界面；`src/design-tokens.css`：V3 Tokens。
+- `src/components/`：对话、真实依据和共享界面；`src/styles/`：HTML 参考对应的主题、布局、控件、页面和动效 Tokens/样式。
 - `src/Knowledge.tsx`、`src/SourceBrowser.tsx`：知识版本与文件资料。
 - `src/Graph.tsx`、`src/ExecutionTrace.tsx`：知识与执行两种图；共享 `GraphViewport.tsx`。
 - `src-tauri/src/`：命令、数据库、模型、检索、来源及执行服务。

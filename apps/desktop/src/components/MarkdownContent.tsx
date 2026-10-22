@@ -1,19 +1,30 @@
 import { memo } from "react";
-import Markdown from "react-markdown";
+import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { decodeString } from "micromark-util-decode-string";
 import type { Parent, Root, RootContent } from "mdast";
 import type { CitationOccurrence } from "../studio";
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
+// Keep this component identity stable so already visible spans are not remounted per chunk.
+const StreamSpan: Components["span"] = ({ node, children, ...props }) => {
+  const order = node?.properties["data-stream-order"];
+  return typeof order === "number"
+    ? <span className="stream-fragment" style={{ animationDelay: `${(order % 6) * 18}ms` }}>{children}</span>
+    : <span {...props}>{children}</span>;
+};
 
 // Position checks use original UTF-16 offsets, never the rendered text as evidence.
 export const MarkdownContent = memo(function MarkdownContent({
   content,
   occurrences = [],
   onCitation,
+  streaming = false,
 }: {
   content: string;
   occurrences?: CitationOccurrence[];
   onCitation?: (item: CitationOccurrence) => void;
+  streaming?: boolean;
 }) {
   const citations = () => (tree: Root) => {
     const walk = (parent: Parent) => {
@@ -66,11 +77,30 @@ export const MarkdownContent = memo(function MarkdownContent({
     };
     walk(tree);
   };
+  const reveal = () => (tree: Root) => {
+    if (!streaming) return;
+    let order = 0;
+    const walk = (parent: Parent) => {
+      parent.children = parent.children.flatMap((child): RootContent[] => {
+        if (["link", "linkReference", "code", "inlineCode", "citation"].includes(child.type)) return [child];
+        if ("children" in child) walk(child as Parent);
+        if (child.type !== "text") return [child];
+        const letters = Array.from(graphemes.segment(child.value), part => part.segment);
+        const spans: RootContent[] = [];
+        for (let i = 0; i < letters.length; i += 8) {
+          spans.push({ type: "streamText", data: { hName: "span", hProperties: { "data-stream-order": order++ } }, children: [{ type: "text", value: letters.slice(i, i + 8).join("") }] } as unknown as RootContent);
+        }
+        return spans;
+      });
+    };
+    walk(tree);
+  };
   return (
     <Markdown
-      remarkPlugins={[remarkGfm, citations]}
+      remarkPlugins={[remarkGfm, citations, reveal]}
       urlTransform={(url) => (/^(https?:\/\/|mailto:)/i.test(url) ? url : "")}
       components={{
+        span: StreamSpan,
         button: ({ node, children }) => {
           const start = Number(node?.properties["data-citation-start"]);
           const item = occurrences.find((item) => item.start === start);

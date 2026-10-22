@@ -68,7 +68,7 @@ test("keyboard navigation and graph choice work; unavailable operations stay hon
     .getByRole("link", { name: "设置", exact: true })
     .click();
   await expect(
-    page.getByText("浏览器仅供界面预览", { exact: true }),
+    page.locator(".connection-status").getByText("浏览器仅供界面预览", { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "检测连接" })).toBeDisabled();
   await expect(page.getByLabel("服务地址")).toHaveAttribute("readonly", "");
@@ -110,6 +110,7 @@ for (const [width, height] of [
       await page.screenshot({
         path: testInfo.outputPath(`${route}-${width}.png`),
       });
+      if (width <= 900) await page.getByRole("button", { name: "打开导航", exact: true }).click();
       await page
         .getByRole("navigation")
         .getByRole("link", { name: "对话", exact: true })

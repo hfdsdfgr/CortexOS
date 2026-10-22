@@ -10,15 +10,12 @@ import { ChatPage } from "./Chat";
 import { GraphPage, RelationshipEditor, type EditEdge } from "./Graph";
 import { SettingsPage } from "./Settings";
 import { errorText, useStudio } from "./studio";
-import "./App.css";
-import "./chat-design.css";
-import "./knowledge-design.css";
-import "./compact-shell.css";
-import "./source-browser.css";
-import "./workspace-design.css";
-import "./design-tokens.css";
-import "./graph-design.css";
-import "./workspace-v3.css";
+import { notify } from "./components/Toast";
+import "./styles/tokens.css";
+import "./styles/layout.css";
+import "./styles/controls.css";
+import "./styles/features.css";
+import "./styles/motion.css";
 import "./markdown.css";
 import { useNavigation, navigate } from "./navigation";
 
@@ -179,6 +176,7 @@ export default function App() {
           request={edgeEdit}
           onClose={() => setEdgeEdit(null)}
           onSaved={() => {
+            notify("关系已保存");
             setEdgeEdit(null);
             setKnowledgeRevision((n) => n + 1);
           }}
@@ -189,6 +187,7 @@ export default function App() {
           request={knowledgeEdit}
           onClose={() => setKnowledgeEdit(null)}
           onSaved={(workspace, id) => {
+            notify("知识草稿已保存");
             setKnowledgeEdit(null);
             setKnowledgeSelection({ workspace, id });
             setKnowledgeRevision((n) => n + 1);
@@ -220,6 +219,7 @@ export default function App() {
             void studio
               .createWorkspace(workspaceName)
               .then(() => {
+                notify("工作区已创建");
                 navigate(page);
                 workspaceDialog.current?.close();
               })

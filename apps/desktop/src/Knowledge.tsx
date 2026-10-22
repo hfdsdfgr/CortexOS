@@ -4,6 +4,7 @@ import {
   type SourceRef,
 } from "./SourceBrowser";
 import { invoke } from "@tauri-apps/api/core";
+import { notify } from "./components/Toast";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -681,6 +682,7 @@ export function KnowledgeInspector({
                       .then(() => {
                         approval.current?.close();
                         setRefresh((n) => n + 1);
+                        notify("知识版本已确认");
                         onChanged?.();
                       })
                       .catch((e) => {

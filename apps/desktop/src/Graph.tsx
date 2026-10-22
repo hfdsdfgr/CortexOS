@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { notify } from "./components/Toast";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   lazy,
@@ -441,6 +442,7 @@ function KnowledgeGraph({
       dirtyPositions.current.clear();
       setUnsaved(false);
       setSaved(true);
+      notify("镜头与布局已保存");
     } catch (e) {
       setError(errorText(e));
     } finally {

@@ -1,5 +1,44 @@
 # 里程碑记录
 
+## 2026-10-22：Full Prototype HTML前端重构
+
+用户明确要求用reference中的Full Prototype HTML彻底替换旧视觉，仅改前端、保留全部功能，并应用五项细节。本轮以design/html-prototype-ui.md替代V3；读取总纲/开发规范/计划、AGENTS及新HTML，使用frontend-design、ui-ux-pro-max与ponytail。技能通用搜索返回的Hero方案不适合已有桌面应用，实际配色、宽度、玻璃层级均以用户HTML为准；不引入外部字体或新依赖。reference HTML及用户其他参考图保持原样，未纳入提交。
+
+### 实际变更
+
+统一252px侧栏、720px对话与输入、336px依据栏，重排知识/图谱/设置；主题浅/深/跟随系统，暗色字重降低；双环输入框、微色阶、数字等宽、Grid自适应、balance/pretty换行、短弹性反馈和2500ms成功提示。新到片段按8个字素渐显，Intl.Segmenter保留组合字符，已显示片段DOM不反复挂载；Markdown原文与引用UTF-16协议不变。右侧依据只读取get_run的真实知识/版本/估算量，连线仅表示实际纳入请求，不搬入原型的模拟冲突、检索算法或数字。窗口拖动和图谱420ms/可打断规则保留。
+
+新组件及逐文件职责见设计文档；删除9份旧覆盖CSS，统一为5份样式和Markdown入口。原页面事务/接口/状态管理复用；git diff核对src-tauri、package.json和package-lock.json无变化，无Rust源码、权限、迁移、模型请求或锁文件修改。App/Knowledge/Graph/Source仅接呈现成功提示，错误、未保存和历史状态保留。窄窗统一导航使用原生dialog，展开时只挂载一套侧栏控件，避免重复ID与工作区选择。
+
+### 构建、参考与截图
+
+所有命令从本独立仓库执行，构建/Playwright从apps/desktop。npm.cmd run typecheck首次通过；npm.cmd run dev提供loopback预览。Edge本地打开HTML时阻止外部字体请求，等待原型入场完成后截图四页；首轮截图过早处于动画空白，已重取且未作为最终对照。初次打印HTML遇宿主cp950无法输出字符，改UTF-8输出。一次过长内联PowerShell写入被Windows 206命令长度拒绝，未写入文件，改apply_patch分文件。
+
+npm.cmd run tauri -- build --debug --no-bundle成功6次，分别Rust约15.05、15.99、12.87、11.43、21.75和16.70秒；补Intl.Segmenter时一次类型检查失败，tsconfig仅增加ES2022.Intl类型后恢复通过。最终类型/Vite/Windows调试构建通过，CSS43.33kB、主JS540.78kB/gzip163.35、图谱941.05kB；保留既有500kB警告，不称为已做包体优化。构建顺序执行，没有并行混用dist。
+
+浏览器实际四页及深色首检无pageerror。Node/Playwright测量1600×900下参考side/cmp/ev与实际sidebar/composer/evidence均为252/720/336px，存artifacts/prototype-ui/layout-comparison.json。用真实原生24张图生成浅/深联系表并查看，另查看代表原图和375窄窗；不是设计图或静态背景冒充UI。最终构建的24张+2张窄窗图在prototype-ui-context-final目录，参考/联系表在prototype-ui目录。媒体查询仿真、CDP内容视口与真实Windows缩放分别报告，未改系统设置。
+
+### 专项命令与修正记录
+
+共同命令前缀为npx.cmd playwright test，后附下列文件、--project desktop、--grep（有时使用）及--output ../../artifacts/对应目录，均为隔离数据和可控HTTP服务，不是新真实Ollama验收：
+
+- markdown-camera.spec.ts trace.spec.ts graph.spec.ts --grep "native Markdown|execution graph|native graph persists" → prototype-ui-regression：1通过2失败。图谱因旧构建导航名改变，已恢复原可访问名称；Markdown因右依据栏盖住错误关闭，修正层级与错误时偏移，后复验通过。
+- prototype-ui.spec.ts markdown-camera.spec.ts graph.spec.ts sources.spec.ts --grep "HTML reference|native Markdown|native graph persists|authorized snapshots" → prototype-ui-acceptance：2通过2失败。新增检查原先假定自动命中3条，实际只有2条，改为UI明确勾选3条再校验，未篡改业务结果。图谱固定坐标落入面板，改elementFromPoint核对真实画布坐标，并补回新CSS中的列表开关显示规则。
+- prototype-ui.spec.ts graph.spec.ts → prototype-ui-focused：1通过1失败；保存提示与状态同文导致定位歧义，提示改为“镜头与布局已保存”，视图状态保留。
+- prototype-ui.spec.ts graph.spec.ts markdown-camera.spec.ts sources.spec.ts trace.spec.ts knowledge-layout.spec.ts chat-design.spec.ts --grep "HTML reference|native graph persists|native Markdown|native focus|authorized snapshots|execution graph|reference sidebar|native chat" → prototype-ui-final：实际7条，6通过，知识宽度因860.000061px舍入失败；上限检查允许1 CSS px舍入，未放宽实际860px样式。
+- knowledge-layout.spec.ts chat-design.spec.ts → prototype-ui-reading-final：知识2.6s通过，对话仍用旧“打开会话列表”入口超时。改为新统一导航并验证ESC焦点返回，同时修正重复隐藏侧栏挂载问题。
+- prototype-ui.spec.ts markdown-camera.spec.ts chat-design.spec.ts knowledge-layout.spec.ts --grep "HTML reference|native Markdown|reference chat|reference sidebar" → prototype-ui-delivery：3通过1失败，离线断言指向新设计隐藏的顶栏副本；改查设置页实际连接状态。chat-design.spec.ts → prototype-ui-chat-final：1条8.3s通过，总9.0s。
+- context.spec.ts prototype-ui.spec.ts → prototype-ui-context-final：最终截图/主题/动画专项12.0s通过，上下文旧脚本漏列P1-B早已存在的citations_checked事件。context.spec.ts → prototype-ui-context-recheck / -confirmed：又发现旧“生效v2/预算/完整请求快照”等用词，依现有UI及追加事件对齐断言并增加10s动作等待；不改后端。context.spec.ts → prototype-ui-context-complete：1条4.0s通过，总4.8s，实际请求/生效版本变化、预览、模型检查失败和重启快照保留均通过。
+- app.spec.ts --project edge → prototype-ui-browser-final：7条通过，总8.9s，覆盖主导航/返回/深链、键盘及1440、1280、1024、800、375宽度的可达性和无溢出。仅浏览器预览，不代替桌面结果。
+
+最终不同的9项原生专项均有通过结果：图谱11.7s、知识阅读2.8s、Markdown4.2s、镜头10.2s、新UI12.0s、来源6.1s、执行图9.3s、对话8.3s、上下文4.0s。是按修改范围分次专项，不是一轮全量套件；未跑单元测试。新UI专项验证三知识确来自请求、渐显老片段DOM连续、主题记忆/跟随媒体查询、三尺寸浅深四页、800/375抽屉、2500ms复制提示、无pageerror。图谱/来源/执行专项继续核对版本、关系、视角、停用与跨页。
+
+### 边界与停止点
+
+保留正式Release窗口及数据，测试不访问正式库；不覆盖公开v0.1.0或改其标签。字体用系统回退，内容为真实中文数据，窗口/审核等额外入口和真实3D会与原型存在必要差异；没有像素相似率声明。系统150%、实际读屏、长时真实模型与超长流式性能仍未测。验收文档列明当前差异。本轮完成后停在UI人工验收，不推进Decision Lab。提交排除用户原有desktop.spec.ts与reference文件，正常manager推送；最终差异/链接及提交检查接下方。
+
+最终静态复核：10份Markdown与50个本地链接、围栏和UTF-8通过；6个CSS入口均存在；git diff --check通过（仅既有CRLF提示），src-tauri/依赖清单和锁文件无差异，Gittoken.txt仍忽略。代码在codex/html-prototype-ui独立分支交付，正式v0.1.0及main不在本轮替换。最终调试程序为apps/desktop/src-tauri/target/debug/cortexos-desktop.exe；使用者退出旧窗口后可手动打开验收。未自动关闭用户窗口或改动正式数据库。
+
 ## 2026-10-22：README改为产品与用途导向
 
 按用户反馈重新组织README，突出项目讨论、可复用知识、关系探索、回答依据及学习研究/软件开发/产品项目/写作/个人知识/工作资料六类用途；去掉镜头修复、构建验证和开发过程叙述，开发细节改由链接进入专门文档。同步入门指南，说明Qwen轻量模型仅为示例和初始默认值，可选择其他本机Ollama部署的兼容本地对话模型。根据ollama.rs实际检查保留本地GGUF、固定loopback接口、不接受云端别名等兼容边界，不把“其他本地模型”扩写成支持任意部署工具接口。仅修改文档，不修改功能、默认模型或发布资产，不运行单元测试。

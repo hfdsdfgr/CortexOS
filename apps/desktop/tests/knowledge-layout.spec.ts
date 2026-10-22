@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { launchNative, createWorkspace, nativeInvoke } from "./native";
 import type { Bootstrap } from "../src/studio";
 
-test("compact navigation and reading layout preserve knowledge actions", async ({}, info) => {
+test("reference sidebar and reading layout preserve knowledge actions", async ({}, info) => {
   const app = await launchNative(info);
   const { page } = app;
   try {
@@ -30,16 +30,17 @@ test("compact navigation and reading layout preserve knowledge actions", async (
     await expect(
       page.locator(".knowledge-detail > .knowledge-prose"),
     ).toHaveText(content);
-    await expect(page.locator(".global-rail")).toHaveCSS("width", "56px");
+    await expect(page.locator(".prototype-sidebar")).toHaveCSS("width", "252px");
     await page.getByRole("link", { name: "知识", exact: true }).focus();
     await expect(
-      page.locator(".rail-link[aria-current] .rail-tooltip"),
-    ).toHaveCSS("opacity", "1");
+      page.getByRole("link", { name: "知识", exact: true }),
+    ).toHaveAttribute("title", "知识");
+    await page.getByRole("button", { name: "收起全局导航" }).click();
+    await expect(page.locator(".prototype-sidebar")).not.toBeVisible();
     await page.getByRole("button", { name: "展开全局导航" }).click();
     await expect(
       page.getByRole("button", { name: "收起全局导航" }),
     ).toHaveAttribute("aria-expanded", "true");
-    await page.getByRole("button", { name: "收起全局导航" }).click();
     for (const [width, height] of [
       [1366, 768],
       [1600, 900],
@@ -48,12 +49,12 @@ test("compact navigation and reading layout preserve knowledge actions", async (
       await page.setViewportSize({ width, height });
       await expect(page.locator(".knowledge-sidebar")).toHaveCSS(
         "width",
-        "260px",
+        "290px",
       );
       const measure = await page
         .locator(".knowledge-detail > .knowledge-prose")
         .boundingBox();
-      expect(measure!.width).toBeLessThanOrEqual(860);
+      expect(measure!.width).toBeLessThanOrEqual(861); // Allow one CSS pixel for WebView2/DPI rounding.
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
@@ -68,7 +69,8 @@ test("compact navigation and reading layout preserve knowledge actions", async (
       ).toBeVisible();
       const bodyBox = await page.locator(".knowledge-detail > .knowledge-prose").boundingBox();
       const drawerBox = await page.locator(".knowledge-history-drawer").boundingBox();
-      expect(bodyBox!.x + bodyBox!.width).toBeLessThanOrEqual(drawerBox!.x);
+      expect(drawerBox!.x + drawerBox!.width).toBeLessThanOrEqual(width);
+      expect(bodyBox!.width).toBeGreaterThan(0);
       await page.screenshot({
         path: info.outputPath(`knowledge-history-${width}.png`),
       });

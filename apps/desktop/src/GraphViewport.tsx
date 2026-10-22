@@ -1,7 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { GraphCamera } from "./GraphCamera";
 import { GraphLabels } from "./GraphLabels";
-import { Component, useEffect, useMemo, type ReactNode, type Ref } from "react";
+import { Component, useEffect, useMemo, useState, type ReactNode, type Ref } from "react";
 import * as THREE from "three";
 
 import type { Point } from "./graph-data";
@@ -45,7 +45,13 @@ interface Props {
   onFocused?: () => void;
 }
 function Scene(props: Props) {
-  const { camera, gl } = useThree();
+  const { camera, gl, invalidate } = useThree();
+  const [paletteRevision, setPaletteRevision] = useState(0);
+  useEffect(() => {
+    const observer = new MutationObserver(() => { setPaletteRevision(value => value + 1); invalidate(); });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-color-scheme"] });
+    return () => observer.disconnect();
+  }, [invalidate]);
   const { nodes, edges, positions, selected, onChange } = props;
   const colors = useMemo(() => {
     const styles = getComputedStyle(gl.domElement);
@@ -63,7 +69,7 @@ function Scene(props: Props) {
         "conflict",
       ].map((kind) => [kind, styles.getPropertyValue(`--node-${kind}`).trim()]),
     );
-  }, [gl]);
+  }, [gl, paletteRevision]);
   const edgeColors = useMemo(() => {
     const styles = getComputedStyle(gl.domElement);
     return Object.fromEntries(
@@ -79,7 +85,7 @@ function Scene(props: Props) {
         new THREE.Color(styles.getPropertyValue(name).trim()),
       ]),
     );
-  }, [gl]);
+  }, [gl, paletteRevision]);
   const nodeGroups = useMemo(() => {
     const groups = new Map<string, DisplayNode[]>();
     for (const node of nodes) {

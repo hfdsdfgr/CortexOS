@@ -45,6 +45,7 @@ export function AnswerContent({
         ) : (
           <MarkdownContent
             content={message.content}
+            streaming={message.role === "assistant" && message.status === "streaming"}
             occurrences={compatible ? report?.occurrences : []}
             onCitation={setSelected}
           />

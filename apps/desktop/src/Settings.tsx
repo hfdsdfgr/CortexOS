@@ -7,12 +7,12 @@ import {
   Unplug,
 } from "lucide-react";
 import { errorText, type Studio } from "./studio";
+import { notify } from "./components/Toast";
 
 export function SettingsPage({ studio }: { studio: Studio }) {
   const draft = studio.settingsDraft;
   const setDraft = studio.setSettingsDraft;
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [section, setSection] = useState("model");
   const installed = studio.health?.models.some(
@@ -24,7 +24,6 @@ export function SettingsPage({ studio }: { studio: Studio }) {
     value: string,
   ) => {
     setDraft((current) => ({ ...current, [name]: Number(value) }));
-    setSaved(false);
   };
   return (
     <section className="standard-page" aria-labelledby="page-title">
@@ -68,11 +67,10 @@ export function SettingsPage({ studio }: { studio: Studio }) {
             onSubmit={(event) => {
               event.preventDefault();
               setSaving(true);
-              setSaved(false);
               setError(null);
               void studio
                 .saveSettings(draft)
-                .then(() => setSaved(true))
+                .then(() => notify("设置已保存"))
                 .catch((value) => setError(errorText(value)))
                 .finally(() => setSaving(false));
             }}
@@ -142,7 +140,6 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                     ...current,
                     model: event.target.value,
                   }));
-                  setSaved(false);
                 }}
               >
                 {!installed && (
@@ -247,7 +244,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                 {saving ? "正在保存…" : "保存设置"}
               </button>
               <span className="inline-help" role="status">
-                {saved ? "设置已保存" : changed ? "有未保存的更改" : ""}
+                {changed ? "有未保存的更改" : ""}
               </span>
             </div>
           </form>

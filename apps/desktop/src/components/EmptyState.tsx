@@ -13,20 +13,9 @@ export function EmptyState({
     <div className="chat-empty">
       <div className="welcome-heading">
         <svg className="cognitive-mark" viewBox="0 0 80 80" aria-hidden="true">
-          <defs>
-            <pattern
-              id="mark-dots"
-              width="6"
-              height="6"
-              patternUnits="userSpaceOnUse"
-            >
-              <circle cx="3" cy="3" r="1.8" fill="currentColor" />
-            </pattern>
-          </defs>
-          <path
-            d="M40 2 49 27 73 14 57 37 79 48 53 50 59 76 40 57 19 78 26 51 1 43 27 33 14 8 36 25Z"
-            fill="url(#mark-dots)"
-          />
+          <circle cx="40" cy="40" r="30" fill="none" stroke="currentColor" strokeWidth="2" />
+          <circle cx="40" cy="40" r="11" fill="currentColor" />
+          <circle cx="58" cy="23" r="6" fill="var(--success)" />
         </svg>
         <h2>欢迎使用 CortexOS</h2>
       </div>

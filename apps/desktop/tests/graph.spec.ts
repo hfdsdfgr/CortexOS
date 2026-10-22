@@ -1,11 +1,21 @@
 import { writeFile } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { createWorkspace, launchNative, nativeInvoke } from "./native";
 import type { Bootstrap } from "../src/studio";
 import type { GraphData } from "../src/graph-data";
 import type { KnowledgeDetail } from "../src/Knowledge";
 
 test.use({ actionTimeout: 10000 });
+async function uncoveredCanvasPoint(page: Page) {
+  return page.locator('canvas[data-webgl-ready="true"]').evaluate(canvas => {
+    const box = canvas.getBoundingClientRect();
+    for (const y of [30, 100, box.height / 2]) for (const x of [30, box.width / 2, box.width - 40]) {
+      const point = { x: box.x + x, y: box.y + y };
+      if (document.elementFromPoint(point.x, point.y) === canvas) return point;
+    }
+    throw new Error("No exposed canvas point for real pointer input");
+  });
+}
 test("native graph persists relationships, independent views and knowledge edits", async ({}, testInfo) => {
   test.setTimeout(120000);
   let app = await launchNative(testInfo);
@@ -171,9 +181,10 @@ test("native graph persists relationships, independent views and knowledge edits
     await expect(page.locator(".graph-inspector")).not.toBeVisible();
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
-    await page.mouse.move(box!.x + 30, box!.y + 70);
+    const dragPoint = await uncoveredCanvasPoint(page);
+    await page.mouse.move(dragPoint.x, dragPoint.y);
     await page.mouse.down();
-    await page.mouse.move(box!.x + 110, box!.y + 110, { steps: 8 });
+    await page.mouse.move(dragPoint.x + 80, dragPoint.y + 40, { steps: 8 });
     await page.mouse.up();
     await page.getByRole("button", { name: "保存视图", exact: true }).click();
     await expect(page.getByText("视图已保存", { exact: true })).toBeVisible();
@@ -266,9 +277,8 @@ test("native graph persists relationships, independent views and knowledge edits
     });
     expect(knowledge.versions.length).toBe(2);
     expect(knowledge.node.effectiveVersion).toBe(2);
-    const reopenedCanvas = page.locator('canvas[data-webgl-ready="true"]');
-    const reopenedBox = await reopenedCanvas.boundingBox();
-    await page.mouse.click(reopenedBox!.x + 25, reopenedBox!.y + 75);
+    const reopenedPoint = await uncoveredCanvasPoint(page);
+    await page.mouse.click(reopenedPoint.x, reopenedPoint.y);
     await page.getByRole("button", { name: "保存视图", exact: true }).click();
     await expect(page.getByText("视图已保存", { exact: true })).toBeVisible();
     const recaptured = await nativeInvoke<GraphData>(
