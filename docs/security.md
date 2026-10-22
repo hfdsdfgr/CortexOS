@@ -91,3 +91,9 @@ main窗口增加query_graph_nodes、load_graph_node、load_graph_links、query_g
 ## 多中心范围参数
 
 原query_graph_nodes新增rootNodeIds，与rootNodeId互斥；最多20个、拒绝重复并逐项检查归属，再将JSON数组作为绑定参数交给json_each。不增加命令、capability、前端文件或数据库权限。空列表明确返回空范围，不能视为不加限制。各中心读取与最终有效连线继续校验同一数据快照，跨工作区拒绝；探索成员来源只属于前端浏览状态。
+
+## Windows内部交付边界（2026-10-22）
+
+NSIS明确currentUser，内部0.1.0包未签名，无公开发布/自动更新、Ollama或权重捆绑；已有WebView2时不下载运行时，缺少时默认引导程序需要联网，干净系统未验。许可审查与通用备份恢复完成前不开放公开测试。卸载的“删除应用数据”是独立用户选择，本轮静默检查未选择它。
+
+安装升级检查使用独立产品名/identifier及仓库artifacts内数据，通过/NS跳过快捷方式；专用HKCU安装项随检查卸载清理，数据留下审计。debug伴随包复用已有仅调试的CDP、文件夹与本机服务覆盖，不改生产边界。正式Release的lib.rs/commands.rs/ollama.rs由cfg(debug_assertions)排除这些入口；本轮只构建正式Release，运行证据来自伴随包。没有新Tauri权限或数据库迁移。正式用户数据未读取或修改。

@@ -166,3 +166,11 @@ graph-exploration.spec.ts在真实WebView2与隔离70节点库验证：A59/B17/�
 graph-reading.spec.ts在真实WebView2使用80节点隔离夹具，检查密集与长中英文标题、末尾节点选中优先、草稿标记不被标题挤掉、屏幕/面板/标签矩形避让、相机后方/画布外裁剪、连线名称开关和真实关系历史、三尺寸、空闲350ms绘制不增长及完整GraphData不变。复用实例点击/位置/相机、多中心、执行图和浏览器演示专项。
 
 三规模graph-baseline记录24个标签槽与实际可见数量，延用首页/全量分开计时和绘制提交观测；千节点stream-profile继续要求固定流零标签层重建/零静置绘制。实际命令、当前性能单位和未验证范围见graph-reading与milestone-log，不运行单元或全套测试。
+
+## Windows内部交付专项
+
+只在CORTEXOS_DELIVERY_CHECK=1时启用delivery项目。先以tests/fixtures/delivery-previous.json及delivery-current.json构建两份独立标识的debug NSIS包，再构建正式Release并恢复默认debug程序；命令见windows-delivery。实际安装路径限定仓库artifacts，/S /NS不建快捷方式。检查版本与文件哈希、重新启动后的GraphData、四条知识版本及旧生效/新草稿、审核、消息/事件/请求快照、来源及布局的全表哈希，卸载应用文件删除而数据保留。Python标准库脚本仅接受artifacts内数据库，检查完整性、外键和6→7合成库的一致性备份。
+
+窗口用真实HWND缩放，不调用CDP视口仿真；最大化/还原用键盘Enter，可访问树检查有意义的控件名称。它们不代替鼠标拖动、系统150%和真实读屏。正式Release只构建；伴随包debug测试入口不作为生产特性。用户选择保留系统设置，人工表全部待执行。
+
+chat.spec.ts可通过CORTEXOS_CHAT_SOAK_MS=60000/120000延长既有受控流，默认0。取消后检查SQLite内容与状态；新增真实HTTP连接销毁，确认有效部分输出及run_failed。原格式错误、30秒超时、关闭和中断重启断言保留。必要专项只运行delivery及chat，不跑单元或全套测试；不把合成流当作真实模型长期稳定性。实际命令与结果见milestone-log。

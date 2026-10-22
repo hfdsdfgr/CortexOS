@@ -11,6 +11,7 @@ export async function launchNative(
     dataDirectory?: string;
     profileDirectory?: string;
     sourcePath?: string;
+    executable?: string;
   } = {},
 ) {
   const reservation = createServer();
@@ -26,7 +27,7 @@ export async function launchNative(
   const application = spawn(
     development
       ? process.execPath
-      : resolve("src-tauri/target/debug/cortexos-desktop.exe"),
+      : (options.executable ?? resolve("src-tauri/target/debug/cortexos-desktop.exe")),
     development
       ? [
           resolve("node_modules/@tauri-apps/cli/tauri.js"),

@@ -21,6 +21,9 @@ export default defineConfig({
     timeout: 30_000,
   },
   projects: [
+    ...(process.env.CORTEXOS_DELIVERY_CHECK === "1"
+      ? [{ name: "delivery", testMatch: "windows-delivery.spec.ts" }]
+      : []),
     { name: "edge", testMatch: ["app.spec.ts", "graph-preview.spec.ts"] },
     {
       name: "desktop",

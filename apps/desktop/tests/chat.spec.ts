@@ -4,7 +4,11 @@ import { createWorkspace, launchNative, nativeInvoke } from "./native";
 import type { Bootstrap, Message, RunDetail } from "../src/studio";
 
 test("native chat preserves real SQLite data through cancellation, errors and restart", async ({}, testInfo) => {
-  test.setTimeout(150_000);
+  const soakMs = Number(process.env.CORTEXOS_CHAT_SOAK_MS ?? "0");
+  if (![0, 60000, 120000].includes(soakMs))
+    throw Error("Unsupported soak duration");
+  test.setTimeout(150_000 + soakMs);
+  let observedSoakMs = 0;
   let mode = "complete";
   const requests: Record<string, unknown>[] = [];
   const server = createServer(async (request, response) => {
@@ -59,6 +63,11 @@ test("native chat preserves real SQLite data through cancellation, errors and re
     }
     if (mode === "malformed") {
       response.end(frame("格式错误前的有效内容") + "{invalid-json}\n");
+      return;
+    }
+    if (mode === "disconnect") {
+      response.write(frame("服务断开前的有效内容"));
+      setTimeout(() => response.destroy(), 300);
       return;
     }
     const bytes = Buffer.from(frame("用于回归检查的完整回答。", true));
@@ -123,6 +132,14 @@ test("native chat preserves real SQLite data through cancellation, errors and re
         .last()
         .locator(".message-content"),
     ).toContainText("已经生成的部分内容");
+    if (soakMs) {
+      const started = Date.now();
+      await page.waitForTimeout(soakMs);
+      observedSoakMs = Date.now() - started;
+      await expect(
+        page.getByRole("button", { name: "停止生成", exact: true }),
+      ).toBeVisible();
+    }
     await createWorkspace(page, "回归项目 B");
     await page
       .getByRole("textbox", { name: "你的问题", exact: true })
@@ -152,6 +169,16 @@ test("native chat preserves real SQLite data through cancellation, errors and re
     const cancelled = messages.at(-1)!;
     expect(cancelled.content).toContain("已经生成的部分内容");
     expect(cancelled.status).toBe("cancelled");
+    await testInfo.attach("controlled-stream-duration", {
+      body: JSON.stringify({
+        source: "controlled HTTP fixture, not real model longevity",
+        requestedMs: soakMs,
+        observedMs: observedSoakMs,
+        savedCharacters: cancelled.content.length,
+        status: cancelled.status,
+      }),
+      contentType: "application/json",
+    });
     const cancelledRun = await nativeInvoke<RunDetail>(page, "get_run", {
       workspaceId: workspaceA,
       runId: cancelled.modelRunId,
@@ -174,6 +201,31 @@ test("native chat preserves real SQLite data through cancellation, errors and re
         runId: cancelled.modelRunId,
       }),
     ).rejects.toThrow(/不属于当前工作区/);
+
+    mode = "disconnect";
+    await page
+      .getByRole("textbox", { name: "你的问题", exact: true })
+      .fill("真实连接断开检查");
+    await page.getByRole("button", { name: "发送消息", exact: true }).click();
+    await expect(
+      page
+        .getByRole("article", { name: "模型回答" })
+        .last()
+        .getByText("生成失败", { exact: true }),
+    ).toBeVisible();
+    const disconnected = (
+      await nativeInvoke<Message[]>(page, "load_messages", {
+        workspaceId: workspaceA,
+        conversationId: conversationA,
+      })
+    ).at(-1)!;
+    expect(disconnected.status).toBe("failed");
+    expect(disconnected.content).toBe("服务断开前的有效内容");
+    const disconnectedRun = await nativeInvoke<RunDetail>(page, "get_run", {
+      workspaceId: workspaceA,
+      runId: disconnected.modelRunId,
+    });
+    expect(disconnectedRun.events.at(-1)!.kind).toBe("run_failed");
 
     mode = "malformed";
     await page

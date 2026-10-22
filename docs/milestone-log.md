@@ -888,3 +888,40 @@ npm/npx命令目录为apps/desktop；原生构建及检查使用require_escalate
 避让只解决文本/面板矩形，不解决3D几何遮挡或节点布局。选中节点在镜头外、面板覆盖或无空位时，标签可隐藏，全文仍在列表/详情。24槽限制DOM数量，候选投影和排序仍随已加载节点/相关边增长；没有10,000节点、20中心性能承诺。系统150%、完整读屏、真实模型高负载/长时、安装升级未验；此前高显存长回答根因仍未确定。
 
 本轮停止在第4项验收点。后续剩第5Windows桌面交付、第6Decision Lab/评估，LoRA后置；不宣称整个P1-C或项目已完成。
+
+## 2026-10-22 Windows内部交付：自动部分
+
+用户继续第5项；复读development、开发规范、实施计划、AGENTS和V3，先记录ADR0017。用户异步选择“保留系统设置，提供人工检查表”，不擅改Windows缩放或启动读屏。遵守不跑非必要单元测试，只做本切片必要原生安装/恢复检查。使用ponytail保持现有NSIS、数据/模型逻辑、语义样式及已有测试；没有新增依赖或系统安装。
+
+### 实际修改
+
+- tauri.conf.json明确currentUser及SimpChinese/English安装语言和选择入口，正式版本仍0.1.0。
+- tests/fixtures/delivery-previous.json、delivery-current.json以独立产品名CortexOS Delivery Check和com.cortexos.deliverycheck生成同源0.0.9/0.1.0调试伴随包。不是历史发行代码兼容证明。
+- native.ts只新增可选executable用于启动实际安装后的程序；生产程序无调试后门变更。playwright配置用CORTEXOS_DELIVERY_CHECK显式开启独立项目。
+- 新windows-delivery.spec.ts实际安装、升级、卸载，验证文件版本与完整数据、实际HWND缩放、键盘窗口按钮、可访问树和迁移备份；delivery-db.py用Python标准库在artifacts内建立6版合成库并只读校验/哈希，拒绝覆盖既有seed。
+- chat.spec.ts在既有检查加入可选60/120秒流和真实HTTP连接销毁；保留取消、工作区、格式错误、超时、关闭/中断恢复及重试。没有修改业务代码、数据库、模型逻辑或V3布局，两个锁文件未改。
+- 文档为ADR0017、windows-delivery、README、implementation-plan、refactoring-plan、test-plan、security和本日志。用户desktop.spec.ts换行差异及reference新增文件保留、不纳入提交。
+
+### 实际命令与结果
+
+以下npm/npx命令目录为apps/desktop；构建与原生操作使用require_escalated、隔离数据与专用WebView目录。没有运行单元或全套测试、没有访问正式数据。
+
+- npm.cmd run tauri -- build --debug --bundles nsis --config tests/fixtures/delivery-previous.json：通过，Rust15.94s；构建器首次下载并校验NSIS3.13和nsis_tauri_utils0.5.3到Tauri缓存，不是系统软件安装。隔离旧版包4.04MiB。
+- 同命令配置delivery-current.json：通过，Rust13.09s；当前包4.04MiB。两个包内容源码相同，仅配置版本不同。
+- npm.cmd run tauri -- build --bundles nsis：通过，首次完整优化Rust3分33秒，正式包2,902,672字节。Vite保留既有940.72kB图谱块大于500kB提示；release另有lib.rs/commands.rs仅debug使用变量的两条unused_mut提示，未当失败或宣称已消除。
+- 初次npm.cmd run typecheck发现测试使用目标库不支持的replaceAll及GraphNode不含content（TS2550/TS2339）。改为replace正则、断言摘要标题，全文另外由完整知识版本哈希校验；后续typecheck通过。
+- npx.cmd --yes prettier@3.9.10 --write整理新检查及两份配置首次因沙箱npm缓存EPERM失败；在require_escalated下重跑通过，未改项目依赖；后续整理chat专项和最终delivery检查。
+- CORTEXOS_DELIVERY_CHECK=1；npx.cmd playwright test windows-delivery.spec.ts --project delivery --output ../../artifacts/windows-delivery-first：1条通过，总21.1s、用例19.1s，覆盖实际安装升级/迁移/卸载和窗口/名称。
+- npm.cmd run tauri -- build --debug --no-bundle：通过，Rust22.16s；将默认调试程序恢复正式identifier，未把伴随包留为日常开发程序。
+- CORTEXOS_DELIVERY_CHECK=1及CORTEXOS_CHAT_SOAK_MS=60000；npx.cmd playwright test windows-delivery.spec.ts chat.spec.ts --project delivery --project desktop --output ../../artifacts/windows-delivery-acceptance：2条通过，总1.8分钟；安装专项7.0s、恢复专项约1.6分钟。包含60秒流、取消、真实HTTP断连接、格式错误、30秒超时、关闭取消、强制中断重启以及云端模型阻止。
+- 最终补充四条知识版本/旧生效新草稿、审核记录和卸载应用文件删除断言，格式化、npm.cmd run typecheck通过；仅补跑npx.cmd playwright test windows-delivery.spec.ts --project delivery --output ../../artifacts/windows-delivery-final：1条通过，总9.1s、用例6.9s；没有重跑已通过的60秒恢复专项。
+- Get-FileHash、Get-AuthenticodeSignature读取正式包：SHA256为108e763c7c76aad9c573253b847d9b8a95600e70a779f2c3da37840316d2b691，NotSigned。写实际manifest到artifacts/windows-delivery-release，不提交安装包。Python只读隔离SQLite汇总真实事件：model_response_received至run_cancelled间隔60.202s，保留379个字符、cancelled；间隔包含切工作区/点击开销，不冒称精确计时或真实模型。结果写controlled-stream-evidence.json。
+- 已查看首次及最终已安装应用截图和失败恢复截图；git diff --check通过，仅既有CRLF提示。提交前再次确认独立仓库及凭据管理器，Gittoken.txt保持忽略，未读取正文。
+
+### 结果和停止门槛
+
+调试伴随包实际安装0.0.9→0.1.0，已安装文件版本匹配；升级前后及重启/默认卸载后全表数据哈希一致。最终夹具含2条消息、1次运行及10个事件、请求快照、4条知识版本/1次审核（旧生效版与新草稿同时保留）、2条关系修订、1份来源副本及相机/位置。完整GraphData相等。6→7迁移保留原知识和工作区，备份全表哈希与旧库一致，完整性/外键均通过；默认卸载删除应用exe，保留隔离数据。
+
+真实HWND从原矩形调整到1200×800物理窗口，无横向溢出；GetDpiForWindow120及WebView2 DPR1.25，当前为125%环境。键盘Enter最大化/还原和关键控件可访问名称通过；没有以此冒称鼠标拖动或读屏实测。截图路径、三类构建与测量边界见windows-delivery。
+
+本轮交付第5项自动部分，尚未达到第5项整体验收门槛。正式Release仅构建、未安装启动，安装运行证据来自隔离debug伴随包；系统150%、鼠标窗口拖动、真实读屏、至少30分钟真实模型使用和干净系统WebView2安装仍未验证。用户选择的人工检查表已交付，全部保持待执行。以前千节点/真实512和2048观测保留原边界，高显存旧超时根因没有新结论。停止，等待人工结果及后续确认；不进入Decision Lab，不标P1-C完成或公开发行。
