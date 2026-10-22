@@ -1,8 +1,8 @@
-# Windows 内部交付记录
+# Windows 发布与验收记录
 
-2026-10-22 发布补记：用户授权发布后，已将下述现有安装包发布到私有仓库的 [v0.1.0 预发布版](https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0)，附 SHA256SUMS.txt。标签精确指向 b7ad41779f28649032ee31c51d66f5a06807f2d2；未改变仓库可见性或启用自动更新。发布说明见 [releases/v0.1.0.md](releases/v0.1.0.md)。以下人工验收边界继续有效。
+2026-10-22，当前发布为 [v0.1.0 预发布版](https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0)。仓库及资产已公开，安装包与 SHA256SUMS.txt 可直接下载。标签指向 b7ad41779f28649032ee31c51d66f5a06807f2d2；未启用自动更新。用户安装步骤见 [开始使用](getting-started.md)，本页保留开发验证证据与人工验收边界。
 
-2026-10-22，六步计划第5项。状态：内部安装包与自动验证部分已交付，人工验收待完成；不进入Decision Lab。范围决策见ADR/0017-windows-internal-delivery.md。
+2026-10-22，六步计划第5项。状态：安装包与自动验证部分已交付，人工验收待完成；不进入Decision Lab。范围决策见ADR/0017-windows-internal-delivery.md。
 
 ## 安装包
 
@@ -10,9 +10,9 @@
 
 SHA-256：`1c067bed99cf0e22a738272a067a36eaad3d5f30fe682d09f6fa1d24825d3c23`。
 
-Authenticode：NotSigned，内部开发包。没有公开发布、自动更新、Ollama或模型捆绑。依赖/模型再分发许可、签名与面向用户的通用备份恢复仍未完成，不作为公开测试版本。默认WebView2引导程序在缺少运行时时需要联网；已有运行时可离线安装应用。没有实测缺少运行时的干净系统。
+Authenticode：NotSigned，公开预发布包；没有自动更新、Ollama或模型捆绑。依赖分发许可审查、项目许可证选择、签名与通用备份恢复仍未完成，当前不作为稳定版本。默认WebView2引导程序在缺少运行时时需要联网；已有运行时可离线安装应用。没有实测缺少运行时的干净系统。
 
-`artifacts/windows-delivery-release/manifest.json`记录实际大小、哈希和验证边界。构建来自0823637及本轮交付配置，最终源码提交见Git和里程碑。NSIS官方构建工具下载到已有Tauri缓存并校验哈希，没有安装系统软件或新增项目依赖。两个锁文件未改。
+`artifacts/windows-delivery-release/manifest.json`记录实际大小、哈希和验证边界。当前发布包功能基线为 b7ad417（包含 Markdown、420ms 镜头偏好与首帧计时修复）；较早的安装检查来自当时的同源伴随包，不能混作最终包全量验收。NSIS官方构建工具下载到已有Tauri缓存并校验哈希，没有安装系统软件或新增项目依赖。两个锁文件未改。
 
 ## 已验证与待验证
 

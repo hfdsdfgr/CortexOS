@@ -1,5 +1,7 @@
 # CortexOS 3D — Development Master Plan
 
+> 原始产品总纲与初始任务约定（历史基线）。文中的“空仓库”“Pre-development”及阶段时间表描述首次规划，不表示当前状态。当前能力见 [路线与功能状态](docs/roadmap.md)，入口见 [项目首页](README.md)，实际证据见 [里程碑](docs/milestone-log.md)。
+
 > Version: 0.1.0 | Status: Pre-development | Target: Windows 11 / NVIDIA RTX 4070 Laptop 8 GB VRAM
 > This document is the primary project specification for Codex. The repository starts empty. Do not assume any code, dependencies, services, or tests already exist.
 

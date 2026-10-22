@@ -1,5 +1,7 @@
 # CortexOS 可执行开发计划
 
+> 当前状态（2026-10-22）：v0.1.0 已公开预发布；P0、P1-A/B 及多个 P1-C 切片已实现，Windows 完整人工验收仍待完成，Decision Lab 未开始。面向使用者的当前清单见 [路线](roadmap.md)。下文保留原规划及逐次调整，早期私有仓库和阶段描述均为当时记录。
+
 状态：实施计划 v0.6，2026-10-16。配套约束见 `development-standards.md`，原始范围见 `../development.md`。实际结果见 `milestone-log.md`。
 
 ## 1. 已核实的起点

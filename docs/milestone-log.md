@@ -1,5 +1,15 @@
 # 里程碑记录
 
+## 2026-10-22：公开仓库文档重整
+
+用户告知仓库已公开并要求重写 README 等文档。通过现有凭据调用 GitHub API，确认 private=false / visibility=public、默认分支 main、v0.1.0 为已发布预发布版，license=null。沿用安装包、标签及功能源码，不修改数据库、引擎、UI 或模型逻辑。
+
+重写根 README、桌面 README、PRD、架构和安全说明；新增文档索引、安装、使用、常见问题、路线、CONTRIBUTING、SECURITY 与 CHANGELOG，共13份主体文档。更新发布说明和Windows交付状态，给总纲、规范、实施/纠偏计划、数据库契约、历史审计和检查方法增加当前状态入口，保留原计划、原审计和历史证据。按源码核对默认模型/参数、实际导入范围、FTS检索对象、知识生效规则、不可变快照、Markdown及相机设置；不再把文件全文检索、Decision Lab和通用恢复写成已完成，也不擅自新增许可证。
+
+实际检查：git rev-parse --show-toplevel / status --short / log / rev-list 与 git fetch origin 核对独立仓库及远程。main 相对当前已发布分支为0/28，没有分叉；按用户公开文档请求将默认分支快进到已发布功能与新文档，确保首页说明与默认克隆的代码一致。正常凭据使用manager，未读取或输出Gittoken.txt。浏览官方Ollama Windows、Tauri前置要求和Vite文档核对安装说明。Python 3 标准库检查首批22份Markdown的108个本地链接、UTF-8和围栏闭合，全部通过；git diff --check通过，仅原有desktop.spec.ts的CRLF提示。最终补记检查另记录下方。
+
+本轮仅文档修改，按用户要求未运行单元测试、类型检查、构建或原生界面测试；未将旧测试冒称本轮新结果。已发布安装包和v0.1.0标签保持不变。原有desktop.spec.ts与未跟踪参考文件保持原样并排除提交。Release正文同步为公开仓库说明，二进制资产及其SHA-256不变。
+
 ## 2026-10-22：v0.1.0 私有仓库预发布
 
 用户要求 release 一个版本。沿用已完成 Release/NSIS 构建及三项原生专项验证的 b7ad417，不修改业务代码、不重打同一安装包、不重复运行单元测试。新增 docs/releases/v0.1.0.md，补充 windows-delivery 发布入口；人工验收仍待完成，P1-C 第5项不改为全部完成。
