@@ -1,5 +1,15 @@
 # 里程碑记录
 
+## 2026-10-22：v0.1.0 私有仓库预发布
+
+用户要求 release 一个版本。沿用已完成 Release/NSIS 构建及三项原生专项验证的 b7ad417，不修改业务代码、不重打同一安装包、不重复运行单元测试。新增 docs/releases/v0.1.0.md，补充 windows-delivery 发布入口；人工验收仍待完成，P1-C 第5项不改为全部完成。
+
+实际命令与结果：git rev-parse --show-toplevel / status --short / remote -v / tag --list 核对独立仓库、用户未提交文件和标签；读取现有版本配置及交付 manifest；Get-FileHash -Algorithm SHA256 核对安装包。初次 python 使用宿主旧 Python 2 导致 urllib.request 导入失败，未发生网络写入；改用已安装的 py -3（3.13.7）。通过 Python 标准库 subprocess 调用 git credential fill，仅在内存使用现有凭据；urllib.request 只读确认仓库 private=true、无既有 Release。没有读取 Gittoken.txt，没有新增依赖。
+
+py -3 内联发布程序先验证本地安装包 SHA-256、字节数和源提交，POST /releases 建立草稿，分别上传 CortexOS_0.1.0_x64-setup.exe 与 SHA256SUMS.txt，核对 GitHub 资产 size/state/digest 后 PATCH 发布。随后 GET Release/资产及 git/ref/tags/v0.1.0 确认 draft=false、prerelease=true，标签指向 b7ad41779f28649032ee31c51d66f5a06807f2d2。安装包 2,949,609 字节，SHA-256 1c067bed99cf0e22a738272a067a36eaad3d5f30fe682d09f6fa1d24825d3c23，与上轮交付完全相同。发布结果记录在本机 artifacts/release-v0.1.0/release.json。仓库保持私有，未启用自动更新，未操作正式应用数据和已打开的窗口。
+
+Release：https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0 。发布说明明确未签名、不捆绑 Ollama/模型，以及系统150%、真实读屏、干净系统和长期模型验证边界。用户原有参考图与 desktop.spec.ts 改动不纳入本次发布记录提交。
+
 ## Phase 0：可运行应用壳与架构
 
 日期：2026-10-15。状态：核心验收通过；人工补充项见下方。本节为 Phase 0 历史记录。

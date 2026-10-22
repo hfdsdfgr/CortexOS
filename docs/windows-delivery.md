@@ -1,5 +1,7 @@
 # Windows 内部交付记录
 
+2026-10-22 发布补记：用户授权发布后，已将下述现有安装包发布到私有仓库的 [v0.1.0 预发布版](https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0)，附 SHA256SUMS.txt。标签精确指向 b7ad41779f28649032ee31c51d66f5a06807f2d2；未改变仓库可见性或启用自动更新。发布说明见 [releases/v0.1.0.md](releases/v0.1.0.md)。以下人工验收边界继续有效。
+
 2026-10-22，六步计划第5项。状态：内部安装包与自动验证部分已交付，人工验收待完成；不进入Decision Lab。范围决策见ADR/0017-windows-internal-delivery.md。
 
 ## 安装包
