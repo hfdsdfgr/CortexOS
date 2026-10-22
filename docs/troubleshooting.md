@@ -25,4 +25,4 @@
 
 ## 提交可复现的问题
 
-在 [Issues](https://github.com/hfdsdfgr/CortexOS/issues) 提供：应用版本、Windows/WebView2 与 Ollama 版本、模型名、最短复现步骤、预期和实际结果，以及脱敏截图。性能问题补充节点/关系数量、是否同时生成和窗口尺寸。敏感安全问题按 [安全报告说明](../SECURITY.md) 处理。
+在 [Issues](https://github.com/marksimZ/CortexOS/issues) 提供：应用版本、Windows/WebView2 与 Ollama 版本、模型名、最短复现步骤、预期和实际结果，以及脱敏截图。性能问题补充节点/关系数量、是否同时生成和窗口尺寸。敏感安全问题按 [安全报告说明](../SECURITY.md) 处理。

@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
-import { ArrowUpRight, BookOpen, Network, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight, BookOpen, Network, PanelRightClose } from "lucide-react";
 import { errorText, type RunDetail, type Studio } from "../studio";
 import { navigate } from "../navigation";
 
-export function ChatEvidence({ studio, runId, onInspect, onClose }: {
-  studio: Studio; runId: string | null; onInspect: () => void; onClose: () => void;
+export function ChatEvidence({ studio, overlay, runId, onInspect, onClose }: {
+  studio: Studio; overlay: boolean; runId: string | null; onInspect: () => void; onClose: () => void;
 }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => { if (overlay) dialog.current?.showModal(); }, [overlay]);
   const [detail, setDetail] = useState<RunDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -29,8 +31,9 @@ export function ChatEvidence({ studio, runId, onInspect, onClose }: {
   const refs = detail?.contextManifest.knowledgeRefs ?? [];
   const item = refs.find(ref => ref.nodeId === selected);
   const manifest = detail?.contextManifest;
-  return <aside className="chat-evidence" aria-label="回答依据">
-    <header className="evidence-heading"><h2>回答依据</h2><button className="icon-button" aria-label="收起回答依据" onClick={onClose}><X size={16}/></button></header>
+  const content = <>
+    <header className="evidence-heading"><h2 id="evidence-title">回答依据</h2><button id="evidence-collapse" className="icon-button" aria-label="收起回答依据" title="收起回答依据" onClick={onClose}><PanelRightClose size={18}/></button></header>
+    <div className="evidence-content">
     <div className="evidence-map">
       {refs.length ? <svg viewBox="0 0 300 220" role="group" aria-label="本次回答与所用知识，连线表示纳入本次请求">
         {refs.slice(0, 6).map((ref, i, list) => {
@@ -52,5 +55,9 @@ export function ChatEvidence({ studio, runId, onInspect, onClose }: {
     {item && <section className="evidence-selection"><h3>{item.title}</h3><p>{item.content}</p><button className="button secondary" onClick={() => navigate("knowledge", {workspace:studio.workspaceId,node:item.nodeId,version:item.version})}><BookOpen size={14}/>查看此知识版本</button></section>}
     {detail && <button className="button secondary evidence-inspect" onClick={onInspect}>查看完整处理记录<ArrowUpRight size={14}/></button>}
     {!runId && <a className="button secondary" href="#/knowledge">整理项目知识<ArrowUpRight size={14}/></a>}
-  </aside>;
+    </div>
+  </>;
+  return overlay
+    ? <dialog ref={dialog} id="chat-evidence" className="chat-evidence evidence-overlay" aria-labelledby="evidence-title" onClose={onClose}>{content}</dialog>
+    : <aside id="chat-evidence" className="chat-evidence" aria-labelledby="evidence-title">{content}</aside>;
 }

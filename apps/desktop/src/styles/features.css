@@ -3,7 +3,7 @@
 .knowledge-workbench { display: grid; grid-template-columns: 290px minmax(0,1fr); gap: 16px; flex: 1; min-height: 0; }
 .knowledge-workbench.list-collapsed { grid-template-columns: minmax(0,1fr); }
 .knowledge-workbench.list-collapsed > .knowledge-sidebar { display: none; }
-.knowledge-sidebar { min-height: 0; overflow: auto; scrollbar-width: thin; }
+.knowledge-sidebar { min-height: 0; overflow: auto;  }
 .knowledge-list-pane { display: flex; flex-direction: column; gap: 10px; }
 .knowledge-filters { display: flex; flex-direction: column; gap: 10px; }
 .search-field { display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--surface-subtle); border: 1px solid var(--line); border-radius: 12px; color: var(--muted); }
@@ -16,7 +16,7 @@
 .knowledge-row[aria-current] { background: var(--selected); }
 .knowledge-row-title { font-weight: var(--font-strong); font-size: 13.5px; }
 .knowledge-row-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); }
-.knowledge-detail { min-height: 0; min-width: 0; overflow: auto; scrollbar-width: thin; padding: 24px 28px; border-radius: 16px; background: var(--surface-subtle); box-shadow: inset 0 0 0 1px var(--line); }
+.knowledge-detail { min-height: 0; min-width: 0; overflow: auto;  padding: 24px 28px; border-radius: 16px; background: var(--surface-subtle); box-shadow: inset 0 0 0 1px var(--line); }
 .knowledge-detail > :not(dialog) { max-width: 860px; }
 .knowledge-detail-heading { display: flex; gap: 16px; justify-content: space-between; flex-wrap: wrap; margin-bottom: 24px; }
 .knowledge-detail-heading h2 { margin: 8px 0; font-size: 26px; letter-spacing: -.4px; }
@@ -100,14 +100,18 @@
 .graph-stage,.trace-stage { position: relative; flex: 1; min-width: 0; min-height: 300px; }
 .graph-stage > div,.trace-stage > div { height: 100%; }
 .graph-stage canvas,.trace-stage canvas { border-radius: 16px; touch-action: none; }
-.graph-inspector,.trace-detail { position: absolute; right: 16px; top: 16px; bottom: 16px; width: min(320px,calc(100% - 32px)); padding: 16px; background: var(--surface); border: 1px solid var(--glass-highlight); box-shadow: var(--shadow-overlay); border-radius: 16px; overflow: auto; scrollbar-width: thin; z-index: 5; }
+.graph-inspector,.trace-detail { position: absolute; right: 16px; top: 16px; bottom: 16px; width: min(320px,calc(100% - 32px)); padding: 16px; background: var(--surface); border: 1px solid var(--glass-highlight); box-shadow: var(--shadow-overlay); border-radius: 16px; overflow: auto;  z-index: 5; }
 .graph-inspector h2,.trace-detail h2 { font-size: 16px; margin-bottom: 12px; }
 .graph-inspector .knowledge-detail { padding: 0; background: transparent; box-shadow: none; overflow: visible; }
+.graph-inspector.panel-container,.trace-detail.panel-container { overflow: hidden; padding: 0; }
+.graph-inspector > .panel-header,.trace-detail > .panel-header { padding: 12px 16px; }
+.graph-inspector > .panel-header h2,.trace-detail > .panel-header h2 { margin: 0; font-size: 16px; }
+.graph-inspector > .panel-body,.trace-detail > .panel-body { padding: 0 16px 16px; }
 .graph-inspector .knowledge-detail h2 { font-size: 19px; }
 .graph-inspector .knowledge-prose { font-size: 13px; line-height: 1.65; }
 .graph-inspector .knowledge-detail-heading { margin-bottom: 16px; }
 .graph-inspector .button { white-space: normal; }
-.graph-node-index { display: none; position: absolute; top: 44px; left: 14px; bottom: 84px; width: 250px; z-index: 4; padding: 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); overflow: auto; scrollbar-width: thin; }
+.graph-node-index { display: none; position: absolute; top: 44px; left: 14px; bottom: 84px; width: 250px; z-index: 4; padding: 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); overflow: auto;  }
 .graph-workbench.list-is-open > .graph-node-index,.graph-node-index.fallback-list { display: block; }
 .graph-node-index h2 { margin: 2px 6px 10px; font-size: 14px; }
 .graph-node-index ul,.graph-node-index ol,.trace-index ul { list-style: none; margin: 0; padding: 0; }

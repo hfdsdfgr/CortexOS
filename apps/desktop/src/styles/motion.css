@@ -7,6 +7,7 @@
 .primary-navigation a:hover { transform: translateX(2px); }
 .composer { transition: box-shadow 260ms var(--ease); }
 .toast { animation: feedback-pop 320ms var(--spring) both; }
+.select-popup:popover-open { animation: panel-enter 120ms var(--ease) both; }
 dialog[open] { animation: panel-enter 240ms var(--ease) both; }
 .knowledge-history-drawer[open],.run-drawer[open] { animation: drawer-enter 260ms var(--ease) both; }
 .stream-fragment { animation: text-bloom 280ms var(--ease) both; }

@@ -14,7 +14,7 @@ CortexOS 当前面向 Windows 桌面，采用 React、TypeScript、Vite、Tauri 
 ## 运行与构建
 
 ```powershell
-git clone https://github.com/hfdsdfgr/CortexOS.git
+git clone https://github.com/marksimZ/CortexOS.git
 cd CortexOS/apps/desktop
 npm.cmd ci
 npm.cmd run tauri -- dev
@@ -73,4 +73,4 @@ try {
 
 ## 提交问题与改动
 
-一般问题使用 [Issues](https://github.com/hfdsdfgr/CortexOS/issues)；安全问题见 [SECURITY.md](SECURITY.md)。PR 描述说明触发场景、最终行为、实际检查及未验证项，相关界面改动附真实截图。开发阶段的完成记录写入 `docs/milestone-log.md`，历史失败与验证边界保持可追溯。
+一般问题使用 [Issues](https://github.com/marksimZ/CortexOS/issues)；安全问题见 [SECURITY.md](SECURITY.md)。PR 描述说明触发场景、最终行为、实际检查及未验证项，相关界面改动附真实截图。开发阶段的完成记录写入 `docs/milestone-log.md`，历史失败与验证边界保持可追溯。

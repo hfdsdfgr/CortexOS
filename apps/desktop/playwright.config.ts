@@ -24,12 +24,13 @@ export default defineConfig({
     ...(process.env.CORTEXOS_DELIVERY_CHECK === "1"
       ? [{ name: "delivery", testMatch: "windows-delivery.spec.ts" }]
       : []),
-    { name: "edge", testMatch: ["app.spec.ts", "graph-preview.spec.ts"] },
+    { name: "edge", testMatch: ["app.spec.ts", "graph-preview.spec.ts", "ui-usability.spec.ts"] },
     {
       name: "desktop",
       testMatch: [
         "desktop.spec.ts",
         "prototype-ui.spec.ts",
+        "ui-usability-native.spec.ts",
         "chat.spec.ts",
         "markdown-camera.spec.ts",
         "chat-design.spec.ts",

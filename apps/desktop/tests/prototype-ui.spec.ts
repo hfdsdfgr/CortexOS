@@ -86,7 +86,7 @@ test("HTML reference layout retains real evidence, themes, streaming continuity 
       await drawer.getByRole("link", { name: "对话", exact: true }).click();
       await expect(drawer).not.toBeVisible();
       await page.getByRole("button", { name: "打开回答依据", exact: true }).click();
-      await expect(page.getByRole("complementary", { name: "回答依据" })).toBeVisible();
+      await expect(page.getByRole("dialog", { name: "回答依据", exact: true })).toBeVisible();
       await page.getByRole("button", { name: "收起回答依据", exact: true }).click();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: info.outputPath(`narrow-${width}.png`) });

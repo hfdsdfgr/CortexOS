@@ -4,7 +4,7 @@
 
 CortexOS 是一款本地优先的 AI 认知工作台，将模型对话、知识管理和 3D 关系探索放在同一个工作区。围绕一个项目持续提问，整理资料与结论，查看回答依据，再把经过检查的知识用于下一次讨论。
 
-[下载 Windows 版](https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0) · [开始使用](docs/getting-started.md) · [使用指南](docs/user-guide.md) · [文档目录](docs/README.md)
+[下载 Windows 版](https://github.com/marksimZ/CortexOS/releases/tag/v0.2.0) · [开始使用](docs/getting-started.md) · [使用指南](docs/user-guide.md) · [文档目录](docs/README.md)
 
 ## 用它做什么
 
@@ -49,7 +49,7 @@ CortexOS 是一款本地优先的 AI 认知工作台，将模型对话、知识�
 
 ## 开始使用
 
-1. 从 [Releases](https://github.com/hfdsdfgr/CortexOS/releases) 下载 Windows x64 安装包并安装。
+1. 从 [Releases](https://github.com/marksimZ/CortexOS/releases) 下载 Windows x64 安装包并安装。
 2. 安装并启动 [Ollama](https://ollama.com/download/windows)，下载你选择的本地模型。例如：
 
    ```powershell
@@ -69,8 +69,8 @@ CortexOS 是一款本地优先的 AI 认知工作台，将模型对话、知识�
 
 ## 下载与反馈
 
-当前提供 [v0.1.0 Windows x64 预发布版](https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0)，安装包未签名，不附带 Ollama 或模型。通用备份恢复、导出和永久删除界面暂未提供，重要资料请另存备份。
+当前提供 [v0.2.0 Windows x64 预发布版](https://github.com/marksimZ/CortexOS/releases/tag/v0.2.0)，安装包未签名，不附带 Ollama 或模型。通用备份恢复、导出和永久删除界面暂未提供，重要资料请另存备份。
 
-使用问题与建议欢迎提交到 [GitHub Issues](https://github.com/hfdsdfgr/CortexOS/issues)，请附版本、复现步骤和脱敏截图。后续方向见 [开发路线](docs/roadmap.md)；源码运行和贡献方式见 [开发指南](CONTRIBUTING.md)。
+使用问题与建议欢迎提交到 [GitHub Issues](https://github.com/marksimZ/CortexOS/issues)，请附版本、复现步骤和脱敏截图。后续方向见 [开发路线](docs/roadmap.md)；源码运行和贡献方式见 [开发指南](CONTRIBUTING.md)。
 
 仓库尚未指定项目许可证，再分发及其他授权范围需由维护者明确；第三方依赖与模型遵循各自许可证。

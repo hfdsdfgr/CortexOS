@@ -1,3 +1,4 @@
+import { SelectMenu } from "./components/SelectMenu";
 import { useState } from "react";
 import {
   CheckCircle2,
@@ -131,7 +132,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
               )}
             <div className="field model-field">
               <label htmlFor="model">模型</label>
-              <select
+              <SelectMenu
                 id="model"
                 value={draft.model}
                 disabled={!studio.desktop || !studio.health?.models.length}
@@ -151,7 +152,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
                     {(model.size / 1e9).toFixed(1)} GB）
                   </option>
                 ))}
-              </select>
+              </SelectMenu>
               <details className="field-help">
                 <summary>如何选择模型</summary>
                 <p>
@@ -310,7 +311,7 @@ export function SettingsPage({ studio }: { studio: Studio }) {
           <div className="settings-fields">
             <div className="about-line">
               <strong>CortexOS</strong>
-              <span className="version-label">0.1.0 本地工作台测试版</span>
+              <span className="version-label">0.2.0 本地工作台测试版</span>
             </div>
           </div>
         </section>

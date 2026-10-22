@@ -100,11 +100,11 @@ function CitationDetail({
     <>
       <dialog
         ref={dialog}
-        className="side-drawer citation-drawer"
+        className="side-drawer citation-drawer panel-dialog"
         aria-labelledby={`citation-${message.id}`}
         onClose={onClose}
       >
-        <div className="drawer-heading">
+        <div className="drawer-heading panel-header">
           <h2 id={`citation-${message.id}`}>引用文字</h2>
           <button
             className="icon-button"
@@ -114,6 +114,7 @@ function CitationDetail({
             <X size={20} aria-hidden="true" />
           </button>
         </div>
+        <div className="panel-body">
         {occurrence.error || !reference ? (
           <p className="form-error" role="alert">
             {occurrence.label}：
@@ -196,6 +197,7 @@ function CitationDetail({
             </details>
           </>
         )}
+        </div>
       </dialog>
       {source && (
         <SourceBrowser

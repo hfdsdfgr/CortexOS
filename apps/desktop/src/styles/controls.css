@@ -1,4 +1,16 @@
 /* Shared controls; task state remains in the feature components. */
+/* Native scrolling, themed consistently without changing thumb width on hover. */
+* { scrollbar-color: var(--scroll-thumb) transparent; scrollbar-width: thin; }
+@supports selector(::-webkit-scrollbar) {
+  * { scrollbar-width: auto; scrollbar-color: auto; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track,::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-thumb { min-height: 32px; border: 2px solid transparent; border-radius: 999px; background: var(--scroll-thumb); background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); }
+  ::-webkit-scrollbar-thumb:active { background-color: var(--scroll-thumb-active); }
+  ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+}
+@media(forced-colors:active) { * { scrollbar-color: auto; scrollbar-width: auto; } ::-webkit-scrollbar-thumb { background: ButtonText; } }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: 0 0 auto; min-height: 34px; padding: 7px 14px; border-radius: 999px; background: transparent; color: var(--text); text-decoration: none; font-size: 12.5px; font-weight: var(--font-medium); line-height: 1.45; text-align: center; border: 1px solid transparent; white-space: nowrap; }
 .button svg,.icon-button svg { display: block; }
 .button.primary { background: var(--primary); color: var(--on-primary); }
@@ -15,6 +27,21 @@ input[type=checkbox],input[type=radio] { accent-color: var(--primary); width: 15
 input[type=number] { font-variant-numeric: tabular-nums; }
 input:read-only { background: var(--micro-inset); }
 input:disabled,select:disabled { opacity: .6; }
+.select-field { display: inline-grid; position: relative; min-width: 0; max-width: 100%; vertical-align: middle; }
+.select-field > .select-control { width: 100%; appearance: none; padding-right: 30px; cursor: pointer; text-overflow: ellipsis; }
+.select-field > .select-control:disabled { cursor: default; }
+.select-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.field .select-field { width: 100%; }
+.workspace-picker .select-field { flex: 1; width: 0; }
+.workspace-picker .select-field select { width: 100%; padding-right: 24px; }
+.workspace-picker .select-chevron { right: 3px; }
+.select-popup { position: fixed; inset: auto; margin: 0; padding: 5px; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--glass-highlight); border-radius: 12px; background: var(--surface); backdrop-filter: blur(24px); color: var(--text); box-shadow: var(--shadow-overlay); font: var(--font-normal) 13px/1.5 var(--font-ui); }
+.select-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+.select-option > span { min-width: 0; overflow-wrap: anywhere; }
+.select-option[aria-selected=true] { color: var(--primary); }
+.select-option.is-active:not([aria-disabled=true]) { background: var(--selected); }
+.select-option[aria-disabled=true] { color: var(--muted); opacity: .55; cursor: default; }
+@media(forced-colors:active) { .select-popup { border: 1px solid CanvasText; background: Canvas; } .select-option.is-active { outline: 1px solid Highlight; } }
 textarea { width: 100%; min-height: 160px; line-height: 1.65; resize: vertical; }
 textarea,pre,code { overflow-wrap: anywhere; }
 code,pre { font-family: var(--font-mono); font-size: 12px; }
@@ -47,6 +74,16 @@ dialog h2 { margin: 0 0 20px; font-size: 20px; }
 .knowledge-history-drawer { position: fixed; inset: 0 0 0 auto; z-index: 25; box-shadow: var(--shadow-overlay); }
 .drawer-heading,.history-drawer-heading,.source-toolbar,.citation-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
 .drawer-heading h2,.history-drawer-heading h2,.source-toolbar h2 { margin: 0; font-size: 18px; }
+/* Header and actions stay outside the only scrolling body. */
+.panel-dialog[open],.panel-container { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+.panel-form { display: flex; flex-direction: column; min-height: 0; max-height: inherit; }
+.panel-header { display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; gap: 12px; padding: 20px 24px 16px; margin: 0; }
+.panel-header h2 { min-width: 0; margin: 0; font-size: 18px; line-height: 1.45; overflow-wrap: anywhere; }
+.panel-body { flex: 1 1 auto; min-height: 0; min-width: 0; overflow: auto; padding: 0 24px 24px; overscroll-behavior: contain; scrollbar-gutter: stable; scroll-padding-block: 12px; }
+.citation-lines,.source-lines,.source-text,.evidence-selection p,.sidebar-threads,.message-scroll { overscroll-behavior: contain; scrollbar-gutter: stable; }
+.panel-footer { flex: 0 0 auto; margin: 0; padding: 16px 24px; box-shadow: 0 -1px 0 var(--line); }
+.run-summary > div { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); gap: 16px; }
+.run-summary dd { min-width: 0; }
 .execution-timeline { list-style: none; padding: 0; margin: 0 0 24px; }
 .execution-timeline li { position: relative; display: flex; gap: 12px; padding-bottom: 16px; }
 .execution-timeline li:not(:last-child)::before { content: ''; position: absolute; left: 5px; top: 18px; bottom: 1px; width: 1px; background: var(--line); }

@@ -69,11 +69,11 @@ export function CognitiveInspector({
   return (
     <dialog
       ref={dialog}
-      className="side-drawer run-drawer"
+      className="side-drawer run-drawer panel-dialog"
       aria-labelledby="run-title"
       onClose={onClose}
     >
-      <div className="drawer-heading">
+      <div className="drawer-heading panel-header">
         <h2 id="run-title">本次回答的处理记录</h2>
         <button
           className="icon-button"
@@ -83,6 +83,7 @@ export function CognitiveInspector({
           <X size={20} aria-hidden="true" />
         </button>
       </div>
+      <div className="panel-body">
       {error ? (
         <p className="form-error" role="alert">
           {error}
@@ -219,6 +220,7 @@ export function CognitiveInspector({
           </details>
         </>
       )}
+      </div>
     </dialog>
   );
 }

@@ -1,5 +1,17 @@
 # Windows 发布与验收记录
 
+## v0.2.0 当前交付（2026-10-23）
+
+本版按用户要求发布当前工作台界面与交互优化，下载入口为 [v0.2.0](https://github.com/marksimZ/CortexOS/releases/tag/v0.2.0)。正式标识仍为`com.cortexos.desktop`，Windows x64、当前用户安装；不改变数据库结构，不包含Ollama或模型，未启用自动更新。
+
+正式包为`CortexOS_0.2.0_x64-setup.exe`，2,948,478字节，SHA-256：`b3a18e39b590c2615b024293e172e434949b263daf37cd7d122ff8c71a9ed1eb`；发布页同时提供`SHA256SUMS.txt`。安装包未签名，缺少WebView2的设备需由安装器联网获取运行时。正式Release/NSIS构建通过，程序ProductVersion为0.2.0；随后直接启动正式exe，Windows UI Automation找到前端“关闭窗口”按钮并通过它正常退出，未编辑工作区或调用模型。这项启动检查不等于正式安装包已完整人工验收。
+
+安装检查使用独立产品名CortexOS Delivery Check与`com.cortexos.deliverycheck`，在仓库artifacts中完成0.1.0→0.2.0安装升级、数据前后快照及卸载，1/1通过（24.8秒）。安装/卸载退出码均为0，实际安装程序版本匹配，全部表及图数据在升级前后相等，卸载保留检查数据。两包来自本轮相同源码，版本由测试配置覆盖；这验证安装器及数据保留流程，不等于已测试历史正式0.1.0安装包升级。6→7迁移使用合成库，迁移前备份与旧库逐表一致，完整性和外键通过，不读取正式用户数据。
+
+UI功能检查沿用本轮已通过的三项浏览器与四项原生专项，并复核最终菜单版本；安装环节不重复运行单元或全量检查。检查后已恢复正常开发程序标识，正式包校验值未变。证据位于`artifacts/release-v0.2.0/install-check`和`production-window-evidence.json`；这些本地合成检查产物不随发布上传。真实Windows150%缩放、读屏、干净系统和长期真实模型负载仍待人工验证。具体新命令和产物见[本轮里程碑](milestone-log.md)。
+
+## v0.1.0 历史交付记录
+
 2026-10-22，当前发布为 [v0.1.0 预发布版](https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0)。仓库及资产已公开，安装包与 SHA256SUMS.txt 可直接下载。标签指向 b7ad41779f28649032ee31c51d66f5a06807f2d2；未启用自动更新。用户安装步骤见 [开始使用](getting-started.md)，本页保留开发验证证据与人工验收边界。
 
 2026-10-22，六步计划第5项。状态：安装包与自动验证部分已交付，人工验收待完成；不进入Decision Lab。范围决策见ADR/0017-windows-internal-delivery.md。

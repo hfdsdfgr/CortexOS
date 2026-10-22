@@ -1,18 +1,18 @@
 # 安装与首次使用
 
-适用版本：v0.1.0，Windows x64 预发布版。当前原生验证基于 Windows 11；其他系统组合尚未完成验收。
+适用版本：v0.2.0，Windows x64 预发布版。当前原生验证基于 Windows 11；其他系统组合尚未完成验收。
 
 ## 1. 安装 CortexOS
 
-从 [v0.1.0 发布页](https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0) 下载 `CortexOS_0.1.0_x64-setup.exe`，安装到当前 Windows 用户。安装包未签名；遇到未知发布者提示时，先确认下载地址与校验值。
+从 [v0.2.0 发布页](https://github.com/marksimZ/CortexOS/releases/tag/v0.2.0) 下载 `CortexOS_0.2.0_x64-setup.exe`，安装到当前 Windows 用户。安装包未签名；遇到未知发布者提示时，先确认下载地址与校验值。
 
 在安装包所在目录核验：
 
 ```powershell
-Get-FileHash .\CortexOS_0.1.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\CortexOS_0.2.0_x64-setup.exe -Algorithm SHA256
 ```
 
-预期 SHA-256：`1c067bed99cf0e22a738272a067a36eaad3d5f30fe682d09f6fa1d24825d3c23`，大小 2,949,609 字节。发布页同时提供 `SHA256SUMS.txt`。
+将输出与同一发布页提供的 `SHA256SUMS.txt` 对照，确认文件名及 SHA-256 一致。
 
 应用使用 WebView2。已有运行时可离线安装应用；缺少时安装器需要联网获取运行时。模型服务与权重单独准备。
 

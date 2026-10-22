@@ -1,3 +1,4 @@
+import { SelectMenu } from "./components/SelectMenu";
 import { invoke } from "@tauri-apps/api/core";
 import { notify } from "./components/Toast";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -115,14 +116,14 @@ export const GraphPage = memo(function GraphPage({
         <>
           <div className="graph-source">
             <label htmlFor="graph-source">数据</label>
-            <select
+            <SelectMenu
               id="graph-source"
               value={demo ? "demo" : "workspace"}
               onChange={(event) => setDemo(event.target.value === "demo")}
             >
               <option value="workspace">当前工作区</option>
               <option value="demo">7 节点演示</option>
-            </select>
+            </SelectMenu>
             {demo && <strong>演示数据，不写入工作区</strong>}
           </div>
           <KnowledgeGraph
@@ -595,7 +596,7 @@ function KnowledgeGraph({
         className="graph-filter-panel"
         hidden={!filtersOpen}
       >
-        <select
+        <SelectMenu
           aria-label="节点类型筛选"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
@@ -606,8 +607,8 @@ function KnowledgeGraph({
               {name}
             </option>
           ))}
-        </select>
-        <select
+        </SelectMenu>
+        <SelectMenu
           aria-label="节点审核筛选"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -615,7 +616,7 @@ function KnowledgeGraph({
           <option value="all">全部状态</option>
           <option value="confirmed">已确认</option>
           <option value="draft">待确认 / 新草稿</option>
-        </select>
+        </SelectMenu>
         <div className="graph-date-filter">
           <label>
             更新日期不早于
@@ -902,10 +903,10 @@ function KnowledgeGraph({
           <aside
             ref={inspector}
             tabIndex={-1}
-            className="graph-inspector"
+            className="graph-inspector panel-container"
             aria-label="图谱详情"
           >
-            <header className="graph-inspector-toolbar">
+            <header className="graph-inspector-toolbar panel-header">
               <button
                 className="button text-button"
                 disabled={failed || !visibleIds.has(selectedNode.id)}
@@ -926,6 +927,7 @@ function KnowledgeGraph({
                 <X size={19} />
               </button>
             </header>
+            <div className="panel-body">
             {!visibleIds.has(selectedNode.id) && (
               <div className="graph-hidden-selection" role="status">
                 <p>此节点不在当前显示范围，详情仍保留。</p>
@@ -1056,6 +1058,7 @@ function KnowledgeGraph({
                 }}
               />
             </details>
+            </div>
           </aside>
         )}
       </div>
@@ -1244,7 +1247,7 @@ export function RelationshipEditor({
     <>
       <dialog
         ref={dialog}
-        className="form-dialog relation-editor"
+        className="form-dialog relation-editor panel-dialog"
         aria-labelledby="edge-edit-title"
         onCancel={(event) => {
           event.preventDefault();
@@ -1253,12 +1256,13 @@ export function RelationshipEditor({
       >
         <form
           ref={form}
+          className="panel-form"
           onSubmit={(event) => {
             event.preventDefault();
             void save();
           }}
         >
-          <header className="drawer-heading">
+          <header className="drawer-heading panel-header">
             <h2 id="edge-edit-title">{original ? "修改关系" : "添加关系"}</h2>
             <button
               type="button"
@@ -1270,6 +1274,7 @@ export function RelationshipEditor({
               <X size={19} />
             </button>
           </header>
+          <div className="panel-body">
           <div className="field">
             <label htmlFor="edge-from">起点</label>
             {loadingOptions && <p role="status">正在读取节点选项…</p>}
@@ -1285,7 +1290,7 @@ export function RelationshipEditor({
                 </button>
               </p>
             )}
-            <select
+            <SelectMenu
               id="edge-from"
               value={from}
               disabled={saving || loadingOptions}
@@ -1296,11 +1301,11 @@ export function RelationshipEditor({
                   {node.title}
                 </option>
               ))}
-            </select>
+            </SelectMenu>
           </div>
           <div className="field">
             <label htmlFor="edge-relation">关系类型</label>
-            <select
+            <SelectMenu
               id="edge-relation"
               value={relation}
               disabled={saving}
@@ -1311,11 +1316,11 @@ export function RelationshipEditor({
                   {label}
                 </option>
               ))}
-            </select>
+            </SelectMenu>
           </div>
           <div className="field">
             <label htmlFor="edge-to">终点</label>
-            <select
+            <SelectMenu
               id="edge-to"
               value={to}
               disabled={saving || loadingOptions}
@@ -1330,7 +1335,7 @@ export function RelationshipEditor({
                     {node.title}
                   </option>
                 ))}
-            </select>
+            </SelectMenu>
           </div>
           {original && (
             <label className="edge-active">
@@ -1420,7 +1425,8 @@ export function RelationshipEditor({
               </button>
             </div>
           )}
-          <footer className="dialog-actions">
+          </div>
+          <footer className="dialog-actions panel-footer">
             <button
               type="button"
               className="button secondary"

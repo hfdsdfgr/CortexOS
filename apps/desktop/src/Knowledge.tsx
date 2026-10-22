@@ -1,3 +1,4 @@
+import { SelectMenu } from "./components/SelectMenu";
 import {
   SourceBrowser,
   type SourceEvidence,
@@ -7,6 +8,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { notify } from "./components/Toast";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   BookOpen,
   Check,
@@ -199,7 +201,7 @@ export function KnowledgePage({
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </label>
-              <select
+              <SelectMenu
                 aria-label="知识状态筛选"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
@@ -207,7 +209,7 @@ export function KnowledgePage({
                 <option value="all">全部状态</option>
                 <option value="pending">待确认 / 新草稿</option>
                 <option value="confirmed">已确认</option>
-              </select>
+              </SelectMenu>
             </div>
             {loading ? (
               <p className="inline-loading" role="status">
@@ -378,7 +380,7 @@ export function KnowledgeInspector({
         </summary>
         <div className="version-picker">
           <label htmlFor="knowledge-version">查看版本</label>
-          <select
+          <SelectMenu
             id="knowledge-version"
             value={currentVersion.version}
             onChange={(e) => {
@@ -397,7 +399,7 @@ export function KnowledgeInspector({
                 v{item.version}，{item.approvedAt ? "已确认过" : "草稿"}
               </option>
             ))}
-          </select>
+          </SelectMenu>
         </div>
         <ol className="knowledge-history">
           {detail.versions.map((item) => (
@@ -547,9 +549,10 @@ export function KnowledgeInspector({
               </details>
             )}
             {route.page === "knowledge" ? (
+              createPortal(
               <dialog
                 ref={historyDialog}
-                className="knowledge-history-drawer"
+                className="knowledge-history-drawer panel-dialog"
                 aria-labelledby="knowledge-history-title"
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {
@@ -558,7 +561,7 @@ export function KnowledgeInspector({
                   }
                 }}
               >
-                <header className="history-drawer-heading">
+                <header className="history-drawer-heading panel-header">
                   <h2 id="knowledge-history-title">版本历史</h2>
                   <button
                     className="icon-button"
@@ -568,9 +571,11 @@ export function KnowledgeInspector({
                     <X size={20} />
                   </button>
                 </header>
-                <p className="history-document-title">{detail.node.title}</p>
-                {history}
-              </dialog>
+                <div className="panel-body">
+                  <p className="history-document-title">{detail.node.title}</p>
+                  {history}
+                </div>
+              </dialog>, document.body)
             ) : (
               history
             )}
@@ -835,7 +840,7 @@ export function KnowledgeEditor({
     <>
       <dialog
         ref={dialog}
-        className="knowledge-editor form-dialog"
+        className="knowledge-editor form-dialog panel-dialog"
         aria-labelledby="knowledge-edit-title"
         onCancel={(e) => {
           e.preventDefault();
@@ -844,12 +849,13 @@ export function KnowledgeEditor({
       >
         <form
           ref={form}
+          className="panel-form"
           onSubmit={(e) => {
             e.preventDefault();
             void save();
           }}
         >
-          <header className="drawer-heading">
+          <header className="drawer-heading panel-header">
             <h2 id="knowledge-edit-title">
               {original ? "修改知识草稿" : "新建知识草稿"}
             </h2>
@@ -863,6 +869,7 @@ export function KnowledgeEditor({
               <X size={20} />
             </button>
           </header>
+          <div className="panel-body">
           <div className="knowledge-edit-fields">
             <div className="field">
               <label htmlFor="knowledge-title">标题</label>
@@ -878,7 +885,7 @@ export function KnowledgeEditor({
             </div>
             <div className="field">
               <label htmlFor="knowledge-kind">类型</label>
-              <select
+              <SelectMenu
                 id="knowledge-kind"
                 value={kind}
                 disabled={saving}
@@ -889,7 +896,7 @@ export function KnowledgeEditor({
                     {label}
                   </option>
                 ))}
-              </select>
+              </SelectMenu>
             </div>
           </div>
           <div className="field">
@@ -984,7 +991,8 @@ export function KnowledgeEditor({
               </button>
             </div>
           )}
-          <footer className="dialog-actions">
+          </div>
+          <footer className="dialog-actions panel-footer">
             <span className="editor-status">
               {request.detail?.node.effectiveVersion
                 ? `保存草稿后，回答仍使用 v${request.detail.node.effectiveVersion}`

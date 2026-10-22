@@ -63,7 +63,10 @@ export function AppShell({ studio, page, openCreateWorkspace, children }: {
       </header>
       {children}
     </div>
-    <dialog id="mobile-navigation" ref={drawer} className="mobile-sidebar" aria-label="导航与会话" onClose={() => setMobileOpen(false)}><button className="icon-button drawer-close" aria-label="关闭导航" onClick={() => drawer.current?.close()}><X size={18} /></button>{mobileOpen && sidebar(true)}</dialog>
+    <dialog id="mobile-navigation" ref={drawer} className="mobile-sidebar panel-dialog" aria-labelledby="mobile-navigation-title" onClose={() => setMobileOpen(false)}>
+      <header className="panel-header"><h2 id="mobile-navigation-title">导航与会话</h2><button className="icon-button" aria-label="关闭导航" onClick={() => drawer.current?.close()}><X size={18} /></button></header>
+      <div className="panel-body">{mobileOpen && sidebar(true)}</div>
+    </dialog>
     <Toast />
   </div>;
 }

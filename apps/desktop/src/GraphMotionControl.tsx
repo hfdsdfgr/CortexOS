@@ -1,3 +1,4 @@
+import { SelectMenu } from "./components/SelectMenu";
 import { useId, useState } from "react";
 import { preference, remember } from "./studio";
 
@@ -25,7 +26,7 @@ export function GraphMotionControl() {
   return (
     <div className="field graph-motion-control">
       <label htmlFor={id}>镜头过渡</label>
-      <select
+      <SelectMenu
         id={id}
         value={motion}
         onChange={(event) => {
@@ -38,7 +39,7 @@ export function GraphMotionControl() {
         <option value="smooth">平滑（0.42秒）</option>
         <option value="system">跟随系统</option>
         <option value="instant">立即切换</option>
-      </select>
+      </SelectMenu>
     </div>
   );
 }

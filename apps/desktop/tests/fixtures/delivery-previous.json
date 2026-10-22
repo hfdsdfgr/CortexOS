@@ -1,6 +1,6 @@
 {
   "productName": "CortexOS Delivery Check",
   "identifier": "com.cortexos.deliverycheck",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "bundle": { "windows": { "nsis": { "displayLanguageSelector": false } } }
 }

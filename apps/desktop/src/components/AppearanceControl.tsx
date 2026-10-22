@@ -1,3 +1,4 @@
+import { SelectMenu } from "./SelectMenu";
 import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { preference, remember } from "../studio";
@@ -24,12 +25,12 @@ export function AppearanceControl() {
   const Icon = appearance === "system" ? Monitor : appearance === "dark" ? Moon : Sun;
   return <label className="appearance-control" title="外观">
     <Icon size={16} aria-hidden="true" />
-    <select aria-label="外观" value={appearance} onChange={event => {
+    <SelectMenu aria-label="外观" value={appearance} onChange={event => {
       const value = event.target.value as Appearance;
       setAppearance(value);
       remember("appearance", value);
     }}>
       <option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option>
-    </select>
+    </SelectMenu>
   </label>;
 }

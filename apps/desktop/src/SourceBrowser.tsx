@@ -1,3 +1,4 @@
+import { SelectMenu } from "./components/SelectMenu";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
 import { notify } from "./components/Toast";
@@ -152,14 +153,14 @@ export function SourceBrowser({
     <>
       <dialog
         ref={dialog}
-        className="source-browser form-dialog"
+        className="source-browser form-dialog panel-dialog"
         aria-labelledby="sources-title"
         onCancel={(event) => {
           event.preventDefault();
           if (!busy) close();
         }}
       >
-        <header className="source-toolbar">
+        <header className="source-toolbar panel-header">
           <h2 id="sources-title">资料文件</h2>
           <div className="source-actions">
             <button
@@ -187,6 +188,7 @@ export function SourceBrowser({
             </button>
           </div>
         </header>
+        <div className="panel-body">
         {error && (
           <p role="alert" className="form-error">
             {error}
@@ -209,34 +211,7 @@ export function SourceBrowser({
               </p>
               <code className="source-hash">SHA-256 {preview.contentHash}</code>
             </details>
-            <footer className="dialog-actions">
-              <button
-                className="button secondary"
-                disabled={busy}
-                onClick={() => void perform(cancelPreview)}
-              >
-                取消导入
-              </button>
-              <button
-                className="button primary"
-                disabled={busy}
-                onClick={() =>
-                  void perform(async () => {
-                    const saved = await invoke<SourceDocument>(
-                      "commit_source",
-                      { workspaceId: workspace, ticket: preview.ticket },
-                    );
-                    if (!live.current) return;
-                    notify("文件文字副本已保存");
-                    setPreview(null);
-                    await refresh();
-                    await read(saved.id, saved.latestVersion);
-                  })
-                }
-              >
-                确认导入
-              </button>
-            </footer>
+
           </section>
         ) : (
           <div className="source-workbench">
@@ -277,7 +252,7 @@ export function SourceBrowser({
                     </h3>
                     <label>
                       文件版本
-                      <select
+                      <SelectMenu
                         aria-label="文件版本"
                         disabled={busy}
                         value={selected.version}
@@ -298,7 +273,7 @@ export function SourceBrowser({
                               v{version}
                             </option>
                           ))}
-                      </select>
+                      </SelectMenu>
                     </label>
                   </header>
                   <div className="source-line-inputs">
@@ -437,6 +412,37 @@ export function SourceBrowser({
               )}
             </section>
           </div>
+        )}
+        </div>
+        {preview && (
+            <footer className="dialog-actions panel-footer">
+              <button
+                className="button secondary"
+                disabled={busy}
+                onClick={() => void perform(cancelPreview)}
+              >
+                取消导入
+              </button>
+              <button
+                className="button primary"
+                disabled={busy}
+                onClick={() =>
+                  void perform(async () => {
+                    const saved = await invoke<SourceDocument>(
+                      "commit_source",
+                      { workspaceId: workspace, ticket: preview.ticket },
+                    );
+                    if (!live.current) return;
+                    notify("文件文字副本已保存");
+                    setPreview(null);
+                    await refresh();
+                    await read(saved.id, saved.latestVersion);
+                  })
+                }
+              >
+                确认导入
+              </button>
+            </footer>
         )}
       </dialog>
       <dialog

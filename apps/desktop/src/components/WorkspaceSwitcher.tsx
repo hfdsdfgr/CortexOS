@@ -1,3 +1,4 @@
+import { SelectMenu } from "./SelectMenu";
 import { Plus } from "lucide-react";
 import { navigate, type PageName } from "../navigation";
 import type { Studio } from "../studio";
@@ -15,7 +16,7 @@ export function WorkspaceSwitcher({
       <label className="sr-only" htmlFor="current-workspace">
         当前工作区
       </label>
-      <select
+      <SelectMenu
         id="current-workspace"
         value={studio.workspaceId ?? ""}
         disabled={!studio.desktop || !studio.data || studio.loading}
@@ -32,7 +33,7 @@ export function WorkspaceSwitcher({
             {workspace.name}
           </option>
         ))}
-      </select>
+      </SelectMenu>
       <button
         className="icon-button"
         aria-label="新建工作区"

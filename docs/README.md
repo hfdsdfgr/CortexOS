@@ -1,6 +1,6 @@
 # CortexOS 文档
 
-当前版本为 [v0.1.0 预发布版](https://github.com/hfdsdfgr/CortexOS/releases/tag/v0.1.0)，状态更新于 2026-10-22。
+当前版本为 [v0.2.0 预发布版](https://github.com/marksimZ/CortexOS/releases/tag/v0.2.0)，状态更新于 2026-10-22。
 
 ## 使用与下载
 

@@ -104,7 +104,9 @@ test("isolated NSIS upgrade preserves saved data and migrates a v6 fixture", asy
   const endpoint = `http://127.0.0.1:${address.port}`;
   let app: Awaited<ReturnType<typeof launchNative>> | undefined;
   try {
-    await install("0.0.9");
+    const previousVersion = JSON.parse(await readFile(resolve("tests/fixtures/delivery-previous.json"), "utf8")).version as string;
+    const currentVersion = JSON.parse(await readFile(resolve("tests/fixtures/delivery-current.json"), "utf8")).version as string;
+    await install(previousVersion);
     app = await launchNative(info, {
       executable,
       dataDirectory,
@@ -172,7 +174,7 @@ test("isolated NSIS upgrade preserves saved data and migrates a v6 fixture", asy
     expect(before.tables.knowledge_edge_versions.rows).toBe(2);
     expect(before.tables.knowledge_versions.rows).toBe(4);
     expect(before.tables.knowledge_approval_events.rows).toBe(1);
-    await install("0.1.0");
+    await install(currentVersion);
     expect(await snapshot(dataDirectory)).toEqual(before);
     app = await launchNative(info, {
       executable,

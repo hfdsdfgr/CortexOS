@@ -7,7 +7,7 @@ import { EmptyState } from "./components/EmptyState";
 import { CognitiveInspector } from "./components/CognitiveInspector";
 import { ChatEvidence } from "./components/ChatEvidence";
 import { notify } from "./components/Toast";
-import { errorText, type Message, type Studio } from "./studio";
+import { errorText, preference, remember, type Message, type Studio } from "./studio";
 
 export function ChatPage({
   studio,
@@ -52,10 +52,22 @@ export function ChatPage({
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
-  const [evidenceOpen, setEvidenceOpen] = useState(() => window.innerWidth > 1100);
+  const evidenceToggle = useRef<HTMLButtonElement>(null);
+  const [wide, setWide] = useState(() => window.innerWidth > 1100);
+  const [desktopEvidence, setDesktopEvidence] = useState(() => preference("evidence-open") !== "false");
+  const [overlayEvidence, setOverlayEvidence] = useState(false);
+  const evidenceOpen = wide ? desktopEvidence : overlayEvidence;
+  const setEvidenceOpen = (open: boolean) => {
+    if (wide) { setDesktopEvidence(open); remember("evidence-open", String(open)); }
+    else setOverlayEvidence(open);
+    requestAnimationFrame(() => {
+      if (!open) evidenceToggle.current?.focus({ preventScroll: true });
+      else if (wide) document.getElementById("evidence-collapse")?.focus({ preventScroll: true });
+    });
+  };
   useEffect(() => {
     const query = window.matchMedia("(max-width: 1100px)");
-    const update = () => setEvidenceOpen(!query.matches);
+    const update = () => { setWide(!query.matches); setOverlayEvidence(false); };
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
@@ -108,7 +120,7 @@ export function ChatPage({
             )}
           </div>
           <div className="heading-actions">
-            <button className={`icon-button evidence-toggle ${!evidenceOpen ? "is-closed" : ""}`} aria-label={evidenceOpen ? "收起回答依据栏" : "打开回答依据"} title="回答依据" onClick={() => setEvidenceOpen(!evidenceOpen)}><PanelRight size={17} /></button>
+            <button ref={evidenceToggle} hidden={evidenceOpen} className="icon-button evidence-toggle" aria-label="打开回答依据" aria-expanded={evidenceOpen} aria-controls="chat-evidence" aria-haspopup={!wide ? "dialog" : undefined} title="打开回答依据" onClick={() => setEvidenceOpen(true)}><PanelRight size={17} /></button>
             {conversation && (
               <button
                 className="icon-button"
@@ -215,7 +227,7 @@ export function ChatPage({
           {copied ? "，回答已复制" : ""}
         </p>
       </section>
-      {evidenceOpen && <ChatEvidence studio={studio} runId={latestRun} onInspect={() => setSelectedRun(latestRun)} onClose={() => setEvidenceOpen(false)} />}
+      {evidenceOpen && <ChatEvidence studio={studio} overlay={!wide} runId={latestRun} onInspect={() => setSelectedRun(latestRun)} onClose={() => setEvidenceOpen(false)} />}
       <dialog
         className="form-dialog"
         ref={renameDialog}

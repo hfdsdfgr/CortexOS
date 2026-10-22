@@ -1,5 +1,78 @@
 # 里程碑记录
 
+## 2026-10-23：v0.2.0 预发布准备与验证
+
+用户要求“先这样吧，release一个0.2.0”，次日继续。发布基于已完成的HTML界面和易用性优化，仅同步版本、发布文档与安装检查；无Rust业务源码、数据库迁移、权限或依赖调整。npm包与锁文件、Cargo包与锁文件、Tauri配置及设置页版本统一为0.2.0，正式标识仍为com.cortexos.desktop。README保留能力与用途介绍，Qwen仅作为示例，可使用其他兼容的Ollama本地模型。远端核实已更名为公开的marksimZ/CortexOS，沿用仓库配置的Git Credential Manager，不读取或输出Gittoken.txt。保留用户reference素材及原有desktop.spec.ts工作区状态。
+
+### 实际命令和结果
+
+以下npm/Playwright命令在apps/desktop运行，其余从独立仓库根目录运行。构建和安装检查在10月22日执行，正式窗口复核及发布收尾在10月23日完成；不重跑单元或全量测试。
+
+- `git rev-parse --show-toplevel`确认D:/vibecoding/CortexOS；`git fetch origin`与`git ls-remote origin refs/heads/main refs/heads/codex/html-prototype-ui refs/tags/v0.2.0`确认main为e5bef65、界面分支为8877af4，尚无0.2.0标签。GitHub API核实仓库公开、有push权限，既有0.1.0资产保持不变。
+- `npm.cmd version 0.2.0 --no-git-tag-version`同步npm版本，Cargo/Tauri版本显式更新；锁文件只有根包版本变化。
+- `npm.cmd run tauri -- build --bundles nsis`通过类型检查、Vite、Rust优化构建与NSIS打包，Rust约3分11秒。正式exe的ProductVersion=0.2.0；包复制至artifacts/release-v0.2.0。安装包2,948,478字节，SHA-256为`b3a18e39b590c2615b024293e172e434949b263daf37cd7d122ff8c71a9ed1eb`，Authenticode为NotSigned。SHA256SUMS.txt与manifest.json记录一致。保留原有Vite大块提示和两处unused_mut提示，未顺带调整产品代码。
+- 顺序执行`npm.cmd run tauri -- build --debug --bundles nsis --config tests/fixtures/delivery-previous.json`和`--config tests/fixtures/delivery-current.json`，Rust分别约36.80秒和18.49秒；独立检查产品的版本为0.1.0和0.2.0，来自同一份当前源码，不是历史正式包。
+- 设置`CORTEXOS_DELIVERY_CHECK=1`后执行`npx.cmd playwright test tests/windows-delivery.spec.ts --project=delivery --output=../../artifacts/release-v0.2.0/install-check`，1/1通过、24.8秒。实际安装版本匹配，升级前后逐表记录及图谱相等；合成6版库迁移到7版及备份检查通过；卸载退出0、程序移除、检查数据保留。已安装窗口和可访问树检查通过，当前系统125%，不冒称150%或真实读屏。详情见delivery-evidence.json。
+- 正式Release启动复核最初通过Process.MainWindowHandle找到了Tao辅助窗口，关闭结果不可靠；仅清理本次拥有的无窗口探测进程。随后生产程序未开放CDP，30秒探测超时，没有新增生产调试入口。10月22日Windows UI Automation复核未执行，原因是自动审批服务用量限制，次日继续。
+- 10月23日执行`powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File artifacts/release-v0.2.0/check-production-window.ps1`实际启动正式程序。首次UIA按钮名受Windows PowerShell的UTF-8无BOM读取影响未匹配；改用Unicode码点构造固定名称，带`-VerificationProcessId 26884`复核同一探测进程通过：Tauri Window存在、前端关闭按钮可找到、调用按钮后正常退出，未强制结束。证据production-window-evidence.json。使用单独WebView配置，不编辑正式工作区或发送模型问题；不声称完整生产UI自动化。
+- `npm.cmd run tauri -- build --debug --no-bundle`恢复正常开发程序标识，类型检查和构建通过，Rust16.90秒。没有覆盖已生成正式包。主JS546.73kB/gzip165.16kB、图谱941.05kB，保留既有大小提示。
+- 收尾GitHub辅助脚本第一次以系统`python`调用时命中Python2并报语法错误，未发送API请求；改为`py -3 artifacts/release-v0.2.0/github-release.py inspect`通过。凭据只在内存中使用，输出仅含公开版本和权限。
+
+### 发布边界
+
+此前UI专项最终浏览器3/3、原生4/4及最终菜单1/1通过，见下节；本轮仅复用证据及运行必要安装/启动验证。正式安装包尚未在干净系统上安装，历史0.1.0正式包升级、150%系统缩放、真实读屏与长期真实模型仍待人工验收。安装包无签名、不包含Ollama/模型、未启用自动更新。准备在正常快进推送后发布v0.2.0预发布及安装包/校验和，发布结果另记；保留v0.1.0原标签和资产。
+
+## 2026-10-22：界面易用性优化
+
+用户确认只读审计方案后授权实施。沿用Full Prototype视觉方向，依次完成面板滚动结构、依据栏操作与滚动条、共享选择菜单，停在本轮UI验收。使用frontend-design、ui-ux-pro-max和ponytail；定向检索focus not obscured用于核对固定区域与焦点关系，实际设计继续采用项目Tokens，不引入UI依赖。未运行单元或全量检查。
+
+### 实际修改文件
+
+以下应用路径相对`apps/desktop/`，本表包含本轮全部源码、检查和文档变更。
+
+| 文件 | 变更 |
+| --- | --- |
+| `src/components/SelectMenu.tsx`（新增） | 保留真实select及原字段事件，以Popover顶层呈现统一选项；鼠标、方向键、Home/End/Enter/Esc/F4、键入匹配、选中勾选、禁用态、边界定位、外部关闭；不支持Popover时回退原控件 |
+| `src/components/AppearanceControl.tsx`、`WorkspaceSwitcher.tsx` | 接共享菜单，主题/工作区状态及原回调不变 |
+| `src/Settings.tsx`、`GraphMotionControl.tsx` | 模型/镜头设置接共享菜单；参数和相机动画语义不变 |
+| `src/Chat.tsx`、`src/components/ChatEvidence.tsx` | 面板标题行右侧收起，聊天区右侧展开；桌面偏好与窄窗临时状态分离，关闭返回焦点，窄窗使用原生模态dialog |
+| `src/components/CognitiveInspector.tsx`、`AnswerContent.tsx` | 处理记录与引用标题固定，正文独立滚动，保留实际记录、错误和引用定位 |
+| `src/Knowledge.tsx` | 历史固定标题，Portal解除玻璃页面的层叠遮挡；知识编辑固定标题/保存区，版本与类型使用共享菜单，保留审核、冲突和草稿保护 |
+| `src/Graph.tsx`、`ExecutionTrace.tsx` | 图谱与执行节点详情顶部操作固定；关系编辑固定标题/保存区；来源/筛选/节点/运行选择接共享菜单；不改相机或领域数据 |
+| `src/SourceBrowser.tsx` | 文件预览/阅读固定总标题，预览确认/取消移至独立底部；文件版本接共享菜单；保留导入、快照、选段和停用操作 |
+| `src/components/AppShell.tsx` | 窄窗导航固定标题和关闭入口 |
+| `src/styles/tokens.css`、`controls.css`、`layout.css`、`features.css`、`motion.css` | 浅深滑块色，原生滚动条统一轨道/滑块/悬停；共享面板头/正文/操作区；稳定滚动占位及边界；长配置值换行；共享菜单与120ms轻反馈；保留减少动态效果规则 |
+| `tests/ui-usability.spec.ts`、`ui-usability-native.spec.ts`（新增）及`playwright.config.ts` | 两项浏览器UI检查及一项原生完整易用性检查；使用隔离合成资料与真实界面，不以图片代替应用 |
+| `tests/knowledge.spec.ts` | 旧检查改为通过文字节点选取Markdown片段，导航按现有语义定位，历史滚动指向新的正文容器；保留来源/审核/冲突/重启等断言 |
+| `tests/prototype-ui.spec.ts` | 窄窗依据栏断言更新为真实dialog角色；本轮未重复运行此整项，等价窄窗开关/Esc由新增浏览器专项覆盖 |
+| `tests/graph-preview.spec.ts` | 等待相机收敛后检测连续250ms空闲帧，保留静止零绘制断言；不改相机实现 |
+| `docs/design/html-prototype-ui.md`、`docs/implementation-plan.md`、`docs/milestone-log.md` | 交互规范、当前验收门槛及实际结果 |
+
+进入本轮前已有的`tests/desktop.spec.ts`修改和reference素材未覆盖。Git核对Rust源码、数据库迁移、模型调用、权限、依赖与锁文件均无本轮变更，没有发布、推送或替换v0.1.0资产。
+
+### 实际命令和结果
+
+命令在`apps/desktop`运行；git检查在独立仓库根目录运行。
+
+- `git rev-parse --show-toplevel`：确认D:/vibecoding/CortexOS。`git status --short`保留既有改动；`git diff --check`通过（有CRLF规范化提示）。
+- `npm.cmd run typecheck`：各阶段及最终通过。首次缺少执行详情X图标导入，补齐后通过；一次读取命令工作目录重复了apps/desktop前缀，没有写入文件。
+- `npx.cmd playwright test tests/graph-preview.spec.ts --project=edge --grep "seven-node" --output=../../artifacts/ui-usability-stage1`：旧用例固定等待的空闲帧断言失败（115→139），随后新增专项实际展开长详情并断言正文scrollTop>0、顶部坐标保持不变。收尾改为等待收敛后仍严格检查连续250ms新增绘制0，不改变相机逻辑。
+- Node/Playwright临时浏览器脚本：确认Edge155支持Popover，检查真实组件中的菜单指针/键盘选择与原select事件。首次在pointerdown打开会被同一手势的轻关闭逻辑立即关闭，改为click打开后通过；未引入模拟页面或额外依赖。
+- `npx.cmd playwright test tests/ui-usability.spec.ts --project=edge --output=../../artifacts/ui-usability-stage2`：当时1项通过；后续增加菜单检查。`--output=../../artifacts/ui-usability-stage3`首次边界检查抓到缩放事件尚未完成的一帧旧坐标，改为等待实际菜单进入新视口后再量测。
+- 最终`npx.cmd playwright test tests/ui-usability.spec.ts --project=edge --output=../../artifacts/ui-usability-browser-final2`：2/2通过，5.1秒。覆盖真实图谱长面板、依据栏位置和偏好、800px抽屉Esc/返回焦点、菜单鼠标/键盘/外部关闭/记忆、浅深主题与1366/1600/1920/375视口边界。
+- 补充`npx.cmd playwright test tests/ui-usability.spec.ts tests/graph-preview.spec.ts --project=edge --grep "browser panel|browser themed|seven-node" --output=../../artifacts/ui-usability-browser-acceptance`：最终3/3通过，8.8秒，包括上述两项和图谱筛选/选择/静止零绘制/WebGL降级。期间修正共享菜单仅在打开时挂载，关闭后不留下会被原字段非精确getByLabel查询命中的隐藏列表；字段值和回调不变。
+- `npm.cmd run build`：通过。`npm.cmd run tauri -- build --debug --no-bundle`前几次因用户可见的原调试进程11824占用标准exe而无法替换；已生成的deps独立产物复制到项目artifacts用于中间隔离检查。用户明确回复保存并关闭后，标准构建成功；最终Rust dev构建8.57秒。未强制终止用户窗口。
+- 原生专项沙箱内首次CDP超时；正常Windows桌面权限下运行可连接。中间检查用例修正了合成资料超预算、内容未变化不新增版本、测试文件必须位于隔离data目录等输入，保留所有产品保护。知识旧用例的纯文本DOM和global-rail假设更新至现有Markdown/主导航，未删功能断言。
+- 原生实际发现历史抽屉被顶栏层叠遮挡、关闭入口无法点击，改为Portal并复验；共享弹出列表与原字段同名会使getByLabel含糊，改为“字段名＋选项”，保持字段原名称。长表单通过已有可调整高度的textarea制造溢出；文件预览使用600px高度并等待原生缩放布局完成后量测固定操作区。
+- 最终`npx.cmd playwright test tests/ui-usability-native.spec.ts tests/knowledge.spec.ts tests/trace.spec.ts tests/sources.spec.ts --project=desktop --grep "native long records|knowledge drafts|execution graph|authorized snapshots" --output=../../artifacts/ui-usability-acceptance`：4/4通过，32.3秒。知识10.0秒、来源6.2秒、执行图9.7秒、面板/菜单5.3秒。实际WebView2执行保存、读取、审核、冲突保护、停用、重启和跨页定位；模型服务为合成fixture，不声称真实模型性能验收。
+- 最后菜单改为按需挂载后的`npx.cmd playwright test tests/ui-usability-native.spec.ts --project=desktop --output=../../artifacts/ui-usability-native-releasecheck`：1/1复核通过，6.6秒；只重跑受该修改影响的面板/菜单/资料界面专项，未重复其余已通过功能。
+
+### 截图与验收边界
+
+原生四项验收截图在`artifacts/ui-usability-acceptance`，最终程序菜单专项截图在`artifacts/ui-usability-native-releasecheck`；新增专项子目录均为`ui-usability-native-native-2d644-keep-all-controls-available-desktop`：浅深主题×三种目标尺寸的菜单/滚到底处理记录共12张，另有历史/编辑固定操作图；知识专项另有三种尺寸和375px，执行图含窄窗图。已查看代表性的深色1600记录、深色1366菜单、浅色历史与长编辑图，以及最终程序深色1366记录，标题/关闭保持可见，历史不再穿透显示顶栏，滚动条无原来的上下箭头。最终浏览器截图在ui-usability-browser-acceptance，区分内容视口、系统缩放与真实模型运行。
+
+最终调试程序：`apps/desktop/src-tauri/target/debug/cortexos-desktop.exe`，SHA-256 `eeb70d436779df1a9580d7a9e5e16041505e7b9c88f28e359bdfa97edeed3e6d`；最后标准构建成功，Rust dev构建14.96秒（替代前次8.57秒产物）。前端主块546.73kB/gzip165.16kB、图谱块941.05kB；既有Vite大块提示仍在。未重做发布安装包；真实Windows150%缩放、读屏及长期真实模型负载未在本轮验证。完成本轮已授权UI切片，等待用户实际手感验收。
+
 ## 2026-10-22：Full Prototype HTML前端重构
 
 用户明确要求用reference中的Full Prototype HTML彻底替换旧视觉，仅改前端、保留全部功能，并应用五项细节。本轮以design/html-prototype-ui.md替代V3；读取总纲/开发规范/计划、AGENTS及新HTML，使用frontend-design、ui-ux-pro-max与ponytail。技能通用搜索返回的Hero方案不适合已有桌面应用，实际配色、宽度、玻璃层级均以用户HTML为准；不引入外部字体或新依赖。reference HTML及用户其他参考图保持原样，未纳入提交。

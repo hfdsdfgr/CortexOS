@@ -1,5 +1,7 @@
+import { SelectMenu } from "./components/SelectMenu";
 import { RetrievalSummary } from "./components/RetrievalSummary";
 import { GraphMotionControl } from "./GraphMotionControl";
+import { X } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   lazy,
@@ -63,7 +65,7 @@ export function ExecutionTrace({ studio }: { studio: GraphStudio }) {
     <>
       <div className="trace-toolbar">
         <label htmlFor="execution-run">回答记录</label>
-        <select
+        <SelectMenu
           id="execution-run"
           value={route.run ?? ""}
           onChange={(e) =>
@@ -84,7 +86,7 @@ export function ExecutionTrace({ studio }: { studio: GraphStudio }) {
               {runLabels[run.status] ?? run.status}，{run.modelId}
             </option>
           ))}
-        </select>
+        </SelectMenu>
         <button
           className="button text-button"
           onClick={() => {
@@ -364,11 +366,14 @@ function TraceCanvas({ studio, runId }: { studio: GraphStudio; runId: string }) 
                 </Suspense>
               )}
             </div>
-            {route.event && <section className="trace-detail" aria-label="执行节点详情">
-              <button className="button text-button" onClick={() => { api.current?.exitFocus(); exitFocus(); }}>关闭执行详情</button>
+            {route.event && <section className="trace-detail panel-container" aria-label="执行节点详情">
+              <header className="panel-header">
+                <h2>{selected?.title ?? "执行节点详情"}</h2>
+                <button className="icon-button" aria-label="关闭执行详情" onClick={() => { api.current?.exitFocus(); exitFocus(); }}><X size={19} /></button>
+              </header>
+              <div className="panel-body">
               {selected ? (
                 <>
-                  <h2>{selected.title}</h2>
                   {selected.time && (
                     <p>
                       {new Date(selected.time).toLocaleString("zh-CN")}
@@ -489,6 +494,7 @@ function TraceCanvas({ studio, runId }: { studio: GraphStudio; runId: string }) 
                 </p>
                 <code>{runId}</code>
               </details>
+              </div>
             </section>}
           </div>
           <details className="trace-caption">

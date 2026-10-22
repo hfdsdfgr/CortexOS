@@ -12,6 +12,7 @@
   --selected: rgb(79 91 213 / 9%); --chip: rgb(79 182 168 / 18%);
   --warning-bg: rgb(227 168 79 / 16%); --danger-bg: rgb(173 62 69 / 8%);
   --micro-raised: rgb(255 255 255 / 3%); --micro-inset: rgb(27 34 48 / 2%);
+  --scroll-thumb: rgb(71 83 111 / 32%); --scroll-thumb-hover: rgb(71 83 111 / 56%); --scroll-thumb-active: rgb(71 83 111 / 72%);
   --shadow: 0 8px 32px rgb(40 50 90 / 8%), inset 0 1px 0 var(--glass-highlight);
   --shadow-overlay: 0 16px 56px rgb(40 50 90 / 16%), inset 0 1px 0 var(--glass-highlight);
   --font-normal: 400; --font-medium: 500; --font-strong: 600;
@@ -38,6 +39,7 @@
   --selected: rgb(120 130 255 / 16%); --chip: rgb(79 182 168 / 22%);
   --warning-bg: rgb(227 168 79 / 13%); --danger-bg: rgb(240 160 165 / 10%);
   --micro-raised: rgb(255 255 255 / 3%); --micro-inset: rgb(0 0 0 / 3%);
+  --scroll-thumb: rgb(174 189 216 / 30%); --scroll-thumb-hover: rgb(174 189 216 / 50%); --scroll-thumb-active: rgb(174 189 216 / 68%);
   --shadow: 0 8px 32px rgb(0 0 0 / 14%), inset 0 1px 0 var(--glass-highlight);
   --shadow-overlay: 0 16px 56px rgb(0 0 0 / 28%), inset 0 1px 0 var(--glass-highlight);
   --font-normal: 380; --font-medium: 450; --font-strong: 500;

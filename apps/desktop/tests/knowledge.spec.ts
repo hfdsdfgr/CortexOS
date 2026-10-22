@@ -28,7 +28,19 @@ test("knowledge drafts preserve source, approval, conflicts and edits across res
     await page.getByRole("button",{name:"发送消息",exact:true}).click();
     await expect(page.getByText("已完成",{exact:true})).toBeVisible();
     await page.locator(".message.assistant .message-content").evaluate((element) => {
-      const range=document.createRange(); range.setStart(element.firstChild!,0); range.setEnd(element.firstChild!,9); const selection=window.getSelection()!;selection.removeAllRanges();selection.addRange(range);
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const first = walker.nextNode();
+      if (!first) throw new Error("回答没有可选择的正文");
+      const range = document.createRange();
+      range.setStart(first, 0);
+      let node: Node | null = first, remaining = 9;
+      while (node && remaining > (node.textContent?.length ?? 0)) {
+        remaining -= node.textContent?.length ?? 0;
+        node = walker.nextNode();
+      }
+      if (!node) throw new Error("回答正文不足9个字符");
+      range.setEnd(node, remaining);
+      const selection=window.getSelection()!;selection.removeAllRanges();selection.addRange(range);
     });
     await page.getByRole("button",{name:"保存为知识",exact:true}).click();
     let editor=page.getByRole("dialog",{name:"新建知识草稿",exact:true});
@@ -119,9 +131,9 @@ test("knowledge drafts preserve source, approval, conflicts and edits across res
     for (const width of [1366, 1600, 1920]) {
       await page.setViewportSize({width,height:width === 1366 ? 768 : width === 1600 ? 900 : 1080});
       await expect(page.locator(".knowledge-history-drawer")).toBeVisible();
-      await expect(page.locator('.global-rail a[aria-current="page"]')).toHaveText("知识");
+      await expect(page.getByRole("navigation", { name: "主导航", exact: true }).locator('[aria-current="page"]')).toHaveText("知识");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await page.locator(".knowledge-history-drawer").evaluate(el => { el.scrollTop = 0; });
+      await page.locator(".knowledge-history-drawer > .panel-body").evaluate(el => { el.scrollTop = 0; });
       await page.screenshot({path:testInfo.outputPath(`knowledge-reference-${width}.png`)});
     }
 
