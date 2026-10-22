@@ -19,6 +19,7 @@ import "./workspace-design.css";
 import "./design-tokens.css";
 import "./graph-design.css";
 import "./workspace-v3.css";
+import "./markdown.css";
 import { useNavigation, navigate } from "./navigation";
 
 export default function App() {

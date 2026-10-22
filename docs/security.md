@@ -97,3 +97,7 @@ main窗口增加query_graph_nodes、load_graph_node、load_graph_links、query_g
 NSIS明确currentUser，内部0.1.0包未签名，无公开发布/自动更新、Ollama或权重捆绑；已有WebView2时不下载运行时，缺少时默认引导程序需要联网，干净系统未验。许可审查与通用备份恢复完成前不开放公开测试。卸载的“删除应用数据”是独立用户选择，本轮静默检查未选择它。
 
 安装升级检查使用独立产品名/identifier及仓库artifacts内数据，通过/NS跳过快捷方式；专用HKCU安装项随检查卸载清理，数据留下审计。debug伴随包复用已有仅调试的CDP、文件夹与本机服务覆盖，不改生产边界。正式Release的lib.rs/commands.rs/ollama.rs由cfg(debug_assertions)排除这些入口；本轮只构建正式Release，运行证据来自伴随包。没有新Tauri权限或数据库迁移。正式用户数据未读取或修改。
+
+## Markdown呈现边界（2026-10-22）
+
+用户输入和模型输出由react-markdown/remark-gfm生成React节点，原始HTML不作为DOM执行；不启用rehype-raw或dangerouslySetInnerHTML。URL仅允许显式http/https/mailto，外链带noopener/noreferrer；图片只呈现说明文字，不自动发网络请求。代码和链接内的引用标记不变成嵌套按钮，普通文字引用仍核对保存的UTF-16偏移。新增三项固定npm运行依赖，不增加Tauri权限、模型接口、数据库迁移或静默上传。原始消息及审计报告不改写。

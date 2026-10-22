@@ -1,4 +1,5 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { MarkdownContent } from "./MarkdownContent";
 import { X } from "lucide-react";
 import { SourceBrowser, type SourceRef } from "../SourceBrowser";
 import { navigate } from "../navigation";
@@ -8,42 +9,46 @@ import type {
   Message,
 } from "../studio";
 
-export function AnswerContent({ message }: { message: Message }) {
+export function AnswerContent({
+  message,
+  raw = false,
+}: {
+  message: Message;
+  raw?: boolean;
+}) {
   const report =
     message.role === "assistant" && message.status !== "streaming"
       ? message.citations
       : null;
   const [selected, setSelected] = useState<CitationOccurrence | null>(null);
-  const pieces = [];
   let cursor = 0;
+  let compatible = true;
   for (const item of report?.occurrences ?? []) {
     // Keep the original answer if a stale/incompatible report ever reaches the UI.
     if (
       item.start < cursor ||
       message.content.slice(item.start, item.end) !== item.label
-    )
-      return <div className="message-content">{message.content}</div>;
-    pieces.push(
-      <Fragment key={item.start}>
-        {message.content.slice(cursor, item.start)}
-        <button
-          className={`answer-citation${item.error ? " invalid" : ""}`}
-          aria-label={`${item.label}，${item.error ? "无法定位" : "查看引用文字"}`}
-          title={item.error ?? "查看本次发给模型的文字"}
-          onClick={() => setSelected(item)}
-        >
-          {item.label}
-        </button>
-      </Fragment>,
-    );
+    ) {
+      compatible = false;
+      break;
+    }
     cursor = item.end;
   }
   const invalid = report?.occurrences.filter((item) => item.error).length ?? 0;
   return (
     <>
-      <div className="message-content">
-        {pieces}
-        {message.content.slice(cursor)}
+      <div
+        className={`message-content ${raw ? "markdown-source" : "markdown-content"}`}
+      >
+        {raw ? (
+          message.content
+        ) : (
+          <MarkdownContent
+            content={message.content}
+            occurrences={compatible ? report?.occurrences : []}
+            onCitation={setSelected}
+          />
+        )}
       </div>
       {invalid > 0 && (
         <p className="citation-warning" role="status">

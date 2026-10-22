@@ -929,3 +929,33 @@ npm/npx命令目录为apps/desktop；原生构建及检查使用require_escalate
 ## 2026-10-22 正式Release交由用户验收
 
 用户要求“弹出来给我测试我来验收”。确认独立仓库、Release exe版本0.1.0及当前无同名应用进程后，经require_escalated用Start-Process启动正式Release并WaitForInputIdle；随后Get-Process及原生IsWindowVisible确认进程存活、窗口标题正确且可见。ShowWindowAsync显示窗口；SetForegroundWindow返回false，未绕过Windows前台限制。使用正常应用目录，不启用调试数据/CDP覆盖，不安装正式NSIS包，不修改缩放或读取用户数据库正文。程序留给用户操作；未运行测试，未声称页面/模型/安装及人工验收通过。当前仍在第5项，Decision Lab尚未启动。
+
+## 2026-10-22 用户验收修复：Markdown与镜头过渡
+
+用户反馈输入/输出不支持Markdown、聚焦和节点切换过快。本轮限定UI呈现与相机时长，继续V3和第5项验收，不进入Decision Lab。复读相关开发规范和永久V3；没有重构数据库、检索或模型逻辑，没有新Tauri权限。使用ponytail复用textarea/状态/原文及相机控制；ui-ux-pro-max查询camera transition motion duration（ux域）得到Animation/Duration Timing，匹配“根据距离与场景定时长”，不将通用数值冒称相机研究或用户测量。
+
+### 实际修改
+
+- 新MarkdownContent.tsx复用到AnswerContent与ChatComposer；使用固定react-markdown10.1.0、remark-gfm4.0.1、micromark-util-decode-string2.0.1。npm元数据和官方仓库说明已核对。标准解析器支持常见块/行内/GFM格式，避免手写Markdown；原有直接依赖版本不改，更新package.json与npm锁文件，Cargo.lock未变。
+- 输入保留原textarea、Enter/Shift+Enter/输入法规则；眼睛/铅笔在原文和预览间切换，草稿/焦点保留，发送仍是原文。用户消息和回答共用排版，回答增加原文切换；复制继续取原文。跨格式选中文字无法对应原文时提示重新选择，避免静默换为整条。新markdown.css使用已有Tokens定义正文、标题、代码和局部滚动表格，未重排全局布局或加常驻灰字。
+- 引用仍用原服务和报告。AST只转换普通文字节点，按原始UTF-16偏移逐项校验，标准解码处理转义/字符实体；粗体/表格可点击，代码/链接内为字面标记。原始HTML显示文字、不执行，危险URL不生成链接，图片只显示说明、不自动请求；未添加新权限或云端功能。
+- GraphCamera原固定420ms变为按位置/目标位移限幅1100–1600ms，使用五次平滑曲线；从当前实际视角开始，保留原探索快照、新聚焦/拖动/滚轮中断、恢复及减少动态效果。除格式化外其余事件/保存语义不变。
+- 新markdown-camera.spec.ts注册desktop两个必要场景；旧citations分隔点断言改为当前V3逗号，保留所有业务断言。文档为design/markdown-and-camera、V3、实施计划、test-plan、security、README、Windows交付记录与本日志。用户desktop.spec.ts差异及reference文件保留不提交。
+
+### 实际命令和结果
+
+npm/npx命令目录apps/desktop；构建与必要原生检查使用require_escalated、隔离库/专用WebView目录。遵守用户不跑非必要单元测试要求，没有运行单元或全套测试，没有安装系统软件。
+
+- npm.cmd ls react-markdown remark-gfm marked markdown-it --depth=0确认无既有解析器；npm.cmd view核对react-markdown10.1.0、remark-gfm4.0.1。npm.cmd install --save-exact react-markdown@10.1.0 remark-gfm@4.0.1 micromark-util-decode-string@2.0.1完成，新增101包，用时5分钟，npm提示旧advisory端点退役；没有单独运行或声称安全审计通过。rg首次Windows通配路径无效，改用目录加-g过滤。
+- npm.cmd run typecheck在接入、预览及新增检查后通过。npx.cmd --yes prettier@3.9.10 --write只整理本轮TSX/相机/检查文件；原相机文件一部分差异为排版。
+- npm.cmd run tauri -- build --debug --no-bundle通过，Rust15.15s；Vite主块530.32kB/gzip160.51kB（原371.65/111.78），图谱940.90kB。新增解析能力有体积成本，主块和图谱均有500kB提示，不声称已优化或消除提示。
+- npx.cmd playwright test markdown-camera.spec.ts citations.spec.ts graph-instances.spec.ts trace.spec.ts --project desktop --output ../../artifacts/markdown-camera-first：5条通过，总33.0s；引用5.0s、实例3.6s、Markdown3.6s、相机7.4s、执行图10.9s。包含原引用错误/历史/来源/重启及原节点选择、位置/探索视角恢复，未删断言。
+- 补充跨格式选取保护、原文选取保存和回答顶部截图，仅运行npx.cmd playwright test markdown-camera.spec.ts --project desktop --grep "native Markdown" --output ../../artifacts/markdown-final：1条通过，总5.8s、用例3.6s。
+- 补充真实空白拖动取消，单跑相机至camera-final失败：手势落点在画布左上20px，实际被top/left16px的状态条覆盖，未触发canvas拖动。改到画布内部18%/45%的空白点并先断言elementFromPoint确为canvas，保持原“不重开详情”断言，未改产品代码；npx.cmd playwright test markdown-camera.spec.ts --project desktop --grep "native focus" --output ../../artifacts/camera-drag-final：1条通过，总11.5s、用例9.4s。
+- npm.cmd run tauri -- build --bundles nsis通过，Rust2分22秒。保留两条原release unused_mut提示与Vite体积提示；新内部包2,948,332字节，SHA256为cb7a1f33a1ca622aaa9a93713ee743bcf223158249d7a879043b04cc7de98ca0，仍未签名0.1.0，不公开发行。更新Windows交付记录和本机manifest，旧安装升级证据不冒充新UI包安装验证。
+- 已查看实际1366×768、1600×900、1920×1080预览截图、回答顶部及动画中截图；三尺寸未横向溢出。原生检查内容视口不代表系统150%。最终相机操作至详情约1327.3/1264.1ms，含IPC/调度，空闲350ms新增绘制0；非屏幕FPS或纯动画耗时。
+- 先确认无同名应用运行，Start-Process启动新正式Release并WaitForInputIdle；原生标题正确、IsWindowVisible=true，未启用测试入口。ShowWindowAsync已显示，SetForegroundWindow=false，未绕过Windows前台限制；程序留给用户验收。git diff --check通过，仅既有CRLF提示。提交前确认独立仓库和配置凭据管理器，令牌文件保持忽略且未读取。
+
+### 边界和停止点
+
+Markdown用原文存储，不改变请求或证据；不支持数学公式/代码着色，不自动下载图片，外链实际系统打开未专项验收；代码/链接内引用为字面文字。没有超长Markdown/真实模型长回答解析性能、系统150%、真实读屏或长时模型新结论。手感由用户继续验收，不将自动检查当人工通过；第5项其余门槛仍在。本轮修复后停止，不推进Decision Lab。

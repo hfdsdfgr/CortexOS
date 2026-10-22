@@ -158,7 +158,7 @@ test("answer citations use exact run inputs, flag bad locations and preserve his
     await citation().click();
     const drawer = () =>
       page.getByRole("dialog", { name: "引用文字", exact: true });
-    await expect(drawer()).toContainText("知识 v1 · 第 2–2 行");
+    await expect(drawer()).toContainText("知识 v1，第 2–2 行");
     await expect(drawer().locator(".citation-line[data-selected]")).toHaveCount(
       1,
     );

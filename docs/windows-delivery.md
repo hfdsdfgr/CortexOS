@@ -4,9 +4,9 @@
 
 ## 安装包
 
-正式标识com.cortexos.desktop，版本0.1.0，Windows x64 Release，当前用户安装，简体中文/英文。文件：`apps/desktop/src-tauri/target/release/bundle/nsis/CortexOS_0.1.0_x64-setup.exe`，2,902,672字节（约2.77MiB）。
+正式标识com.cortexos.desktop，版本0.1.0，Windows x64 Release，当前用户安装，简体中文/英文。文件：`apps/desktop/src-tauri/target/release/bundle/nsis/CortexOS_0.1.0_x64-setup.exe`，2,948,332字节（约2.81MiB，包含本日Markdown/镜头修复）。
 
-SHA-256：`108e763c7c76aad9c573253b847d9b8a95600e70a779f2c3da37840316d2b691`。
+SHA-256：`cb7a1f33a1ca622aaa9a93713ee743bcf223158249d7a879043b04cc7de98ca0`。
 
 Authenticode：NotSigned，内部开发包。没有公开发布、自动更新、Ollama或模型捆绑。依赖/模型再分发许可、签名与面向用户的通用备份恢复仍未完成，不作为公开测试版本。默认WebView2引导程序在缺少运行时时需要联网；已有运行时可离线安装应用。没有实测缺少运行时的干净系统。
 
@@ -63,3 +63,7 @@ Remove-Item Env:CORTEXOS_CHAT_SOAK_MS
 ## 2026-10-22 用户现场验收启动
 
 用户要求弹出程序亲自验收。直接启动target/release/cortexos-desktop.exe（0.1.0），未使用测试环境覆盖；进程存活，原生窗口标题为“CortexOS — 本地认知工作台”，IsWindowVisible=true。ShowWindowAsync已显示窗口，Windows拒绝SetForegroundWindow抢前台（返回false），如在其他窗口后可从任务栏切入。没有自动关闭程序、修改系统缩放或操作用户内容。仅证明进程与原生窗口启动，不代表正式安装包安装、页面加载、模型响应或人工清单已通过；等待用户反馈。
+
+## 本日验收修复后的包更新
+
+Markdown及慢速聚焦修复后重新构建同版本内部Release，当前文件大小/哈希已更新。首轮内部包为2,902,672字节，旧哈希108e763c7c76aad9c573253b847d9b8a95600e70a779f2c3da37840316d2b691，原安装升级证据来自该轮同源调试伴随包；本轮没有重跑安装升级，不能把旧证据当作新包安装验证。新Release原生窗口已按用户要求重新启动并确认可见，等待用户检查Markdown与镜头手感；Windows未允许抢占前台，可从任务栏打开。

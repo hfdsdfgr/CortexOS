@@ -8,7 +8,12 @@ import type { ViewportApi } from "./GraphViewport";
 
 type View = { camera: Point; target: Point };
 export function GraphCamera({
-  apiRef, positions, target, onChange, onExitFocus, onFocused,
+  apiRef,
+  positions,
+  target,
+  onChange,
+  onExitFocus,
+  onFocused,
 }: {
   apiRef: Ref<ViewportApi>;
   positions: Point[];
@@ -25,6 +30,7 @@ export function GraphCamera({
     to: View;
     started: number;
     focused: boolean;
+    duration: number;
   } | null>(null);
   const callbacks = useRef({ onChange, onExitFocus, onFocused });
   callbacks.current = { onChange, onExitFocus, onFocused };
@@ -45,8 +51,21 @@ export function GraphCamera({
       callbacks.current.onChange();
       if (focused) callbacks.current.onFocused?.();
     } else {
+      const from = capture();
+      const distance = Math.max(
+        new THREE.Vector3(...from.camera).distanceTo(
+          new THREE.Vector3(...view.camera),
+        ),
+        new THREE.Vector3(...from.target).distanceTo(
+          new THREE.Vector3(...view.target),
+        ),
+      );
       animation.current = {
-        from: capture(), to: view, started: performance.now(), focused,
+        from,
+        to: view,
+        started: performance.now(),
+        focused,
+        duration: THREE.MathUtils.clamp(1100 + distance * 8, 1100, 1600),
       };
       invalidate();
     }
@@ -64,8 +83,11 @@ export function GraphCamera({
   useFrame(() => {
     const flight = animation.current;
     if (!flight) return;
-    const progress = Math.min(1, (performance.now() - flight.started) / 420);
-    const eased = progress * progress * (3 - 2 * progress);
+    const progress = Math.min(
+      1,
+      (performance.now() - flight.started) / flight.duration,
+    );
+    const eased = progress ** 3 * (progress * (progress * 6 - 15) + 10);
     const interpolate = (a: Point, b: Point) =>
       a.map((v, i) => v + (b[i] - v) * eased) as Point;
     apply({
@@ -83,29 +105,46 @@ export function GraphCamera({
     exitFocus: () => exit(),
     focus: (point) => {
       original.current ??= capture();
-      const direction = camera.position.clone()
-        .sub(controls.current?.target ?? new THREE.Vector3()).normalize();
+      const direction = camera.position
+        .clone()
+        .sub(controls.current?.target ?? new THREE.Vector3())
+        .normalize();
       // Keep a useful neighborhood in frame instead of isolating a single sphere.
-      move({
-        camera: new THREE.Vector3(...point).addScaledVector(direction, 14).toArray() as Point,
-        target: point,
-      }, true);
+      move(
+        {
+          camera: new THREE.Vector3(...point)
+            .addScaledVector(direction, 14)
+            .toArray() as Point,
+          target: point,
+        },
+        true,
+      );
     },
     fit: () => {
       if (!positions.length) return;
       if (original.current) callbacks.current.onExitFocus?.();
       original.current = null;
-      const box = new THREE.Box3().setFromPoints(positions.map(p => new THREE.Vector3(...p)));
+      const box = new THREE.Box3().setFromPoints(
+        positions.map((p) => new THREE.Vector3(...p)),
+      );
       const center = box.getCenter(new THREE.Vector3());
       const perspective = camera as THREE.PerspectiveCamera;
-      const distance = Math.max(8,
-        box.getSize(new THREE.Vector3()).length() * 1.25 /
-        (2 * Math.tan(THREE.MathUtils.degToRad(perspective.fov / 2)) * Math.min(1, perspective.aspect)),
+      const distance = Math.max(
+        8,
+        (box.getSize(new THREE.Vector3()).length() * 1.25) /
+          (2 *
+            Math.tan(THREE.MathUtils.degToRad(perspective.fov / 2)) *
+            Math.min(1, perspective.aspect)),
       );
-      const direction = camera.position.clone()
-        .sub(controls.current?.target ?? new THREE.Vector3()).normalize();
+      const direction = camera.position
+        .clone()
+        .sub(controls.current?.target ?? new THREE.Vector3())
+        .normalize();
       move({
-        camera: center.clone().addScaledVector(direction, distance).toArray() as Point,
+        camera: center
+          .clone()
+          .addScaledVector(direction, distance)
+          .toArray() as Point,
         target: center.toArray() as Point,
       });
     },
@@ -129,16 +168,24 @@ export function GraphCamera({
     const pointerDown = (event: PointerEvent) => {
       const bounds = canvas.getBoundingClientRect();
       const ray = new THREE.Raycaster();
-      ray.setFromCamera(new THREE.Vector2(
-        (event.clientX - bounds.left) / bounds.width * 2 - 1,
-        -(event.clientY - bounds.top) / bounds.height * 2 + 1,
-      ), camera);
-      const hit = ray.intersectObjects(scene.children, true)
-        .some(item => item.object.userData.graphNode);
+      ray.setFromCamera(
+        new THREE.Vector2(
+          ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+          (-(event.clientY - bounds.top) / bounds.height) * 2 + 1,
+        ),
+        camera,
+      );
+      const hit = ray
+        .intersectObjects(scene.children, true)
+        .some((item) => item.object.userData.graphNode);
       down = { x: event.clientX, y: event.clientY, blank: !hit };
     };
     const pointerMove = (event: PointerEvent) => {
-      if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 4) return;
+      if (
+        !down ||
+        Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 4
+      )
+        return;
       if (down.blank && original.current) exit(true);
       else if (animation.current) {
         animation.current = null;
@@ -146,7 +193,9 @@ export function GraphCamera({
       }
       down = null;
     };
-    const pointerUp = () => { down = null; };
+    const pointerUp = () => {
+      down = null;
+    };
     const wheel = () => {
       if (animation.current) {
         animation.current = null;
@@ -155,8 +204,17 @@ export function GraphCamera({
       }
     };
     const keyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented || document.querySelector("dialog[open]")) return;
-      if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable=true]")) return;
+      if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        document.querySelector("dialog[open]")
+      )
+        return;
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.closest("input, textarea, select, [contenteditable=true]")
+      )
+        return;
       exit();
     };
     canvas.addEventListener("pointerdown", pointerDown, true);
@@ -181,7 +239,11 @@ export function GraphCamera({
       makeDefault
       target={target}
       enableDamping={false}
-      mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
+      mouseButtons={{
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN,
+      }}
       minDistance={3}
       maxDistance={50000}
       onEnd={() => callbacks.current.onChange()}

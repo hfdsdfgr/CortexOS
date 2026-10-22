@@ -1,4 +1,5 @@
-import { BookOpen, Check, Copy, GitBranch } from "lucide-react";
+import { BookOpen, Check, Code2, Copy, GitBranch } from "lucide-react";
+import { useState } from "react";
 import { navigate } from "../navigation";
 import type { Message, Studio } from "../studio";
 import { AnswerContent } from "./AnswerContent";
@@ -30,6 +31,7 @@ export function ChatMessage({
   studio: Studio;
   send: (content?: string) => Promise<void>;
 }) {
+  const [raw, setRaw] = useState(false);
   return (
     <article
       className={`message ${message.role}`}
@@ -51,7 +53,7 @@ export function ChatMessage({
         )}
       </div>
       {message.content ? (
-        <AnswerContent message={message} />
+        <AnswerContent message={message} raw={raw} />
       ) : (
         <div className="message-content">
           {message.status === "streaming"
@@ -82,6 +84,15 @@ export function ChatMessage({
           </button>
           <button
             className="button text-button"
+            aria-pressed={raw}
+            aria-label={raw ? "显示 Markdown 排版" : "查看 Markdown 原文"}
+            onClick={() => setRaw(!raw)}
+          >
+            <Code2 size={16} aria-hidden="true" />
+            {raw ? "排版" : "原文"}
+          </button>
+          <button
+            className="button text-button"
             disabled={!message.content || message.status === "streaming"}
             onClick={(event) => {
               const selection = window.getSelection();
@@ -96,6 +107,12 @@ export function ChatMessage({
                 article
                   ?.querySelector(".message-content")
                   ?.contains(selection.focusNode);
+              if (inside && selected && !message.content.includes(selected)) {
+                studio.reportError(
+                  "所选文字跨越了 Markdown 格式标记。请点击“原文”后重新选择，或取消文字选择以保存整条回答。",
+                );
+                return;
+              }
               onSaveKnowledge(
                 message,
                 Array.from(
