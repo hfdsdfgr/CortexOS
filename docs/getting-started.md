@@ -18,14 +18,18 @@ Get-FileHash .\CortexOS_0.1.0_x64-setup.exe -Algorithm SHA256
 
 ## 2. 准备本地模型
 
-安装 [Ollama Windows 版本](https://ollama.com/download/windows) 并启动。官方 Windows 版通常在后台运行，详见 [Ollama Windows 文档](https://docs.ollama.com/windows)。安装后重新打开 PowerShell：
+安装 [Ollama Windows 版本](https://ollama.com/download/windows) 并启动。官方 Windows 版通常在后台运行，详见 [Ollama Windows 文档](https://docs.ollama.com/windows)。安装后重新打开 PowerShell。你可以使用其他通过本机 Ollama 部署的兼容本地对话模型；下面仅以轻量模型 Qwen 为例：
 
 ```powershell
 ollama pull qwen3:4b-instruct
 ollama list
 ```
 
-第一条下载当前默认模型；下载需要联网并占用额外磁盘。模型标签、文件大小和运行内存可能变化，以实际下载和 `ollama show qwen3:4b-instruct` 为准。该模型是当前实现的默认选择，适用性仍取决于设备。
+`qwen3:4b-instruct` 是轻量模型示例，同时也是应用的初始默认值，并非唯一选择。使用其他模型时，将下载命令中的名称换成所选模型的标签，在应用设置中选择对应模型即可。
+
+当前应用要求模型通过本机 Ollama 提供对话接口，检查结果为本地 GGUF 格式，且不指向云端模型。其他部署工具的独立接口暂未接入；也不能保证每个模型的特殊能力或参数均兼容。请根据内存、显存、语言和任务选择模型与量化版本。
+
+下载需要联网并占用额外磁盘。模型标签、大小和运行内存可能变化，以实际下载和 `ollama show <模型名称>` 为准；这里的 `<模型名称>` 需替换为实际标签。
 
 如果 Ollama 未在后台运行，可使用 `ollama serve`；已有服务时无需重复启动。CortexOS 固定连接 `http://127.0.0.1:11434`，不接受远程地址或云端模型别名。
 
