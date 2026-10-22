@@ -163,14 +163,14 @@ export function errorText(value: unknown): string {
       ? value.message
       : "操作未完成，请重试。";
 }
-function preference(key: string): string | null {
+export function preference(key: string): string | null {
   try {
     return localStorage.getItem(`cortexos.${key}`);
   } catch {
     return null;
   }
 }
-function remember(key: string, value: string) {
+export function remember(key: string, value: string) {
   try {
     localStorage.setItem(`cortexos.${key}`, value);
   } catch {

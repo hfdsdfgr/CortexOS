@@ -7,6 +7,10 @@ test("instanced shapes preserve entity picking after filtering and moving, and V
   const app = await launchNative(info);
   try {
     const { page } = app;
+    // Entity-picking coordinates use a settled camera; animated motion has its own native check.
+    await page.evaluate(() =>
+      localStorage.setItem("cortexos.graph-motion", "instant"),
+    );
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1600, height: 900 });
     await createWorkspace(page, "批量绘制点击检查");

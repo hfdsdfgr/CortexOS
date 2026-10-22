@@ -4,9 +4,9 @@
 
 ## 安装包
 
-正式标识com.cortexos.desktop，版本0.1.0，Windows x64 Release，当前用户安装，简体中文/英文。文件：`apps/desktop/src-tauri/target/release/bundle/nsis/CortexOS_0.1.0_x64-setup.exe`，2,948,332字节（约2.81MiB，包含本日Markdown/镜头修复）。
+正式标识com.cortexos.desktop，版本0.1.0，Windows x64 Release，当前用户安装，简体中文/英文。文件：`apps/desktop/src-tauri/target/release/bundle/nsis/CortexOS_0.1.0_x64-setup.exe`，2,949,609字节（约2.81MiB，包含本日Markdown、420ms镜头偏好与首帧计时修复）。
 
-SHA-256：`cb7a1f33a1ca622aaa9a93713ee743bcf223158249d7a879043b04cc7de98ca0`。
+SHA-256：`1c067bed99cf0e22a738272a067a36eaad3d5f30fe682d09f6fa1d24825d3c23`。
 
 Authenticode：NotSigned，内部开发包。没有公开发布、自动更新、Ollama或模型捆绑。依赖/模型再分发许可、签名与面向用户的通用备份恢复仍未完成，不作为公开测试版本。默认WebView2引导程序在缺少运行时时需要联网；已有运行时可离线安装应用。没有实测缺少运行时的干净系统。
 
@@ -67,3 +67,7 @@ Remove-Item Env:CORTEXOS_CHAT_SOAK_MS
 ## 本日验收修复后的包更新
 
 Markdown及慢速聚焦修复后重新构建同版本内部Release，当前文件大小/哈希已更新。首轮内部包为2,902,672字节，旧哈希108e763c7c76aad9c573253b847d9b8a95600e70a779f2c3da37840316d2b691，原安装升级证据来自该轮同源调试伴随包；本轮没有重跑安装升级，不能把旧证据当作新包安装验证。新Release原生窗口已按用户要求重新启动并确认可见，等待用户检查Markdown与镜头手感；Windows未允许抢占前台，可从任务栏打开。
+
+## 镜头复验后最终包（同日）
+
+最终420ms包为2,949,609字节，顶部哈希已更新。本轮明确平滑/跟随系统/立即选项，从实际首帧计时并验证真实相机中间位置；旧1.1–1.6秒中间包不再交付。先前Markdown包2,948,332字节，哈希cb7a1f33a1ca622aaa9a93713ee743bcf223158249d7a879043b04cc7de98ca0，仅为历史记录。当前Release已重新启动且窗口可见，Windows未允许抢占前台，可从任务栏切入；仍等用户手感验收。安装升级、系统150%及读屏未因本轮构建自动通过。

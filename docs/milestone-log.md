@@ -959,3 +959,39 @@ npm/npx命令目录apps/desktop；构建与必要原生检查使用require_escal
 ### 边界和停止点
 
 Markdown用原文存储，不改变请求或证据；不支持数学公式/代码着色，不自动下载图片，外链实际系统打开未专项验收；代码/链接内引用为字面文字。没有超长Markdown/真实模型长回答解析性能、系统150%、真实读屏或长时模型新结论。手感由用户继续验收，不将自动检查当人工通过；第5项其余门槛仍在。本轮修复后停止，不推进Decision Lab。
+
+
+## 2026-10-22 镜头复验：应用偏好与420ms恢复
+
+用户反馈实际聚焦/切换仍瞬间完成，随后明确将时长恢复“初版”。最终420ms，保留五次平滑、可中断及原视角语义。本轮没有数据库、模型、依赖、权限或全局UI重排；不进入Decision Lab。用户此前已要求新版弹出供测试，更新后继续交回验收。
+
+### 检查依据和修复
+
+- 只读SystemParametersInfo(SPI_GETCLIENTAREAANIMATION=0x1042)，调用成功，返回false；已对照Microsoft官方API字段说明。确认原运行进程3132确实来自本仓库release目录。但隔离原生WebView未仿真时媒体查询为false，两种结果不一致；未读取旧正式页面媒体查询，因此不能把系统开关断言为用户实际问题的唯一原因。前一轮的no-preference用例没有覆盖减少动态效果下显式要求平滑的情况，本轮补齐。
+- GraphMotionControl复用studio的preference/remember，只导出已有两个帮助函数；默认平滑，提供跟随系统/立即切换。仅跟随系统才按媒体查询跳过；localStorage键cortexos.graph-motion，全应用知识图/执行图共用，重载保留，存储不可用时保留本会话选择。不修改Windows设置。
+- 控件放在原“图例与操作/图例与记录说明”，复用V3 field、原生select和语义Tokens，不增加常驻灰字。首次检查发现label包裹select时精确名称包含选项，改成useId关联的独立label，保留可访问名称断言。
+- GraphCamera按最新要求恢复固定420ms，并将动画起点延后到第一条实际useFrame回调，避免首帧前同步工作把过渡耗尽。GraphViewport沿用原观测dataset记录真实相机位置，回归核对实际插值，而非只等待检查器出现。
+- markdown-camera专项增加减少动态效果下默认平滑、真实中间坐标、三个选项、重载、首帧前500ms同步工作和三尺寸截图；500ms为隔离构造输入，不是设备性能结论。固定坐标实体检查显式选立即模式，另由相机专项验动画；旧实体/执行图业务断言保留。
+- 文档更新README、V3、design/markdown-and-camera、implementation-plan、test-plan、Windows交付记录和本日志。ExecutionTrace的无关格式化已去掉，仅留导入与控件两行；用户desktop.spec.ts换行差异及reference新增文件仍排除提交。
+
+使用ponytail保持现有相机、偏好帮助函数和原生表单；ui-ux-pro-max检索reduced motion user override（ux域）匹配Reduced Motion一般指导，本轮根据用户明确要求设应用级平滑默认，并保留跟随系统/立即选项。一般指导不是该设备根因的证明。
+
+### 实际命令和过程
+
+命令目录apps/desktop；原生构建/检查使用require_escalated和隔离库/WebView目录。没有运行单元或全套测试，未安装依赖或系统软件，锁文件未变。
+
+- npx.cmd --yes prettier@3.9.10 --write整理新增偏好、相机与相关检查；studio/Graph未额外格式变化。npm.cmd run tauri -- build --debug --no-bundle通过，初次Rust11.00s。
+- npx.cmd playwright test markdown-camera.spec.ts graph-instances.spec.ts trace.spec.ts --project desktop --grep "native focus|instanced shapes|execution graph" --output ../../artifacts/camera-motion-preference：实体4.3s、执行图10.8s通过，偏好控件精确label未找到失败。修正独立label后构建通过（Rust9.88s）；单跑native focus到camera-motion-preference-final通过，总14.5s/用例12.3s。一次apply_patch因格式化后上下文不匹配被拒绝，没有写入；定位实际内容后应用。
+- 严格核对3132可执行路径后CloseMainWindow，Exited=true、Forced=false，正常关闭旧验收程序，未强制结束或读取用户正文。
+- 用户要求恢复初版发生在慢速中间Release构建中。该中间包构建成功（Rust2分20秒），未启动交付；随后恢复420ms调试构建通过（Rust9.45s）。增加实际相机位置断言后，camera-420-acceptance三条通过，总24.6s（4.2/8.9/9.0s）。对应420ms中间Release构建通过（Rust2分30秒），后被最终首帧计时/控件样式版本替代，未交付用户。
+- 控件复用field后调试构建通过（11.89s），首帧计时补充版构建通过（8.88s）。中间调试/Release曾并行使用同一dist，未将这些结果作为最终交付；全部结束后最终Release单独重建，避免混用产物。
+- npx.cmd playwright test markdown-camera.spec.ts graph-instances.spec.ts trace.spec.ts --project desktop --grep "native focus|instanced shapes|execution graph" --output ../../artifacts/camera-420-final：3条通过，总25.7s（实体4.3s、相机9.8s、执行图9.2s）。没有重跑已通过的Markdown正文/模型/安装升级专项。
+- 最终npm.cmd run tauri -- build --bundles nsis及实际包哈希/窗口启动结果接下方。保留既有两个release unused_mut提示和Vite大块提示，不当成已解决。主块531.07kB/gzip160.77kB，图谱940.81kB。
+
+### 最终原生证据和边界
+
+已查看camera-420-final中1366×768、1600×900、1920×1080真实内容视口截图；控件沿用V3，无横向溢出。相机操作至详情约511.3/535.8ms（含IPC/调度，不是纯动画时间）。120ms观测：首次相机z=26.0401，位于30→14之间；切换x=0.9375，位于0→5之间。首帧前500ms同步工作后仍有中间坐标，说明未在首帧直接完成。空闲350ms新增绘制0；拖动/滚轮/快速切换、系统与立即模式、重载保存通过。隔离原生未仿真查询false，随后显式仿真reduce验证覆盖；不伪称已读到旧正式窗口的媒体查询。
+
+仍待用户实际窗口手感复验；没有新的千节点性能、系统150%、读屏、模型长时、安装升级结果，不标第5项全部完成。
+
+最终补记：npm.cmd run tauri -- build --bundles nsis单独完成，Rust2分24秒；当前安装包2,949,609字节，SHA256为1c067bed99cf0e22a738272a067a36eaad3d5f30fe682d09f6fa1d24825d3c23，NotSigned。更新本机manifest与Windows交付文档。Start-Process启动最终正式Release，WaitForInputIdle后原生窗口可见、标题正确（进程19148）；SetForegroundWindow=false，不绕过前台限制。新窗口留给用户操作，未操作知识或自动代替人工验收。提交前git diff --check通过（仅既有CRLF提示），确认独立仓库与credential.helper=manager，Gittoken.txt仍忽略且未读取。

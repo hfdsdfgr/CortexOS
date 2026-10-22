@@ -1,4 +1,5 @@
 import { RetrievalSummary } from "./components/RetrievalSummary";
+import { GraphMotionControl } from "./GraphMotionControl";
 import { invoke } from "@tauri-apps/api/core";
 import {
   lazy,
@@ -492,6 +493,7 @@ function TraceCanvas({ studio, runId }: { studio: GraphStudio; runId: string }) 
           </div>
           <details className="trace-caption">
             <summary>图例与记录说明</summary>
+            <GraphMotionControl />
             <p>时间轴按记录顺序排列；上层为本次输入资料，下层为输出。执行过程不代表模型内部思维。</p>
           </details>
         </>

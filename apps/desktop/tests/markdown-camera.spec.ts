@@ -234,12 +234,15 @@ test("native Markdown preview and streaming output preserve source text and cita
   }
 });
 
-test("native focus and switching use slower interruptible motion with idle demand rendering", async ({}, info) => {
+test("native focus and switching honor app motion preference with real interpolated camera positions", async ({}, info) => {
   test.setTimeout(60000);
   const app = await launchNative(info);
   try {
     const { page } = app;
-    await page.emulateMedia({ reducedMotion: "no-preference" });
+    const nativeReducedMotion = await page.evaluate(
+      () => matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await createWorkspace(page, "镜头过渡验收");
     const workspaceId = await page.getByLabel("当前工作区").inputValue();
     const { nodeIds } = await seedGraph(page, workspaceId, 2, 1);
@@ -261,6 +264,17 @@ test("native focus and switching use slower interruptible motion with idle deman
       .click();
     const canvas = page.locator('canvas[data-webgl-ready="true"]');
     await expect(canvas).toBeVisible();
+    const setMotion = async (value: string) => {
+      const legend = page.locator("details.graph-legend");
+      await legend.locator("summary").click();
+      await page.getByLabel("镜头过渡", { exact: true }).selectOption(value);
+      await legend.locator("summary").click();
+    };
+    await page.locator("details.graph-legend > summary").click();
+    await expect(page.getByLabel("镜头过渡", { exact: true })).toHaveValue(
+      "smooth",
+    );
+    await page.locator("details.graph-legend > summary").click();
     const inspector = page.getByRole("complementary", {
       name: "图谱详情",
       exact: true,
@@ -274,23 +288,33 @@ test("native focus and switching use slower interruptible motion with idle deman
     };
     const started = performance.now();
     await choose(/^中心知识/);
-    await page.waitForTimeout(350);
+    await page.waitForTimeout(120);
     await expect(inspector).not.toBeVisible();
+    const focusMid = (await canvas.getAttribute("data-camera-position"))!
+      .split(",")
+      .map(Number);
+    expect(focusMid[2]).toBeGreaterThan(14.05);
+    expect(focusMid[2]).toBeLessThan(29.95);
     await page.screenshot({ path: info.outputPath("camera-in-flight.png") });
     await expect(
       inspector.getByRole("heading", { name: "中心知识", exact: true }),
     ).toBeVisible();
     const focusMs = performance.now() - started;
-    expect(focusMs).toBeGreaterThanOrEqual(1000);
+    expect(focusMs).toBeGreaterThanOrEqual(350);
     const switched = performance.now();
     await choose(/^关联条目 001/);
-    await page.waitForTimeout(350);
+    await page.waitForTimeout(120);
     await expect(inspector).not.toBeVisible();
+    const switchMid = (await canvas.getAttribute("data-camera-position"))!
+      .split(",")
+      .map(Number);
+    expect(switchMid[0]).toBeGreaterThan(0.05);
+    expect(switchMid[0]).toBeLessThan(4.95);
     await expect(
       inspector.getByRole("heading", { name: "关联条目 001", exact: true }),
     ).toBeVisible();
     const switchMs = performance.now() - switched;
-    expect(switchMs).toBeGreaterThanOrEqual(1000);
+    expect(switchMs).toBeGreaterThanOrEqual(350);
     await choose(/^中心知识/);
     await page.waitForTimeout(150);
     await choose(/^关联条目 001/);
@@ -328,20 +352,93 @@ test("native focus and switching use slower interruptible motion with idle deman
     await page.waitForTimeout(350);
     expect(await canvas.getAttribute("data-render-count")).toBe(count);
     await page.screenshot({ path: info.outputPath("camera-settled.png") });
-    await page.emulateMedia({ reducedMotion: "reduce" });
+    await setMotion("system");
     await choose(/^关联条目 001/);
     await expect(
       inspector.getByRole("heading", { name: "关联条目 001", exact: true }),
+    ).toBeVisible({ timeout: 200 });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await setMotion("instant");
+    await choose(/^中心知识/);
+    await expect(
+      inspector.getByRole("heading", { name: "中心知识", exact: true }),
+    ).toBeVisible({ timeout: 200 });
+    await setMotion("smooth");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await choose(/^关联条目 001/);
+    await page.waitForTimeout(120);
+    await expect(inspector).not.toBeVisible();
+    await expect(
+      inspector.getByRole("heading", { name: "关联条目 001", exact: true }),
     ).toBeVisible();
+    const delayedStart = (await canvas.getAttribute("data-camera-position"))!
+      .split(",")
+      .map(Number);
+    await page.getByRole("button", { name: "节点列表", exact: true }).click();
+    await page
+      .getByRole("complementary", { name: "图谱节点列表", exact: true })
+      .getByRole("button", { name: /^中心知识/ })
+      .evaluate((button) => {
+        (button as HTMLButtonElement).click();
+        // Isolated regression: emulate main-thread work before the first rendered frame.
+        const until = performance.now() + 500;
+        while (performance.now() < until) {
+          /* synthetic test work */
+        }
+      });
+    await page.waitForTimeout(100);
+    await expect(inspector).not.toBeVisible();
+    const delayedMid = (await canvas.getAttribute("data-camera-position"))!
+      .split(",")
+      .map(Number);
+    expect(delayedMid[0]).toBeLessThan(delayedStart[0] - 0.05);
+    expect(delayedMid[0]).toBeGreaterThan(delayedStart[0] - 4.95);
+    await expect(
+      inspector.getByRole("heading", { name: "中心知识", exact: true }),
+    ).toBeVisible();
+    await page.locator("details.graph-legend > summary").click();
+    for (const [width, height] of [
+      [1366, 768],
+      [1600, 900],
+      [1920, 1080],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await expect(page.getByLabel("镜头过渡", { exact: true })).toHaveValue(
+        "smooth",
+      );
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await page.screenshot({
+        path: info.outputPath(`camera-motion-${width}.png`),
+      });
+    }
+    await page.reload();
+    await page.locator("details.graph-legend > summary").click();
+    await expect(page.getByLabel("镜头过渡", { exact: true })).toHaveValue(
+      "smooth",
+    );
+    await page.locator("details.graph-legend > summary").click();
     await writeFile(
       info.outputPath("camera-timing.json"),
       JSON.stringify(
         {
           focusMs,
           switchMs,
+          duration: 420,
+          focusMid,
+          switchMid,
+          delayedFirstFrameChecked: true,
+          delayedMid,
+          nativeReducedMotion,
+          testedReducedMotion: true,
           note: "UI operation to inspector ready; includes IPC, not pure animation duration",
           idleFrames: 0,
-          reducedMotionChecked: true,
+          smoothOverrideChecked: true,
+          systemAndInstantChecked: true,
+          preferenceReloadChecked: true,
         },
         null,
         2,

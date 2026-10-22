@@ -5,6 +5,7 @@ import type { OrbitControls as Controls } from "three-stdlib";
 import * as THREE from "three";
 import type { Point } from "./graph-data";
 import type { ViewportApi } from "./GraphViewport";
+import { animateGraphCamera } from "./GraphMotionControl";
 
 type View = { camera: Point; target: Point };
 export function GraphCamera({
@@ -28,7 +29,7 @@ export function GraphCamera({
   const animation = useRef<{
     from: View;
     to: View;
-    started: number;
+    started: number | null;
     focused: boolean;
     duration: number;
   } | null>(null);
@@ -46,26 +47,18 @@ export function GraphCamera({
   };
   const move = (view: View, focused = false) => {
     animation.current = null;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!animateGraphCamera()) {
       apply(view);
       callbacks.current.onChange();
       if (focused) callbacks.current.onFocused?.();
     } else {
       const from = capture();
-      const distance = Math.max(
-        new THREE.Vector3(...from.camera).distanceTo(
-          new THREE.Vector3(...view.camera),
-        ),
-        new THREE.Vector3(...from.target).distanceTo(
-          new THREE.Vector3(...view.target),
-        ),
-      );
       animation.current = {
         from,
         to: view,
-        started: performance.now(),
+        started: null,
         focused,
-        duration: THREE.MathUtils.clamp(1100 + distance * 8, 1100, 1600),
+        duration: 420,
       };
       invalidate();
     }
@@ -83,10 +76,10 @@ export function GraphCamera({
   useFrame(() => {
     const flight = animation.current;
     if (!flight) return;
-    const progress = Math.min(
-      1,
-      (performance.now() - flight.started) / flight.duration,
-    );
+    const now = performance.now();
+    // Start with the first actual frame; work before it must not consume the transition.
+    flight.started ??= now;
+    const progress = Math.min(1, (now - flight.started) / flight.duration);
     const eased = progress ** 3 * (progress * (progress * 6 - 15) + 10);
     const interpolate = (a: Point, b: Point) =>
       a.map((v, i) => v + (b[i] - v) * eased) as Point;

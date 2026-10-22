@@ -34,6 +34,9 @@
 .graph-label-leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
 .graph-label-leaders line { stroke: var(--control-border); stroke-width: 1; }
 .graph-edge-label-toggle { display: flex; align-items: center; gap: 8px; margin-block: 12px; }
+.graph-motion-control { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-block: 12px; }
+.graph-motion-control > label { margin-bottom: 0; }
+.design-v3 .graph-motion-control select { width: auto; min-height: 36px; max-width: 100%; }
 .design-v3 .graph-legend { border: 1px solid var(--line); box-shadow: none; font-size: 13px; }
 .design-v3 .graph-view-status { color: var(--muted); }
 .design-v3 .graph-node-index { border: 1px solid var(--line); border-radius: var(--v3-radius-panel); }

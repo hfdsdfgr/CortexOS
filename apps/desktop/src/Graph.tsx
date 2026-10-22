@@ -35,6 +35,7 @@ import {
 } from "./graph-data";
 import type { ViewportApi } from "./GraphViewport";
 import { GraphRelations } from "./GraphRelations";
+import { GraphMotionControl } from "./GraphMotionControl";
 import {
   readGraphScope,
   MAX_GRAPH_CENTERS,
@@ -857,6 +858,7 @@ function KnowledgeGraph({
           )}
           <details className="graph-legend">
             <summary>图例与操作</summary>
+            <GraphMotionControl />
             <label className="graph-edge-label-toggle">
               <input
                 type="checkbox"

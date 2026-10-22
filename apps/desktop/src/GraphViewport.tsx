@@ -45,7 +45,7 @@ interface Props {
   onFocused?: () => void;
 }
 function Scene(props: Props) {
-  const { gl } = useThree();
+  const { camera, gl } = useThree();
   const { nodes, edges, positions, selected, onChange } = props;
   const colors = useMemo(() => {
     const styles = getComputedStyle(gl.domElement);
@@ -109,6 +109,7 @@ function Scene(props: Props) {
     );
     // Renderer counters describe the preceding completed render, not GPU time.
     canvas.dataset.drawCalls = String(gl.info.render.calls);
+    canvas.dataset.cameraPosition = camera.position.toArray().join(",");
   });
   const links = useMemo(
     () =>
