@@ -1,6 +1,6 @@
 # 里程碑记录
 
-## 2026-10-23：v0.2.0 预发布准备与验证
+## 2026-10-23：v0.2.0 公开预发布
 
 用户要求“先这样吧，release一个0.2.0”，次日继续。发布基于已完成的HTML界面和易用性优化，仅同步版本、发布文档与安装检查；无Rust业务源码、数据库迁移、权限或依赖调整。npm包与锁文件、Cargo包与锁文件、Tauri配置及设置页版本统一为0.2.0，正式标识仍为com.cortexos.desktop。README保留能力与用途介绍，Qwen仅作为示例，可使用其他兼容的Ollama本地模型。远端核实已更名为公开的marksimZ/CortexOS，沿用仓库配置的Git Credential Manager，不读取或输出Gittoken.txt。保留用户reference素材及原有desktop.spec.ts工作区状态。
 
@@ -20,7 +20,16 @@
 
 ### 发布边界
 
-此前UI专项最终浏览器3/3、原生4/4及最终菜单1/1通过，见下节；本轮仅复用证据及运行必要安装/启动验证。正式安装包尚未在干净系统上安装，历史0.1.0正式包升级、150%系统缩放、真实读屏与长期真实模型仍待人工验收。安装包无签名、不包含Ollama/模型、未启用自动更新。准备在正常快进推送后发布v0.2.0预发布及安装包/校验和，发布结果另记；保留v0.1.0原标签和资产。
+此前UI专项最终浏览器3/3、原生4/4及最终菜单1/1通过，见下节；本轮仅复用证据及运行必要安装/启动验证。正式安装包尚未在干净系统上安装，历史0.1.0正式包升级、150%系统缩放、真实读屏与长期真实模型仍待人工验收。安装包无签名、不包含Ollama/模型、未启用自动更新。保留v0.1.0原标签和资产。
+
+### 实际发布结果
+
+- `git diff --check`和暂存差异检查通过；创建codex/release-0.2.0，仅暂存45个已授权界面/检查/版本/文档文件，不包含用户素材及既有desktop.spec.ts状态。提交`8d7e56ae7160dad77b031b7897ebef89359e754b`，注释标签v0.2.0指向该提交，本地manifest同步源码提交。
+- 首次正常push因更名前的仓库路径凭据无法匹配而失败，远端未更改。核实Git配置仍为manager、useHttpPath=true、旧账号hfdsdfgr；辅助脚本`align-git-credential`用现有GCM凭据在内存中核实当前账号marksimZ，将当前仓库的用户名/路径对齐并交由GCM保存，不读取根目录token、不把凭据写入文件或URL。
+- `git push --atomic origin HEAD:refs/heads/codex/release-0.2.0 HEAD:refs/heads/main refs/tags/v0.2.0`成功：main从e5bef65正常快进到8d7e56a，无强推；版本标签远端解引用一致。
+- 顺序执行`py -3 artifacts/release-v0.2.0/github-release.py create`、`upload`、`publish`、`verify`：先创建草稿并上传两份附件，API大小与摘要匹配后公开为prerelease。发布ID420940620，北京时间2026-10-23 00:18:06；地址为[0.2.0发布页](https://github.com/marksimZ/CortexOS/releases/tag/v0.2.0)。没有修改0.1.0发布。
+- 未登录公开下载两份附件复核成功。安装包2,948,478字节，摘要与上文一致；SHA256SUMS.txt为95字节、摘要`7eb00686628d53482ce3c1f8b2c3baffc1e6b29e0bc0bd6b8f5cc95d84e8e505`。发布摘要保存在本地artifacts/release-v0.2.0/release.json。
+- 发布后仅补充本节及计划状态，再作独立文档提交并正常推送；不改安装包、不移动标签、不重跑已通过检查。本轮停在0.2.0发布门槛，后续产品开发等待用户指示。
 
 ## 2026-10-22：界面易用性优化
 
