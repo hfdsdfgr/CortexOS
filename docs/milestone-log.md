@@ -1,5 +1,13 @@
 # 里程碑记录
 
+## 2026-10-23：用户完成150%系统缩放验收
+
+用户反馈：“150缩放我验证了所有功能没问题”。按本次v0.2.0的实际使用反馈，将Windows150%系统缩放记为用户验收通过，所有功能正常；不虚构截图、窗口尺寸或自动化结果。真实读屏、干净系统安装和长期真实模型等其他检查仍保留原状态，未据此将全部桌面交付门槛标为完成。
+
+同步CHANGELOG、0.2.0发布说明、Windows交付记录及人工表、路线、产品范围、实施计划、测试计划和当前HTML界面规范。历史各轮“未测/待验”保留当时事实，当前结果在各入口补充；产品范围日期和版本同时对齐0.2.0。只更新文档，不重建安装包、不移动版本标签。
+
+实际执行`git rev-parse --show-toplevel`确认独立仓库，`git fetch origin`及`git ls-remote`确认main和发布分支为96fed32、v0.2.0仍指向8d7e56a；`git diff --check`通过。`py -3 artifacts/release-v0.2.0/github-release.py update-notes`已更新GitHub发布说明并重新读取确认：正文与本地发布文档一致，发布ID、预发布状态、标签、目标提交及两份附件ID/大小/校验值均未变。结果保存于本地artifacts/release-v0.2.0/notes-update.json。此次按纯文档变更审阅事实、链接和差异，未运行单元、构建或界面测试；仅提交这九份文档并正常推送，保留原有desktop.spec.ts状态及reference素材。
+
 ## 2026-10-23：v0.2.0 公开预发布
 
 用户要求“先这样吧，release一个0.2.0”，次日继续。发布基于已完成的HTML界面和易用性优化，仅同步版本、发布文档与安装检查；无Rust业务源码、数据库迁移、权限或依赖调整。npm包与锁文件、Cargo包与锁文件、Tauri配置及设置页版本统一为0.2.0，正式标识仍为com.cortexos.desktop。README保留能力与用途介绍，Qwen仅作为示例，可使用其他兼容的Ollama本地模型。远端核实已更名为公开的marksimZ/CortexOS，沿用仓库配置的Git Credential Manager，不读取或输出Gittoken.txt。保留用户reference素材及原有desktop.spec.ts工作区状态。
